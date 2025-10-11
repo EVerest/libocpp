@@ -228,8 +228,8 @@ std::optional<CiString<20>> Evse::get_evse_connector_type(const uint32_t connect
 
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                             const MeterValue& meter_start, const std::optional<IdToken>& id_token,
-                            const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
-                            const ChargingStateEnum charging_state) {
+                            const std::optional<IdToken>& /*group_id_token*/,
+                            const std::optional<int32_t> /*reservation_id*/, const ChargingStateEnum charging_state) {
     if (this->id_connector_map.count(connector_id) == 0) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
@@ -270,7 +270,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
     }
 }
 
-void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
+void Evse::close_transaction(const DateTime& /*timestamp*/, const MeterValue& meter_stop, const ReasonEnum& reason) {
     if (this->transaction == nullptr) {
         EVLOG_warning << "Received attempt to stop a transaction without an active transaction";
         return;

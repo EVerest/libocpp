@@ -697,7 +697,7 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
 }
 
 ProfileValidationResultEnum SmartCharging::validate_priority_charging_profile(const ChargingProfile& profile,
-                                                                              int32_t evse_id) const {
+                                                                              int32_t /*evse_id*/) const {
     // Charging profile purpose PriorityCharging:
     // A charging profile with purpose PriorityCharging is used to overrule the currently active TxProfile or
     // TxDefaultProfile charging restrictions with a charging profile that provides the maximum possible power under the

@@ -820,7 +820,7 @@ void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonit
     }
 }
 
-void InitDeviceModelDb::delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
+void InitDeviceModelDb::delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& /*variable_id*/) {
     try {
         const std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
         auto delete_stmt = this->database->new_statement(delete_query);

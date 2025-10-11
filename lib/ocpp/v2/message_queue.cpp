@@ -12,7 +12,7 @@ bool is_transaction_message(const ocpp::v2::MessageType message_type) {
            (message_type == v2::MessageType::SecurityEventNotification);
 }
 
-bool is_start_transaction_message(const ocpp::v2::MessageType message_type) {
+bool is_start_transaction_message(const ocpp::v2::MessageType /*message_type*/) {
     return false;
 }
 

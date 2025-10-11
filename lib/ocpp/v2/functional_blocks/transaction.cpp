@@ -90,7 +90,7 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
                                                const MeterValue& meter_stop, const ReasonEnum reason,
                                                const TriggerReasonEnum trigger_reason,
                                                const std::optional<IdToken>& id_token,
-                                               const std::optional<std::string>& signed_meter_value,
+                                               const std::optional<std::string>& /*signed_meter_value*/,
                                                const ChargingStateEnum charging_state) {
     auto& evse_handle = this->context.evse_manager.get_evse(evse_id);
     auto& enhanced_transaction = evse_handle.get_transaction();

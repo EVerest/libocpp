@@ -140,7 +140,7 @@ void DatabaseHandler::update_transaction_csms_ack(const int32_t transaction_id) 
     }
 }
 
-void DatabaseHandler::update_start_transaction_message_id(const std::string& session_id,
+void DatabaseHandler::update_start_transaction_message_id(const std::string& /*session_id*/,
                                                           const std::string& start_transaction_message_id) {
     const std::string sql = "UPDATE TRANSACTIONS SET START_TRANSACTION_MESSAGE_ID=@start_transaction_message_id, "
                             "LAST_UPDATE=@last_update WHERE ID==@session_id";

@@ -27,7 +27,7 @@ void MessageDispatcher::dispatch_call(const json& call, bool triggered) {
 }
 
 std::future<ocpp::EnhancedMessage<MessageType>> MessageDispatcher::dispatch_call_async(const json& call,
-                                                                                       bool triggered) {
+                                                                                       bool /*triggered*/) {
     const auto message_type = conversions::string_to_messagetype(call.at(CALL_ACTION));
     const auto message_transmission_priority = get_message_transmission_priority(
         is_boot_notification_message(message_type), false,

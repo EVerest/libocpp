@@ -92,7 +92,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
 
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          std::unique_ptr<DeviceModelStorageInterface> device_model_storage_interface,
-                         const std::string& ocpp_main_path, const std::string& core_database_path,
+                         const std::string& /*ocpp_main_path*/, const std::string& core_database_path,
                          const std::string& sql_init_path, const std::string& message_log_path,
                          const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks) :
     ChargePoint(
@@ -228,7 +228,7 @@ void ChargePoint::on_session_finished(const int32_t evse_id, const int32_t conne
     this->evse_manager->get_evse(evse_id).submit_event(connector_id, ConnectorEvent::PlugOut);
 }
 
-void ChargePoint::on_authorized(const int32_t evse_id, const int32_t connector_id, const IdToken& id_token) {
+void ChargePoint::on_authorized(const int32_t evse_id, const int32_t /*connector_id*/, const IdToken& id_token) {
     auto& evse = this->evse_manager->get_evse(evse_id);
     if (!evse.has_active_transaction()) {
         // nothing to report in case transaction is not yet open

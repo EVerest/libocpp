@@ -293,7 +293,7 @@ void ChargePointImpl::init_websocket() {
     auto connection_options = this->get_ws_connection_options();
 
     this->websocket = std::make_unique<Websocket>(connection_options, this->evse_security, this->logging);
-    this->websocket->register_connected_callback([this](OcppProtocolVersion protocol) {
+    this->websocket->register_connected_callback([this](OcppProtocolVersion /*protocol*/) {
         if (this->connection_state_changed_callback != nullptr) {
             this->connection_state_changed_callback(true);
         }
@@ -332,7 +332,7 @@ void ChargePointImpl::init_websocket() {
             this->signal_set_charging_profiles_callback();
         }
     });
-    this->websocket->register_stopped_connecting_callback([this](const WebsocketCloseReason reason) {
+    this->websocket->register_stopped_connecting_callback([this](const WebsocketCloseReason /*reason*/) {
         if (this->switch_security_profile_callback != nullptr) {
             this->switch_security_profile_callback();
         }
@@ -3427,7 +3427,7 @@ void ChargePointImpl::set_time_offset_timer(const std::string& date_time) {
 }
 
 void ChargePointImpl::status_notification(const int32_t connector, const ChargePointErrorCode errorCode,
-                                          const ChargePointStatus status, const ocpp::DateTime& timestamp,
+                                          const ChargePointStatus status, const ocpp::DateTime& /*timestamp*/,
                                           const std::optional<CiString<50>>& info,
                                           const std::optional<CiString<255>>& vendor_id,
                                           const std::optional<CiString<50>>& vendor_error_code,
@@ -4626,7 +4626,7 @@ void ChargePointImpl::on_firmware_update_status_notification(int32_t request_id,
     }
 }
 
-void ChargePointImpl::diagnostic_status_notification(DiagnosticsStatus status, bool initiated_by_trigger_message) {
+void ChargePointImpl::diagnostic_status_notification(DiagnosticsStatus status, bool /*initiated_by_trigger_message*/) {
     DiagnosticsStatusNotificationRequest req;
     req.status = status;
     this->diagnostics_status = status;

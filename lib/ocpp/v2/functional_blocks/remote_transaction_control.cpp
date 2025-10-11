@@ -344,7 +344,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
     } break;
 
     case MessageTriggerEnum::TransactionEvent: {
-        auto send_transaction = [&](int32_t evse_id, EvseInterface& evse) {
+        auto send_transaction = [&](int32_t /*evse_id*/, EvseInterface& evse) {
             if (!evse.has_active_transaction()) {
                 return;
             }

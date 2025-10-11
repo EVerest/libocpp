@@ -520,7 +520,7 @@ void SmartChargingHandler::clear_all_profiles() {
 }
 
 std::vector<ChargingProfile>
-SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
+SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& /*start_time*/, const ocpp::DateTime& /*end_time*/,
                                          const int connector_id,
                                          const std::set<ChargingProfilePurposeType>& purposes_to_ignore) {
     std::vector<ChargingProfile> valid_profiles;

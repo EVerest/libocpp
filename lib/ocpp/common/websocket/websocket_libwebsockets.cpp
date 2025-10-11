@@ -33,7 +33,7 @@ using namespace std::chrono_literals;
 namespace {
 std::optional<std::filesystem::path> keylog_file;
 
-void keylog_callback(const SSL* ssl, const char* line) {
+void keylog_callback(const SSL* /*ssl*/, const char* line) {
     if (keylog_file.has_value()) {
         std::ofstream keylog_ofs;
         keylog_ofs.open(keylog_file.value(), std::ofstream::out | std::ofstream::app);
@@ -448,7 +448,7 @@ static const std::array<struct lws_protocols, 2> protocols = {
     {{local_protocol_name, callback_minimal, 0, 0, 0, nullptr, 0}, LWS_PROTOCOL_LIST_TERM}};
 
 bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key,
-                                      bool custom_key, std::optional<std::string>& password) {
+                                      bool /*custom_key*/, std::optional<std::string>& password) {
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
@@ -1516,7 +1516,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
     return 0;
 }
 
-void WebsocketLibwebsockets::on_conn_connected(ConnectionData* conn_data) {
+void WebsocketLibwebsockets::on_conn_connected(ConnectionData* /*conn_data*/) {
     // Called on the websocket client thread
     EVLOG_info << "OCPP client successfully connected to server with version: " << this->connected_ocpp_version;
 
@@ -1581,7 +1581,7 @@ void WebsocketLibwebsockets::on_conn_close(ConnectionData* conn_data) {
     conn_data->mark_stop_executed();
 }
 
-void WebsocketLibwebsockets::on_conn_fail(ConnectionData* conn_data) {
+void WebsocketLibwebsockets::on_conn_fail(ConnectionData* /*conn_data*/) {
     // Called on the websocket client thread
     EVLOG_error << "OCPP client connection to server failed";
 
