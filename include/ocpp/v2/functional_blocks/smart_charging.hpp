@@ -28,7 +28,7 @@ struct NotifyEVChargingNeedsRequest;
 struct NotifyEVChargingNeedsResponse;
 
 /// \brief Different types of limits and setpoints, used in the limits_setpoints_per_operation_mode map.
-enum LimitSetpointType {
+enum class LimitSetpointType {
     Limit,
     DischargeLimit,
     Setpoint,

@@ -17,7 +17,7 @@ namespace ocpp::v2 {
 
 class DeviceModel;
 
-enum UpdateMonitorMetaType {
+enum class UpdateMonitorMetaType {
     TRIGGER,
     PERIODIC
 };

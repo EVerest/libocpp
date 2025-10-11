@@ -153,7 +153,7 @@ public:
 };
 
 /// \brief Contains the different connection states of the charge point
-enum SessionStartedReason {
+enum class SessionStartedReason {
     EVConnected,
     Authorized
 };
@@ -769,8 +769,8 @@ firmware_status_notification_to_firmware_status_enum_type(const FirmwareStatusNo
 
 namespace security {
 // The security profiles defined in OCPP 2.0.1 resp. in the OCPP 1.6 security-whitepaper.
-enum SecurityProfile { // no "enum class" because values are used in implicit `switch`-comparisons to `int
-                       // security_profile`
+// NOLINTNEXTLINE(cppcoreguidelines-use-enum-class): used in implicit `switch`-comparisons to `int security_profile`
+enum SecurityProfile {
     OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION = 0,
     UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION = 1,
     TLS_WITH_BASIC_AUTHENTICATION = 2,
