@@ -310,11 +310,11 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_ST
 
         if (result != 1) {
             const X509_NAME* subject_name = X509_get_subject_name(server_cert);
-            char common_name[256];
+            std::array<char, 256> common_name;
 
-            if (X509_NAME_get_text_by_NID(subject_name, NID_commonName, common_name, sizeof(common_name)) <= 0) {
+            if (X509_NAME_get_text_by_NID(subject_name, NID_commonName, common_name.data(), sizeof(common_name)) <= 0) {
                 EVLOG_error << "Failed to verify server certificate cn with hostname: " << hostname
-                            << " and with server certificate cs: " << common_name
+                            << " and with server certificate cs: " << common_name.data()
                             << " with wildcards: " << allow_wildcards;
             }
 
@@ -323,7 +323,7 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_ST
                                                             X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS, nullptr);
                 if (result != wildcard_result) {
                     EVLOG_error << "Failed to verify server certificate hostname: \"" << hostname
-                                << "\". Server certificate common name \"" << common_name
+                                << "\". Server certificate common name \"" << common_name.data()
                                 << "\" likely contains wildcards. Please check your OCPP configuration and set "
                                    "VerifyCsmsAllowWildcards to true if you want to allow wildcard certificates.";
                 }
@@ -444,8 +444,8 @@ int private_key_callback(char* buf, int size, int /*rwflag*/, void* userdata) {
 } // namespace
 
 constexpr auto local_protocol_name = "lws-everest-client";
-static const struct lws_protocols protocols[] = {{local_protocol_name, callback_minimal, 0, 0, 0, NULL, 0},
-                                                 LWS_PROTOCOL_LIST_TERM};
+static const std::array<struct lws_protocols, 2> protocols = {
+    {{local_protocol_name, callback_minimal, 0, 0, 0, nullptr, 0}, LWS_PROTOCOL_LIST_TERM}};
 
 bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key,
                                       bool custom_key, std::optional<std::string>& password) {
@@ -609,7 +609,7 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
 
     info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     info.port = CONTEXT_PORT_NO_LISTEN; /* we do not run any server */
-    info.protocols = protocols;
+    info.protocols = protocols.data();
 
     if (this->connection_options.iface.has_value()) {
         EVLOG_info << "Using network iface: " << this->connection_options.iface.value().c_str();
@@ -1312,9 +1312,9 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
     case LWS_CALLBACK_CLIENT_FILTER_PRE_ESTABLISH:
         try {
-            char buffer[16] = {0};
-            lws_hdr_copy(wsi, buffer, 16, WSI_TOKEN_PROTOCOL);
-            this->connected_ocpp_version = ocpp::conversions::string_to_ocpp_protocol_version(buffer);
+            std::array<char, 16> buffer = {0};
+            lws_hdr_copy(wsi, buffer.data(), 16, WSI_TOKEN_PROTOCOL);
+            this->connected_ocpp_version = ocpp::conversions::string_to_ocpp_protocol_version(buffer.data());
         } catch (StringToEnumException& e) {
             EVLOG_warning << "CSMS did not select protocol: " << e.what();
             this->connected_ocpp_version = OcppProtocolVersion::Unknown;

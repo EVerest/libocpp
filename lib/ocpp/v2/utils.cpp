@@ -112,8 +112,8 @@ MeterValue set_meter_value_reading_context(const MeterValue& meter_value, const 
 }
 
 std::string sha256(const std::string& str) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    EVP_Digest(str.c_str(), str.size(), hash, NULL, EVP_sha256(), NULL);
+    std::array<unsigned char, SHA256_DIGEST_LENGTH> hash;
+    EVP_Digest(str.c_str(), str.size(), hash.data(), nullptr, EVP_sha256(), nullptr);
     std::stringstream ss;
     ss << std::hex << std::setfill('0');
     for (const auto& byte : hash) {
