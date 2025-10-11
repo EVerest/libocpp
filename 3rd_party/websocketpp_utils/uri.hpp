@@ -302,9 +302,9 @@ private:
     std::string m_scheme;
     std::string m_host;
     std::string m_resource;
-    uint16_t m_port;
-    bool m_secure;
-    bool m_valid;
+    uint16_t m_port = 0;
+    bool m_secure = false;
+    bool m_valid = false;
 };
 
 } // namespace ocpp

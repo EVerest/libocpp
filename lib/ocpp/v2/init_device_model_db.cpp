@@ -835,7 +835,7 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
 
     std::map<ComponentKey, std::vector<DeviceModelVariable>> components;
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = select_statement->step()) == SQLITE_ROW) {
         ComponentKey component_key;
         component_key.db_id = select_statement->column_int(0);
@@ -1061,7 +1061,7 @@ std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from
 
     select_statement->bind_int("@variable_id", static_cast<int>(variable_id));
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = select_statement->step()) == SQLITE_ROW) {
         DbVariableAttribute attribute;
         attribute.db_id = select_statement->column_int(0);
@@ -1103,7 +1103,7 @@ std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_fro
     auto select_stmt = this->database->new_statement(select_query);
     select_stmt->bind_int(1, variable_id);
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = select_stmt->step()) == SQLITE_ROW) {
         VariableMonitoringMeta monitor_meta;
         VariableMonitoring monitor;

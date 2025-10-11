@@ -566,10 +566,10 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
         return;
     }
 
-    bool is_offline;
-    int offline_severity;
-    int active_monitoring_level;
-    MonitoringBaseEnum active_monitoring_base;
+    bool is_offline = true;
+    int offline_severity = MonitoringLevelSeverity::Danger;
+    int active_monitoring_level = MonitoringLevelSeverity::MAX;
+    MonitoringBaseEnum active_monitoring_base = MonitoringBaseEnum::All;
 
     get_monitoring_info(is_offline, offline_severity, active_monitoring_level, active_monitoring_base);
 

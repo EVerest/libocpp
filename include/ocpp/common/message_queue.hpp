@@ -25,12 +25,12 @@
 namespace ocpp {
 
 template <typename M> struct MessageQueueConfig {
-    int transaction_message_attempts;
-    int transaction_message_retry_interval; // seconds
+    int transaction_message_attempts = 0;
+    int transaction_message_retry_interval = 0; // seconds
 
     // threshold for the accumulated sizes of the queues; if the queues exceed this limit,
     // messages are potentially dropped in accordance with OCPP 2.0.1. Specification (cf. QueueAllMessages parameter)
-    int queues_total_size_threshold;
+    int queues_total_size_threshold = 0;
 
     bool queue_all_messages{false};                 // cf. OCPP 2.0.1. "QueueAllMessages" in OCPPCommCtrlr
     std::set<M> message_types_discard_for_queueing; // allows to discard certain message types for offline queuing (e.g.
@@ -50,11 +50,11 @@ template <typename M> struct MessageQueueConfig {
 
 /// \brief Contains a OCPP message in json form with additional information
 template <typename M> struct EnhancedMessage {
-    json message;                     ///< The OCPP message as json
-    size_t message_size;              ///< size of the json message in bytes
-    MessageId uniqueId;               ///< The unique ID of the json message
-    M messageType = M::InternalError; ///< The OCPP message type
-    MessageTypeId messageTypeId;      ///< The OCPP message type ID (CALL/CALLRESULT/CALLERROR)
+    json message;                                         ///< The OCPP message as json
+    size_t message_size = 0;                              ///< size of the json message in bytes
+    MessageId uniqueId;                                   ///< The unique ID of the json message
+    M messageType = M::InternalError;                     ///< The OCPP message type
+    MessageTypeId messageTypeId = MessageTypeId::UNKNOWN; ///< The OCPP message type ID (CALL/CALLRESULT/CALLERROR)
     json call_message;    ///< If the message is a CALLRESULT or CALLERROR this can contain the original CALL message
     bool offline = false; ///< A flag indicating if the connection to the central system is offline
 };

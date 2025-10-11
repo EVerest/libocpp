@@ -236,7 +236,7 @@ void Security::handle_certificate_signed_req(Call<CertificateSignedRequest> call
     response.status = CertificateSignedStatusEnum::Rejected;
 
     const auto certificate_chain = call.msg.certificateChain.get();
-    ocpp::CertificateSigningUseEnum cert_signing_use;
+    ocpp::CertificateSigningUseEnum cert_signing_use; // NOLINT(cppcoreguidelines-init-variables): initialized below
 
     if (!call.msg.certificateType.has_value() or
         call.msg.certificateType.value() == CertificateSigningUseEnum::ChargingStationCertificate) {

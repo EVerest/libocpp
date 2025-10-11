@@ -70,9 +70,9 @@ private:
         chargepoint_id(chargepoint_id) {
     }
 
-    bool secure;
+    bool secure = false;
     std::string host;
-    uint16_t port;
+    uint16_t port = 0;
     std::string path_without_chargepoint_id;
     std::string chargepoint_id;
 };

@@ -298,7 +298,7 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
         // when we can make libwebsocket take custom verification parameter
 
         // Verify host-name manually
-        int result;
+        int result; // NOLINT(cppcoreguidelines-init-variables): initialized below
 
         if (allow_wildcards) {
             result = X509_check_host(server_cert, hostname.c_str(), hostname.length(),

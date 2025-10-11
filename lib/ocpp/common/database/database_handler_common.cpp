@@ -47,7 +47,7 @@ std::vector<DBTransactionMessage> DatabaseHandlerCommon::get_message_queue_messa
 
     auto stmt = this->database->new_statement(sql);
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = stmt->step()) == SQLITE_ROW) {
         try {
             const std::string message = stmt->column_text(1);

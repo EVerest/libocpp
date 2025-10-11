@@ -69,10 +69,8 @@ void TransactionBlock::on_transaction_started(
     const auto& enhanced_transaction = evse_handle.get_transaction();
     Transaction transaction{enhanced_transaction->transactionId};
     transaction.chargingState = charging_state;
-    if (remote_start_id.has_value()) {
-        transaction.remoteStartId = remote_start_id.value();
-        enhanced_transaction->remoteStartId = remote_start_id.value();
-    }
+    transaction.remoteStartId = remote_start_id;
+    enhanced_transaction->remoteStartId = remote_start_id;
 
     EVSE evse{evse_id};
     evse.connectorId.emplace(connector_id);

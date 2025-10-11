@@ -474,10 +474,8 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
 
     if (response.status == ResetStatusEnum::Accepted and transaction_active and msg.type == ResetEnum::OnIdle) {
         std::optional<int32_t> reset_scheduled_evseid = std::nullopt;
-        if (msg.evseId.has_value()) {
-            // B12.FR.07
-            reset_scheduled_evseid = msg.evseId.value();
-        }
+        // B12.FR.07
+        reset_scheduled_evseid = msg.evseId;
 
         // B12.FR.01: We have to wait until transactions have ended.
         // B12.FR.07

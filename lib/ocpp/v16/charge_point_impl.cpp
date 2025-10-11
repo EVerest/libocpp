@@ -1799,7 +1799,7 @@ void ChargePointImpl::execute_connectors_availability_change(const std::vector<i
 
 void ChargePointImpl::execute_queued_availability_change(const int32_t connector) {
     bool change_queued = false;
-    AvailabilityType connector_availability;
+    AvailabilityType connector_availability = AvailabilityType::Inoperative;
     bool persist = false;
     {
         const std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
@@ -1840,6 +1840,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
     EVLOG_debug << "Received ChangeConfigurationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     ChangeConfigurationResponse response;
+    response.status = ConfigurationStatus::NotSupported;
     // when reconnect or switching security profile the response has to be sent before that
     bool responded = false;
 
@@ -2900,7 +2901,7 @@ void ChargePointImpl::handleInstallCertificateRequest(ocpp::Call<InstallCertific
     InstallCertificateResponse response;
     response.status = InstallCertificateStatusEnumType::Rejected;
 
-    ocpp::CaCertificateType ca_certificate_type;
+    ocpp::CaCertificateType ca_certificate_type; // NOLINT(cppcoreguidelines-init-variables): initialized below
     if (call.msg.certificateType == CertificateUseEnumType::CentralSystemRootCertificate) {
         ca_certificate_type = CaCertificateType::CSMS;
     } else {
@@ -3214,7 +3215,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     TariffMessage tariff_message;
     const auto t = this->transaction_handler->get_transaction_from_id_tag(id_token.value());
     std::string identifier_id;
-    IdentifierType identifier_type;
+    IdentifierType identifier_type; // NOLINT(cppcoreguidelines-init-variables): initialized below
 
     if (t == nullptr) {
         identifier_id = id_token.value();

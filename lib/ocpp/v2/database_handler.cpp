@@ -510,7 +510,7 @@ std::vector<MeterValue> DatabaseHandler::transaction_metervalues_get_all(const s
 
     std::vector<MeterValue> result;
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = select_stmt->step()) == SQLITE_ROW) {
         MeterValue value;
         value.timestamp = from_unix_milliseconds(select_stmt->column_int64(2));
@@ -601,7 +601,7 @@ void DatabaseHandler::transaction_metervalues_clear(const std::string& transacti
 
     const std::string sql2 = "DELETE FROM METER_VALUE_ITEMS WHERE METER_VALUE_ID = @row_id";
     auto delete_stmt = this->database->new_statement(sql2);
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = select_stmt->step()) == SQLITE_ROW) {
         auto row_id = select_stmt->column_int(0);
         delete_stmt->bind_int("@row_id", row_id);

@@ -44,7 +44,7 @@ const EvseInterface& EvseManager::get_evse(const int32_t id) const {
 }
 
 bool EvseManager::does_connector_exist(const int32_t evse_id, const CiString<20> connector_type) const {
-    const EvseInterface* evse;
+    const EvseInterface* evse = nullptr;
     try {
         evse = &this->get_evse(evse_id);
     } catch (const EvseOutOfRangeException&) {

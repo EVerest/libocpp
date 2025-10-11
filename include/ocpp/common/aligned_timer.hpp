@@ -15,7 +15,7 @@ public:
 
 private:
     system_time_point start_point;
-    std::chrono::seconds call_interval;
+    std::chrono::seconds call_interval = std::chrono::seconds(0);
 
     std::function<void()> callback;
 

@@ -1085,7 +1085,7 @@ void store_limit_to_phase_limits(const PeriodLimit& input_limit, const float& no
 void convert_and_transform_limit_value(const float& input, const float& not_specified, const float& transform_value,
                                        std::optional<float>& value, const bool use_min, const bool use_divide) {
     if (!is_equal(input, not_specified)) {
-        float transformed_value;
+        float transformed_value; // NOLINT(cppcoreguidelines-init-variables): initialized in if/else
         if (use_divide) {
             transformed_value = input / transform_value;
         } else {

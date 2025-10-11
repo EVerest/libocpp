@@ -293,7 +293,7 @@ struct Powermeter {
 };
 
 struct StateOfCharge {
-    float value;                         ///< State of Charge in percent
+    float value = 0;                     ///< State of Charge in percent
     std::optional<std::string> location; ///< Location of the State of Charge measurement
 
     /// \brief Conversion from a given StateOfCharge \p k to a given json object \p j
@@ -308,7 +308,7 @@ struct StateOfCharge {
 };
 
 struct Temperature {
-    float value;                         ///< Temperature in degree Celsius
+    float value = 0;                     ///< Temperature in degree Celsius
     std::optional<std::string> location; ///< Location of the Temperature measurement
 
     /// \brief Conversion from a given Temperature \p k to a given json object \p j
@@ -323,7 +323,7 @@ struct Temperature {
 };
 
 struct RPM {
-    float value;                         ///< RPM
+    float value = 0;                     ///< RPM
     std::optional<std::string> location; ///< Location of the RPM measurement
 
     /// \brief Conversion from a given RPM \p k to a given json object \p j
@@ -705,7 +705,7 @@ struct CertificateInfo {
 };
 
 struct GetCertificateInfoResult {
-    GetCertificateInfoStatus status;
+    GetCertificateInfoStatus status = GetCertificateInfoStatus::Rejected;
     std::optional<CertificateInfo> info;
 };
 

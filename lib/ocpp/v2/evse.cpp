@@ -127,7 +127,7 @@ std::optional<ConnectorStatusEnum> Evse::get_connector_status(std::optional<CiSt
     }
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        Connector* connector;
+        Connector* connector = nullptr;
         try {
             connector = this->get_connector(static_cast<int32_t>(i));
         } catch (const std::logic_error&) {

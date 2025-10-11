@@ -181,7 +181,7 @@ std::vector<TransactionEntry> DatabaseHandler::get_transactions(bool filter_inco
 
     auto stmt = this->database->new_statement(sql);
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = stmt->step()) == SQLITE_ROW) {
         TransactionEntry transaction_entry;
         transaction_entry.session_id = stmt->column_text(0);
@@ -353,7 +353,7 @@ std::map<int32_t, v16::AvailabilityType> DatabaseHandler::get_connector_availabi
     const std::string sql = "SELECT ID, AVAILABILITY FROM CONNECTORS";
     auto stmt = this->database->new_statement(sql);
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = stmt->step()) == SQLITE_ROW) {
         auto connector = stmt->column_int(0);
         availability_map[connector] = v16::conversions::string_to_availability_type(stmt->column_text(1));
@@ -584,7 +584,7 @@ std::vector<v16::ChargingProfile> DatabaseHandler::get_charging_profiles() {
     const std::string sql = "SELECT * FROM CHARGING_PROFILES";
     auto stmt = this->database->new_statement(sql);
 
-    int status;
+    int status = SQLITE_ERROR;
     while ((status = stmt->step()) == SQLITE_ROW) {
         profiles.emplace_back(json::parse(stmt->column_text(2)));
     }
