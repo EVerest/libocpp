@@ -18,9 +18,6 @@ using namespace common;
 
 namespace v2 {
 
-extern void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
-                                     std::vector<VariableMonitoringMeta>& monitors);
-
 DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, const fs::path& migration_files_path,
                                                    const fs::path& config_path) {
     if (db_path.empty() || migration_files_path.empty() || config_path.empty()) {

@@ -91,18 +91,6 @@ private:
     /// \brief Format the given \p json_str with the given \p message_type
     FormattedMessageWithType format_message(const std::string& message_type, const std::string& json_str);
 
-    /// \brief Add opening html tags to the given stream \p os
-    void open_html_tags(std::ofstream& os);
-
-    /// \brief Add closing html tags to the given stream \p os
-    void close_html_tags(std::ofstream& os);
-
-    /// \returns a datetime string in YearMonthDayHourMinuteSecond format
-    std::string get_datetime_string();
-
-    /// \returns file size of the given path or 0 if the file does not exist
-    std::uintmax_t file_size(const std::filesystem::path& path);
-
     /// \brief Rotates the log at the given file \p file_basename and remove oldest file if there are more log files
     /// than the maximum
     LogRotationStatus rotate_log(const std::string& file_basename);

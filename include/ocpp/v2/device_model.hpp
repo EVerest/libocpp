@@ -129,14 +129,6 @@ private:
     bool component_criteria_match(const Component& component_id,
                                   const std::vector<ComponentCriterionEnum>& component_criteria);
 
-    /// @brief Iterates over the given \p component_variables and filters them according to the requirement conditions.
-    /// @param component_variables
-    /// @param component_ current component
-    /// @param variable_ current variable
-    /// @return true if the component is found according to any of the requirement conditions.
-    bool component_variables_match(const std::vector<ComponentVariable>& component_variables,
-                                   const ocpp::v2::Component& component_, const struct ocpp::v2::Variable& variable_);
-
     ///
     /// \brief Helper function to check if a variable has a value.
     /// \param component_variable   Component variable to check.

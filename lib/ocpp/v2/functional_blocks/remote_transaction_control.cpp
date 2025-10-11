@@ -26,6 +26,15 @@
 #include <ocpp/v2/messages/UnlockConnector.hpp>
 
 namespace ocpp::v2 {
+namespace {
+///
+/// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of
+///        the connectors occupied).
+/// \param evse Evse to check.
+/// \return True if at least one connector is not faulted or unavailable.
+///
+bool is_evse_connector_available(EvseInterface& evse);
+} // namespace
 
 RemoteTransactionControl::RemoteTransactionControl(
     const FunctionalBlockContext& functional_block_context, TransactionInterface& transaction,
@@ -395,7 +404,8 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
     }
 }
 
-bool RemoteTransactionControl::is_evse_connector_available(EvseInterface& evse) const {
+namespace {
+bool is_evse_connector_available(EvseInterface& evse) {
     if (evse.has_active_transaction()) {
         // If an EV is connected and has no authorization yet then the status is 'Occupied' and the
         // RemoteStartRequest should still be accepted. So this is the 'occupied' check instead.
@@ -416,6 +426,7 @@ bool RemoteTransactionControl::is_evse_connector_available(EvseInterface& evse) 
     // Connectors are faulted or unavailable.
     return false;
 }
+} // namespace
 
 ReservationCheckStatus
 RemoteTransactionControl::is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,

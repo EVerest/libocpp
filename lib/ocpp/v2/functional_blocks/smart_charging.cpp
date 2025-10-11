@@ -27,6 +27,22 @@ const int32_t STATION_WIDE_ID = 0;
 using namespace std::chrono;
 
 namespace ocpp::v2 {
+namespace {
+/// \brief validates that the given \p profile from a RequestStartTransactionRequest is of the correct type
+/// TxProfile
+ProfileValidationResultEnum validate_request_start_transaction_profile(const ChargingProfile& profile);
+
+/// \brief sets attributes of the given \p charging_schedule_period according to the specification.
+/// 2.11. ChargingSchedulePeriodType if absent numberPhases set to 3
+void conform_schedule_number_phases(int32_t profile_id, ChargingSchedulePeriod& charging_schedule_period);
+
+///
+/// \brief sets attributes of the given \p profile according to the specification.
+/// 2.10. ChargingProfileType validFrom if absent set to current date
+/// 2.10. ChargingProfileType validTo if absent set to max date
+///
+void conform_validity_periods(ChargingProfile& profile);
+} // namespace
 namespace conversions {
 std::string profile_validation_result_to_string(ProfileValidationResultEnum e) {
     switch (e) {
@@ -416,7 +432,7 @@ ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(Charging
 
     switch (profile.chargingProfilePurpose) {
     case ChargingProfilePurposeEnum::ChargingStationMaxProfile:
-        result = this->validate_charging_station_max_profile(profile, evse_id);
+        result = validate_charging_station_max_profile(profile, evse_id);
         break;
     case ChargingProfilePurposeEnum::TxDefaultProfile:
         result = this->validate_tx_default_profile(profile, evse_id);
@@ -589,8 +605,7 @@ ProfileValidationResultEnum SmartCharging::validate_evse_exists(int32_t evse_id)
                                                                : ProfileValidationResultEnum::EvseDoesNotExist;
 }
 
-ProfileValidationResultEnum SmartCharging::validate_charging_station_max_profile(const ChargingProfile& profile,
-                                                                                 int32_t evse_id) const {
+ProfileValidationResultEnum validate_charging_station_max_profile(const ChargingProfile& profile, int32_t evse_id) {
     if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationMaxProfile) {
         return ProfileValidationResultEnum::InvalidProfileType;
     }
@@ -1264,13 +1279,14 @@ GetCompositeScheduleResponse SmartCharging::get_composite_schedule_internal(cons
     return response;
 }
 
-ProfileValidationResultEnum
-SmartCharging::validate_request_start_transaction_profile(const ChargingProfile& profile) const {
+namespace {
+ProfileValidationResultEnum validate_request_start_transaction_profile(const ChargingProfile& profile) {
     if (ChargingProfilePurposeEnum::TxProfile != profile.chargingProfilePurpose) {
         return ProfileValidationResultEnum::RequestStartTransactionNonTxProfile;
     }
     return ProfileValidationResultEnum::Valid;
 }
+} // namespace
 
 bool SmartCharging::is_overlapping_validity_period(const ChargingProfile& candidate_profile,
                                                    int32_t candidate_evse_id) const {
@@ -1357,8 +1373,8 @@ SmartCharging::get_valid_profiles_for_evse(int32_t evse_id,
     return valid_profiles;
 }
 
-void SmartCharging::conform_schedule_number_phases(int32_t profile_id,
-                                                   ChargingSchedulePeriod& charging_schedule_period) const {
+namespace {
+void conform_schedule_number_phases(int32_t profile_id, ChargingSchedulePeriod& charging_schedule_period) {
     // K01.FR.49 If no value for numberPhases received for AC, numberPhases is 3.
     if (!charging_schedule_period.numberPhases.has_value()) {
         EVLOG_debug << "Conforming profile: " << profile_id << " added number phase as "
@@ -1367,7 +1383,7 @@ void SmartCharging::conform_schedule_number_phases(int32_t profile_id,
     }
 }
 
-void SmartCharging::conform_validity_periods(ChargingProfile& profile) const {
+void conform_validity_periods(ChargingProfile& profile) {
     if (!profile.validFrom.has_value()) {
         auto validFrom = ocpp::DateTime("1970-01-01T00:00:00Z");
         EVLOG_debug << "Conforming profile: " << profile.id << " added validFrom as " << validFrom;
@@ -1380,6 +1396,7 @@ void SmartCharging::conform_validity_periods(ChargingProfile& profile) const {
         profile.validTo = validTo;
     }
 }
+} // namespace
 
 CurrentPhaseType SmartCharging::get_current_phase_type(const std::optional<EvseInterface*> evse_opt) const {
     if (evse_opt.has_value()) {

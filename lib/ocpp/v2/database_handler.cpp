@@ -22,6 +22,7 @@ namespace ocpp {
 
 using namespace common;
 
+namespace {
 int64_t to_unix_milliseconds(const DateTime& dt) {
     return std::chrono::duration_cast<std::chrono::milliseconds>(dt.to_time_point().time_since_epoch()).count();
 }
@@ -29,6 +30,7 @@ int64_t to_unix_milliseconds(const DateTime& dt) {
 DateTime from_unix_milliseconds(int64_t ms_since_epoch) {
     return DateTime(date::utc_clock::time_point(std::chrono::milliseconds(ms_since_epoch)));
 }
+} // namespace
 
 namespace v2 {
 

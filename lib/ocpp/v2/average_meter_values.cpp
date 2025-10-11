@@ -54,14 +54,16 @@ void AverageMeterValues::average_meter_value() {
         }
     }
 }
-bool AverageMeterValues::is_avg_meas(const SampledValue& sample) {
+
+namespace {
+bool is_avg_meas(const SampledValue& sample) {
     if (sample.measurand.has_value() and (sample.measurand == MeasurandEnum::Current_Import) or
         (sample.measurand == MeasurandEnum::Voltage) or (sample.measurand == MeasurandEnum::Power_Active_Import) or
         (sample.measurand == MeasurandEnum::Frequency)) {
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
+} // namespace
 } // namespace v2
 } // namespace ocpp

@@ -272,8 +272,8 @@ public:
     std::atomic_bool message_sent;
 };
 
-static bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_STORE_CTX* ctx,
-                           bool allow_wildcards) {
+namespace {
+bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_STORE_CTX* ctx, bool allow_wildcards) {
 
     // Error depth gives the depth in the chain (with 0 = leaf certificate) where
     // a potential (!) error occurred; error here means current error code and can also be "OK".
@@ -335,6 +335,7 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
 
     return preverified;
 }
+} // namespace
 
 WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions& connection_options,
                                                std::shared_ptr<EvseSecurity> evse_security) :
@@ -412,23 +413,24 @@ void WebsocketLibwebsockets::set_connection_options(const WebsocketConnectionOpt
     this->connection_attempts = 1; // reset connection attempts
 }
 
-static int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len) {
+namespace {
+int callback_minimal(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len) {
     // Get user safely, since on some callbacks (void *user) can be different than what we set
     if (wsi != nullptr) {
-        if (ConnectionData* data = reinterpret_cast<ConnectionData*>(lws_wsi_user(wsi))) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+        if (auto* data = reinterpret_cast<ConnectionData*>(lws_wsi_user(wsi))) {
             auto* owner = data->get_owner();
             if (owner not_eq nullptr) {
                 return owner->process_callback(wsi, static_cast<int>(reason), user, in, len);
-            } else {
-                EVLOG_debug << "callback_minimal called, but data->owner is nullptr. Reason: " << reason;
             }
+            EVLOG_debug << "callback_minimal called, but data->owner is nullptr. Reason: " << reason;
         }
     }
 
     return 0;
 }
 
-static int private_key_callback(char* buf, int size, int rwflag, void* userdata) {
+int private_key_callback(char* buf, int size, int /*rwflag*/, void* userdata) {
     const auto* password = static_cast<const std::string*>(userdata);
     const std::size_t max_pass_len = (size - 1); // we exclude the endline
     const std::size_t max_copy_chars =
@@ -437,8 +439,9 @@ static int private_key_callback(char* buf, int size, int rwflag, void* userdata)
     std::memset(buf, 0, size);
     std::memcpy(buf, password->c_str(), max_copy_chars);
 
-    return max_copy_chars;
+    return clamp_to<int>(max_copy_chars);
 }
+} // namespace
 
 constexpr auto local_protocol_name = "lws-everest-client";
 static const struct lws_protocols protocols[] = {{local_protocol_name, callback_minimal, 0, 0, 0, NULL, 0},
@@ -1064,7 +1067,8 @@ void WebsocketLibwebsockets::reconnect(long delay) {
         std::chrono::milliseconds(delay));
 }
 
-static bool send_internal(lws* wsi, WebsocketMessage* msg) {
+namespace {
+bool send_internal(lws* wsi, WebsocketMessage* msg) {
     static std::vector<char> buff;
 
     std::string& message = msg->payload;
@@ -1088,6 +1092,7 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
     // int flags = lws_write_ws_flags(proto, is_start, is_end);
     // already_written += lws_write(wsi, buff + LWS_PRE, BUFF_SIZE - LWS_PRE, flags);
 
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
     auto sent = lws_write(wsi, reinterpret_cast<unsigned char*>(&buff[LWS_PRE]), message_len, msg->protocol);
 
     if (sent < 0) {
@@ -1111,6 +1116,7 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
 
     return true;
 }
+} // namespace
 
 void WebsocketLibwebsockets::request_write() {
     if (this->m_is_connected) {

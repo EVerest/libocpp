@@ -13,6 +13,19 @@
 using json = nlohmann::json;
 
 namespace ocpp {
+namespace {
+/// \brief Add opening html tags to the given stream \p os
+void open_html_tags(std::ofstream& os);
+
+/// \brief Add closing html tags to the given stream \p os
+void close_html_tags(std::ofstream& os);
+
+/// \returns a datetime string in YearMonthDayHourMinuteSecond format
+std::string get_datetime_string();
+
+/// \returns file size of the given path or 0 if the file does not exist
+std::uintmax_t safe_file_size(const std::filesystem::path& path);
+} // namespace
 
 MessageLogging::MessageLogging(
     bool log_messages, const std::string& message_log_path, const std::string& output_file_name, bool log_to_console,
@@ -98,14 +111,13 @@ void MessageLogging::initialize() {
                 this->html_raw_log_file = std::filesystem::path(raw_html_file_path);
                 this->html_raw_log_os.open(html_raw_log_file, std::ofstream::app);
                 this->rotate_log_if_needed(
-                    this->html_raw_log_file, this->html_raw_log_os,
-                    [this](std::ofstream& os) { this->close_html_tags(os); },
-                    [this](std::ofstream& os) { this->open_html_tags(os); });
+                    this->html_raw_log_file, this->html_raw_log_os, [this](std::ofstream& os) { close_html_tags(os); },
+                    [this](std::ofstream& os) { open_html_tags(os); });
 
-                if (this->file_size(this->html_raw_log_file) > 0) {
+                if (safe_file_size(this->html_raw_log_file) > 0) {
                     // TODO: try to remove the end tags in the HTML if present
                 } else {
-                    this->open_html_tags(this->html_raw_log_os);
+                    open_html_tags(this->html_raw_log_os);
                 }
             }
             html_file_path += ".html";
@@ -113,13 +125,13 @@ void MessageLogging::initialize() {
             this->html_log_file = std::filesystem::path(html_file_path);
             this->html_log_os.open(html_log_file, std::ofstream::app);
             this->rotate_log_if_needed(
-                this->html_log_file, this->html_log_os, [this](std::ofstream& os) { this->close_html_tags(os); },
-                [this](std::ofstream& os) { this->open_html_tags(os); });
+                this->html_log_file, this->html_log_os, [this](std::ofstream& os) { close_html_tags(os); },
+                [this](std::ofstream& os) { open_html_tags(os); });
 
-            if (this->file_size(this->html_log_file) > 0) {
+            if (safe_file_size(this->html_log_file) > 0) {
                 // TODO: try to remove the end tags in the HTML if present
             } else {
-                this->open_html_tags(this->html_log_os);
+                open_html_tags(this->html_log_os);
             }
         }
         if (this->log_security) {
@@ -135,7 +147,8 @@ void MessageLogging::initialize() {
     }
 }
 
-void MessageLogging::open_html_tags(std::ofstream& os) {
+namespace {
+void open_html_tags(std::ofstream& os) {
     os << "<html><head><title>EVerest OCPP log session</title>\n";
     os << "<style>"
           ".log {"
@@ -164,22 +177,23 @@ void MessageLogging::open_html_tags(std::ofstream& os) {
     os.flush();
 }
 
-void MessageLogging::close_html_tags(std::ofstream& os) {
+void close_html_tags(std::ofstream& os) {
     os << "</table></body></html>\n";
     os.flush();
 }
 
-std::string MessageLogging::get_datetime_string() {
+std::string get_datetime_string() {
     return date::format("%Y%m%d%H%M%S", std::chrono::time_point_cast<std::chrono::seconds>(date::utc_clock::now()));
 }
 
-std::uintmax_t MessageLogging::file_size(const std::filesystem::path& path) {
+std::uintmax_t safe_file_size(const std::filesystem::path& path) {
     try {
         return std::filesystem::file_size(path);
     } catch (...) {
         return 0;
     }
 }
+} // namespace
 
 LogRotationStatus MessageLogging::rotate_log(const std::string& file_basename) {
     LogRotationStatus status = LogRotationStatus::NotRotated;
@@ -209,7 +223,7 @@ LogRotationStatus MessageLogging::rotate_log(const std::string& file_basename) {
         if (file.filename() == file_basename) {
             std::filesystem::path new_file_name;
             if (this->date_suffix) {
-                new_file_name = std::filesystem::path(file.string() + "." + this->get_datetime_string());
+                new_file_name = std::filesystem::path(file.string() + "." + get_datetime_string());
             } else {
                 // traditional .0 .1 ... suffix
                 // does not have a .0 or .1, so needs a new one
@@ -264,7 +278,7 @@ LogRotationStatus MessageLogging::rotate_log_if_needed(const std::filesystem::pa
         // do nothing if no maximum file size is set
         return LogRotationStatus::NotRotated;
     }
-    auto log_file_size = this->file_size(path);
+    auto log_file_size = safe_file_size(path);
     if (log_file_size >= maximum_file_size_bytes) {
         EVLOG_info << "Logfile: " << path.filename().string() << " file size (" << log_file_size << " bytes) >= ("
                    << maximum_file_size_bytes << " bytes) rotating log.";
@@ -289,7 +303,7 @@ MessageLogging::~MessageLogging() {
         }
 
         if (this->log_to_html) {
-            this->close_html_tags(this->html_log_os);
+            close_html_tags(this->html_log_os);
             this->html_log_os.close();
         }
 
@@ -359,6 +373,7 @@ void MessageLogging::raw(const std::string& msg, LogType log_type) {
     }
 }
 
+namespace {
 std::string html_encode(const std::string& msg) {
     std::string out = msg;
     boost::replace_all(out, "<", "&lt;");
@@ -383,6 +398,7 @@ void write_html_log_to_file(std::ofstream& html_log_os, LogType typ, const std::
                 << "</b></td> <td><pre lang=\"json\">" << html_encode(json_str) << "</pre></td> </tr>\n";
     html_log_os.flush();
 }
+} // namespace
 
 void MessageLogging::log_output(LogType typ, const std::string& message_type, const std::string& json_str, bool raw) {
     if (this->log_messages) {
@@ -430,14 +446,13 @@ void MessageLogging::log_output(LogType typ, const std::string& message_type, co
         if (this->log_to_html) {
             if (raw and this->log_raw) {
                 this->rotate_log_if_needed(
-                    this->html_raw_log_file, this->html_raw_log_os,
-                    [this](std::ofstream& os) { this->close_html_tags(os); },
-                    [this](std::ofstream& os) { this->open_html_tags(os); });
+                    this->html_raw_log_file, this->html_raw_log_os, [this](std::ofstream& os) { close_html_tags(os); },
+                    [this](std::ofstream& os) { open_html_tags(os); });
                 write_html_log_to_file(this->html_raw_log_os, typ, ts, origin, target, message_type, json_str);
             } else {
                 this->rotate_log_if_needed(
-                    this->html_log_file, this->html_log_os, [this](std::ofstream& os) { this->close_html_tags(os); },
-                    [this](std::ofstream& os) { this->open_html_tags(os); });
+                    this->html_log_file, this->html_log_os, [this](std::ofstream& os) { close_html_tags(os); },
+                    [this](std::ofstream& os) { open_html_tags(os); });
                 write_html_log_to_file(this->html_log_os, typ, ts, origin, target, message_type, json_str);
             }
         }

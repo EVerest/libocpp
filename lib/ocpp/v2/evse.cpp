@@ -16,15 +16,16 @@ using QueryExecutionException = everest::db::QueryExecutionException;
 namespace ocpp {
 namespace v2 {
 
+namespace {
 // Convert an energy value into Wh
-static float get_normalized_energy_value(SampledValue sampled_value) {
+float get_normalized_energy_value(SampledValue sampled_value) {
     float value = sampled_value.value;
     // If no unit of measure is present the unit is in Wh so nothing to do
     if (sampled_value.unitOfMeasure.has_value()) {
         const auto& unit_of_measure = sampled_value.unitOfMeasure.value();
         if (unit_of_measure.unit.has_value()) {
             if (unit_of_measure.unit.value() == "kWh") {
-                value *= 1000.0f;
+                value *= 1000.0F;
             } else if (unit_of_measure.unit.value() == "Wh") {
                 // do nothing
             } else {
@@ -35,12 +36,13 @@ static float get_normalized_energy_value(SampledValue sampled_value) {
 
         if (unit_of_measure.multiplier.has_value()) {
             if (unit_of_measure.multiplier.value() != 0) {
-                value *= powf(10, unit_of_measure.multiplier.value());
+                value *= powf(10, static_cast<float>(unit_of_measure.multiplier.value()));
             }
         }
     }
     return value;
 }
+} // namespace
 
 EvseInterface::~EvseInterface() = default;
 

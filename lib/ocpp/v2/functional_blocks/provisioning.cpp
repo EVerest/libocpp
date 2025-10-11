@@ -32,8 +32,10 @@ const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 
 namespace ocpp::v2 {
 
-static bool component_variable_change_requires_websocket_option_update_without_reconnect(
+namespace {
+bool component_variable_change_requires_websocket_option_update_without_reconnect(
     const ComponentVariable& component_variable);
+}
 
 Provisioning::Provisioning(const FunctionalBlockContext& functional_block_context,
                            MessageQueue<MessageType>& message_queue, OcspUpdaterInterface& ocsp_updater,
@@ -679,6 +681,7 @@ Provisioning::set_variables_internal(const std::vector<SetVariableData>& set_var
     return response;
 }
 
+namespace {
 /**
  * Determine for a component variable whether it affects the Websocket Connection Options (cf.
  * get_ws_connection_options); return true if it is furthermore writable and does not require a reconnect
@@ -686,7 +689,7 @@ Provisioning::set_variables_internal(const std::vector<SetVariableData>& set_var
  * @param component_variable
  * @return
  */
-static bool component_variable_change_requires_websocket_option_update_without_reconnect(
+bool component_variable_change_requires_websocket_option_update_without_reconnect(
     const ComponentVariable& component_variable) {
 
     return component_variable == ControllerComponentVariables::RetryBackOffRandomRange or
@@ -695,4 +698,5 @@ static bool component_variable_change_requires_websocket_option_update_without_r
            component_variable == ControllerComponentVariables::NetworkProfileConnectionAttempts or
            component_variable == ControllerComponentVariables::WebSocketPingInterval;
 }
+} // namespace
 } // namespace ocpp::v2

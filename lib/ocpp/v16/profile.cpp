@@ -82,6 +82,7 @@ ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
     return ocpp::DateTime(std::chrono::floor<seconds>(dt.to_time_point()));
 }
 
+namespace {
 constexpr bool operator==(const ChargingSchedulePeriod& lhs, const ChargingSchedulePeriod& rhs) {
     return (lhs.startPeriod == rhs.startPeriod) && (lhs.limit == rhs.limit);
 }
@@ -95,6 +96,7 @@ inline std::ostream& operator<<(std::ostream& os, const period_entry_t& entry) {
        << ((entry.charging_rate_unit == ChargingRateUnit::A) ? "A" : "W");
     return os;
 }
+} // namespace
 
 /// \brief populate a schedule period
 /// \param in_start the start time of the profile
@@ -337,6 +339,7 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
     return entries;
 }
 
+namespace {
 std::vector<period_entry_t> calculate_profile_unsorted(const DateTime& now, const DateTime& end,
                                                        const std::optional<DateTime>& session_start,
                                                        const ChargingProfile& profile) {
@@ -365,6 +368,7 @@ void sort_periods_into_date_order(std::vector<period_entry_t>& periods) {
     } less_than;
     std::sort(periods.begin(), periods.end(), less_than);
 }
+} // namespace
 
 std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTime& end,
                                               const std::optional<DateTime>& session_start,

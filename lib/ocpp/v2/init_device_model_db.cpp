@@ -19,28 +19,48 @@ using namespace everest::db::sqlite;
 
 namespace ocpp::v2 {
 
+namespace {
 // Forward declarations.
-static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs);
-static std::vector<std::string> check_integrity_value_type(const DeviceModelVariable& variable);
-static bool value_is_of_type(const std::string& value, const DataEnum& type);
-static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2);
-static bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2);
-static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2);
-static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
-                                         const std::vector<DbVariableAttribute>& attributes2);
-static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
-                                       const std::vector<VariableMonitoringMeta>& monitors2);
-static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2);
-static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
-static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
-static bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2);
+void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs);
+std::vector<std::string> check_integrity_value_type(const DeviceModelVariable& variable);
+bool value_is_of_type(const std::string& value, const DataEnum& type);
+bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2);
+bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2);
+bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2);
+bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
+                                  const std::vector<DbVariableAttribute>& attributes2);
+bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
+                                const std::vector<VariableMonitoringMeta>& monitors2);
+bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2);
+bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
+bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2);
+bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2);
 // Spec based monitor duplicate detection
-static bool is_monitor_duplicate(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2);
-static bool has_attribute_actual_value(const VariableAttribute& attribute,
-                                       const std::optional<std::string>& default_actual_value);
-static std::string get_string_value_from_json(const json& value);
-static std::string get_component_name_for_logging(const ComponentKey& component);
-static std::string get_variable_name_for_logging(const DeviceModelVariable& variable);
+bool is_monitor_duplicate(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2);
+bool has_attribute_actual_value(const VariableAttribute& attribute,
+                                const std::optional<std::string>& default_actual_value);
+std::string get_string_value_from_json(const json& value);
+std::string get_component_name_for_logging(const ComponentKey& component);
+std::string get_variable_name_for_logging(const DeviceModelVariable& variable);
+///
+/// \brief Check if a specific component exists in the databsae.
+/// \param db_components    The current components in the database.
+/// \param component        The component to check against.
+/// \return The component from the database if it exists.
+///
+std::optional<std::pair<ComponentKey, std::vector<DeviceModelVariable>>>
+component_exists_in_db(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components,
+                       const ComponentKey& component);
+
+///
+/// \brief Check if a component exist in the component config.
+/// \param component_config The map of component / variables read from the json component config.
+/// \param component    The component to check.
+/// \return True when the component exists in the config.
+///
+bool component_exists_in_config(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_config,
+                                const ComponentKey& component);
+} // namespace
 
 InitDeviceModelDb::InitDeviceModelDb(const std::filesystem::path& database_path,
                                      const std::filesystem::path& migration_files_path) :
@@ -948,9 +968,10 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
     return components;
 }
 
+namespace {
 std::optional<std::pair<ComponentKey, std::vector<DeviceModelVariable>>>
-InitDeviceModelDb::component_exists_in_db(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components,
-                                          const ComponentKey& component) {
+component_exists_in_db(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components,
+                       const ComponentKey& component) {
     for (const auto& db_component : db_components) {
         if (is_same_component_key(db_component.first, component)) {
             return db_component;
@@ -960,8 +981,8 @@ InitDeviceModelDb::component_exists_in_db(const std::map<ComponentKey, std::vect
     return std::nullopt;
 }
 
-bool InitDeviceModelDb::component_exists_in_config(
-    const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_config, const ComponentKey& component) {
+bool component_exists_in_config(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_config,
+                                const ComponentKey& component) {
     for (const auto& component_in_config : component_config) {
         if (is_same_component_key(component, component_in_config.first)) {
             return true;
@@ -970,6 +991,7 @@ bool InitDeviceModelDb::component_exists_in_config(
 
     return false;
 }
+} // namespace
 
 void InitDeviceModelDb::remove_not_existing_components_from_db(
     const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_config,
@@ -1237,6 +1259,7 @@ void from_json(const json& j, DeviceModelVariable& c) {
     }
 }
 
+namespace {
 /* Below functions check the integrity of the component config, for example if the type is correct.
  */
 
@@ -1249,7 +1272,7 @@ void from_json(const json& j, DeviceModelVariable& c) {
 /// \param component_configs    Read config from the file system.
 /// \throws InitDeviceModelDbError when at least one of the components / variables / attributes has an error.
 ///
-static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs) {
+void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_configs) {
     std::string final_error_message = "Check integrity failed:\n";
     bool has_error = false;
     for (const auto& [component_key, variables] : component_configs) {
@@ -1289,7 +1312,7 @@ static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModel
 /// \param variable Variable to check the attributes from.
 /// \return The errors if there are any, otherwise an empty vector.
 ///
-static std::vector<std::string> check_integrity_value_type(const DeviceModelVariable& variable) {
+std::vector<std::string> check_integrity_value_type(const DeviceModelVariable& variable) {
     const DataEnum& type = variable.characteristics.dataType;
     std::vector<std::string> errors;
     if (variable.default_actual_value.has_value()) {
@@ -1322,7 +1345,7 @@ static std::vector<std::string> check_integrity_value_type(const DeviceModelVari
 /// \param type     The type.
 /// \return True if value is of the given type.
 ///
-static bool value_is_of_type(const std::string& value, const DataEnum& type) {
+bool value_is_of_type(const std::string& value, const DataEnum& type) {
     if (value.empty()) {
         // We can not check if the type of the values that are empty are valid.
         return true;
@@ -1360,7 +1383,7 @@ static bool value_is_of_type(const std::string& value, const DataEnum& type) {
 /// \param component_key2   Component key 2
 /// \return True if those are the same components.
 ///
-static bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2) {
+bool is_same_component_key(const ComponentKey& component_key1, const ComponentKey& component_key2) {
     if ((component_key1.name == component_key2.name) && (component_key1.evse_id == component_key2.evse_id) &&
         (component_key1.connector_id == component_key2.connector_id) &&
         (component_key1.instance == component_key2.instance)) {
@@ -1376,7 +1399,7 @@ static bool is_same_component_key(const ComponentKey& component_key1, const Comp
 /// \param attribute2   Attribute 2
 /// \return True when they are the same.
 ///
-static bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2) {
+bool is_same_attribute_type(const VariableAttribute attribute1, const VariableAttribute& attribute2) {
     return attribute1.type == attribute2.type;
 }
 
@@ -1389,7 +1412,7 @@ static bool is_same_attribute_type(const VariableAttribute attribute1, const Var
 /// @param attribute2    attribute 2.
 /// @return True if characteristics of attribute are the same.
 ///
-static bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2) {
+bool is_attribute_different(const VariableAttribute& attribute1, const VariableAttribute& attribute2) {
     // Constant and persistent are currently not set in the json file.
     if ((attribute1.type == attribute2.type) && /*(attribute1.constant == attribute2.constant) &&*/
         (attribute1.mutability == attribute2.mutability) && (attribute1.value == attribute2.value)
@@ -1406,8 +1429,8 @@ static bool is_attribute_different(const VariableAttribute& attribute1, const Va
 /// \param attributes2 Attributes 2
 /// \return True if they are the same.
 ///
-static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
-                                         const std::vector<DbVariableAttribute>& attributes2) {
+bool variable_has_same_attributes(const std::vector<DbVariableAttribute>& attributes1,
+                                  const std::vector<DbVariableAttribute>& attributes2) {
     if (attributes1.size() != attributes2.size()) {
         return false;
     }
@@ -1431,7 +1454,7 @@ static bool variable_has_same_attributes(const std::vector<DbVariableAttribute>&
     return true;
 }
 
-static bool is_monitor_duplicate(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
+bool is_monitor_duplicate(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
     // 3.77. SetMonitoringStatusEnumType
     // Duplicate - A monitor already exists for the given type/severity combination.
     if (meta1.monitor.type == meta2.monitor.type && meta1.monitor.severity == meta2.monitor.severity) {
@@ -1441,7 +1464,7 @@ static bool is_monitor_duplicate(const VariableMonitoringMeta& meta1, const Vari
     return false;
 }
 
-static bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
+bool is_monitor_different(const VariableMonitoringMeta& meta1, const VariableMonitoringMeta& meta2) {
     if (meta1.type != meta2.type || meta1.reference_value != meta2.reference_value) {
         return true;
     }
@@ -1461,8 +1484,8 @@ static bool is_monitor_different(const VariableMonitoringMeta& meta1, const Vari
     return false;
 }
 
-static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
-                                       const std::vector<VariableMonitoringMeta>& monitors2) {
+bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>& monitors1,
+                                const std::vector<VariableMonitoringMeta>& monitors2) {
     if (monitors1.size() != monitors2.size()) {
         return false;
     }
@@ -1490,7 +1513,7 @@ static bool variable_has_same_monitors(const std::vector<VariableMonitoringMeta>
 /// \param c2   Characteristics 2
 /// \return True if they are different
 ///
-static bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2) {
+bool is_characteristics_different(const VariableCharacteristics& c1, const VariableCharacteristics& c2) {
     if ((c1.supportsMonitoring == c2.supportsMonitoring) && (c1.dataType == c2.dataType) &&
         (c1.maxLimit == c2.maxLimit) && (c1.minLimit == c2.minLimit) && (c1.unit == c2.unit) &&
         (c1.valuesList == c2.valuesList)) {
@@ -1505,7 +1528,7 @@ static bool is_characteristics_different(const VariableCharacteristics& c1, cons
 /// \param v2   Variable 2
 /// \return True if they are the same variable.
 ///
-static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
+bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
     return ((v1.name == v2.name) && (v1.instance == v2.instance));
 }
 
@@ -1515,7 +1538,7 @@ static bool is_same_variable(const DeviceModelVariable& v1, const DeviceModelVar
 /// \param v2   Variable 2
 /// \return True if they are different.
 ///
-static bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
+bool is_variable_different(const DeviceModelVariable& v1, const DeviceModelVariable& v2) {
     if (is_same_variable(v1, v2) && !is_characteristics_different(v1.characteristics, v2.characteristics) &&
         variable_has_same_monitors(v1.monitors, v2.monitors) &&
         variable_has_same_attributes(v1.attributes, v2.attributes)) {
@@ -1530,8 +1553,8 @@ static bool is_variable_different(const DeviceModelVariable& v1, const DeviceMod
 /// \param default_actual_value The default value.
 /// \return True when the attribute has an actual or default value.
 ///
-static bool has_attribute_actual_value(const VariableAttribute& attribute,
-                                       const std::optional<std::string>& default_actual_value) {
+bool has_attribute_actual_value(const VariableAttribute& attribute,
+                                const std::optional<std::string>& default_actual_value) {
     return (attribute.value.has_value() ||
             (attribute.type.has_value() && (attribute.type.value() == AttributeEnum::Actual) &&
              default_actual_value.has_value()));
@@ -1545,7 +1568,7 @@ static bool has_attribute_actual_value(const VariableAttribute& attribute,
 /// \param value    The json value.
 /// \return The string value.
 ///
-static std::string get_string_value_from_json(const json& value) {
+std::string get_string_value_from_json(const json& value) {
     if (value.is_string()) {
         return value;
     }
@@ -1573,7 +1596,7 @@ static std::string get_string_value_from_json(const json& value) {
 /// \param component    The component to get the string from.
 /// \return The logging string.
 ///
-static std::string get_component_name_for_logging(const ComponentKey& component) {
+std::string get_component_name_for_logging(const ComponentKey& component) {
     const std::string component_name =
         component.name + (component.instance.has_value() ? ", instance " + component.instance.value() : "") +
         (component.evse_id.has_value() ? ", evse " + std::to_string(component.evse_id.value()) : "") +
@@ -1590,10 +1613,11 @@ static std::string get_component_name_for_logging(const ComponentKey& component)
 /// \param variable    The variable to get the string from.
 /// \return The logging string.
 ///
-static std::string get_variable_name_for_logging(const DeviceModelVariable& variable) {
+std::string get_variable_name_for_logging(const DeviceModelVariable& variable) {
     const std::string variable_name =
         variable.name + (variable.instance.has_value() ? ", instance" + variable.instance.value() : "");
     return variable_name;
 }
+} // namespace
 
 } // namespace ocpp::v2

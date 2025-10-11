@@ -12,6 +12,7 @@ using std::chrono::seconds;
 namespace ocpp {
 namespace v2 {
 
+namespace {
 // Forward declarations of helper functions
 void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit,
                                      const float& no_limit_specified, const std::optional<int32_t> number_phases,
@@ -35,6 +36,7 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
                                                     std::optional<float>& value, std::optional<float>& value_L2,
                                                     std::optional<float>& value_L3, const bool use_min,
                                                     const bool use_divide);
+} // namespace
 
 int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
     return duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count();
@@ -44,6 +46,7 @@ ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
     return ocpp::DateTime(std::chrono::floor<seconds>(dt.to_time_point()));
 }
 
+namespace {
 IntermediatePeriod default_intermediate_period() {
     IntermediatePeriod empty;
     empty.startPeriod = 0;
@@ -65,6 +68,7 @@ IntermediatePeriod default_intermediate_period(const int32_t start_period) {
     empty.startPeriod = start_period;
     return empty;
 }
+} // namespace
 
 bool ocpp::v2::PeriodLimit::operator==(const PeriodLimit& other) const {
     return is_equal(limit, other.limit) && is_equal(limit_L2, other.limit_L2) && is_equal(limit_L3, other.limit_L3);
@@ -821,7 +825,7 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
 }
 
 // Helper functions
-
+namespace {
 ///
 /// \brief Set the values of the phases so both `PeriodLimit`s have the same values for number of phases, which is used
 ///        later when combining the two.
@@ -1140,6 +1144,7 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
     convert_and_transform_limit_value(input_limit.limit_L2, not_specified, t, value_L2, use_min, use_divide);
     convert_and_transform_limit_value(input_limit.limit_L3, not_specified, t, value_L3, use_min, use_divide);
 }
+} // namespace
 
 } // namespace v2
 } // namespace ocpp

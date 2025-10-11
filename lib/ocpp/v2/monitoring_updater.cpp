@@ -11,6 +11,7 @@
 
 namespace ocpp::v2 {
 
+namespace {
 template <DataEnum T>
 bool triggers_monitor(const VariableMonitoringMeta& monitor_meta, const std::string& value_old,
                       const std::string& value_new) {
@@ -131,6 +132,7 @@ EventData create_notify_event(int32_t unique_id, const std::string& reported_val
 
     return notify_event;
 }
+} // namespace
 
 MonitoringUpdater::MonitoringUpdater(DeviceModel& device_model, notify_events notify_csms_events,
                                      is_offline is_chargepoint_offline) :
@@ -533,7 +535,11 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
     }
 }
 
-bool MonitoringUpdater::should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data) {
+namespace {
+/// \brief Function that determines based on the current meta internal
+/// state if it is proper to remove from the internal list the provided
+/// monitor meta data. That implies various checks for various states
+bool should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data) {
     if (updater_meta_data.type == UpdateMonitorMetaType::PERIODIC) {
         return false;
     }
@@ -560,6 +566,7 @@ bool MonitoringUpdater::should_remove_monitor_meta_internal(const UpdaterMonitor
 
     return false;
 }
+} // namespace
 
 void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool allow_trigger) {
     if (!is_monitoring_enabled()) {

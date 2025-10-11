@@ -159,11 +159,6 @@ private:
     /// of the offline state
     void process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data);
 
-    /// \brief Function that determines based on the current meta internal
-    /// state if it is proper to remove from the internal list the provided
-    /// monitor meta data. That implies various checks for various states
-    bool should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data);
-
     /// \brief Query the database (from in-memory data for fast retrieval)
     /// and updates our internal monitors with the new database data
     void update_periodic_monitors_internal();

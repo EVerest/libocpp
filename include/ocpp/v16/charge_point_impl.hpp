@@ -225,8 +225,6 @@ private:
     std::optional<MeterValue> get_latest_meter_value(int32_t connector,
                                                      std::vector<MeasurandWithPhase> values_of_interest,
                                                      ReadingContext context);
-    MeterValue get_signed_meter_value(const std::string& signed_value, const ReadingContext& context,
-                                      const ocpp::DateTime& datetime);
     void send_meter_value(int32_t connector, MeterValue meter_value, bool initiated_by_trigger_message = false);
     void send_meter_value_on_pricing_trigger(const int32_t connector_number, std::shared_ptr<Connector> connector,
                                              const Measurement& measurement);
@@ -263,11 +261,6 @@ private:
     void start_transaction(std::shared_ptr<Transaction> transaction);
 
     void stop_transaction(int32_t connector, Reason reason, std::optional<CiString<20>> id_tag_end);
-
-    /// \brief Converts the given \p measurands_csv to a vector of Measurands
-    /// \param measurands_csv
-    /// \return
-    std::vector<Measurand> get_measurands_vec(const std::string& measurands_csv);
 
     /// \brief Returns transaction data that can be used to set the transactionData field in StopTransaction.req.
     /// Filters the meter values of the transaction according to the values set within StopTxnAlignedData and

@@ -358,25 +358,6 @@ private: // Functions
     std::map<ComponentKey, std::vector<DeviceModelVariable>> get_all_components_from_db();
 
     ///
-    /// \brief Check if a specific component exists in the databsae.
-    /// \param db_components    The current components in the database.
-    /// \param component        The component to check against.
-    /// \return The component from the database if it exists.
-    ///
-    std::optional<std::pair<ComponentKey, std::vector<DeviceModelVariable>>>
-    component_exists_in_db(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& db_components,
-                           const ComponentKey& component);
-
-    ///
-    /// \brief Check if a component exist in the component config.
-    /// \param component_config The map of component / variables read from the json component config.
-    /// \param component    The component to check.
-    /// \return True when the component exists in the config.
-    ///
-    bool component_exists_in_config(const std::map<ComponentKey, std::vector<DeviceModelVariable>>& component_config,
-                                    const ComponentKey& component);
-
-    ///
     /// \brief Remove components from db that do not exist in the component config.
     /// \param component_config  The component config.
     /// \param db_components     The components in the database.

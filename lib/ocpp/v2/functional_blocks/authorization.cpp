@@ -17,13 +17,15 @@
 #include <ocpp/v2/messages/GetLocalListVersion.hpp>
 #include <ocpp/v2/messages/SendLocalList.hpp>
 
+namespace {
 ///
 /// \brief Check if vector of authorization data has a duplicate id token.
 /// \param list List to check.
 /// \return True if there is a duplicate.
 ///
-static bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list);
-static bool has_no_token_info(const ocpp::v2::AuthorizationData& item);
+bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list);
+bool has_no_token_info(const ocpp::v2::AuthorizationData& item);
+} // namespace
 
 ocpp::v2::Authorization::Authorization(const FunctionalBlockContext& context) :
     context(context), auth_cache_cleanup_handler_running(false) {
@@ -600,7 +602,8 @@ ocpp::v2::Authorization::apply_local_authorization_list(const SendLocalListReque
     return status;
 }
 
-static bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list) {
+namespace {
+bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list) {
     for (auto it1 = list.begin(); it1 != list.end(); ++it1) {
         for (auto it2 = it1 + 1; it2 != list.end(); ++it2) {
             if (it1->idToken.idToken == it2->idToken.idToken and it1->idToken.type == it2->idToken.type) {
@@ -611,6 +614,7 @@ static bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>
     return false;
 }
 
-static bool has_no_token_info(const ocpp::v2::AuthorizationData& item) {
+bool has_no_token_info(const ocpp::v2::AuthorizationData& item) {
     return !item.idTokenInfo.has_value();
 };
+} // namespace

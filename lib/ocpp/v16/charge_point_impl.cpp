@@ -962,8 +962,9 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
     return filtered_meter_value_opt;
 }
 
-MeterValue ChargePointImpl::get_signed_meter_value(const std::string& signed_value, const ReadingContext& context,
-                                                   const ocpp::DateTime& timestamp) {
+namespace {
+MeterValue get_signed_meter_value(const std::string& signed_value, const ReadingContext& context,
+                                  const ocpp::DateTime& timestamp) {
     MeterValue meter_value;
     meter_value.timestamp = timestamp;
     SampledValue sampled_value;
@@ -974,6 +975,7 @@ MeterValue ChargePointImpl::get_signed_meter_value(const std::string& signed_val
     meter_value.sampledValue.push_back(sampled_value);
     return meter_value;
 }
+} // namespace
 
 void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value, bool initiated_by_trigger_message) {
 
@@ -4336,7 +4338,7 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
         meter_start, reservation_id, timestamp, std::move(meter_values_sample_timer));
     if (signed_meter_value) {
         const auto meter_value =
-            this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_Begin, timestamp);
+            get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_Begin, timestamp);
         transaction->add_meter_value(meter_value);
     }
 
@@ -4359,7 +4361,7 @@ void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std:
 
     if (signed_meter_value) {
         const auto meter_value =
-            this->get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_End, timestamp);
+            get_signed_meter_value(signed_meter_value.value(), ReadingContext::Transaction_End, timestamp);
         transaction->add_meter_value(meter_value);
     }
     const auto stop_energy_wh = std::make_shared<StampedEnergyWh>(timestamp, energy_wh_import);
@@ -4443,9 +4445,13 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
     }
 }
 
-std::vector<Measurand> ChargePointImpl::get_measurands_vec(const std::string& measurands_csv) {
+namespace {
+/// \brief Converts the given \p measurands_csv to a vector of Measurands
+/// \param measurands_csv
+/// \return
+std::vector<Measurand> get_measurands_vec(const std::string& measurands_csv) {
     std::vector<Measurand> measurands;
-    std::vector<std::string> measurands_strings = ocpp::split_string(measurands_csv, ',');
+    const std::vector<std::string> measurands_strings = ocpp::split_string(measurands_csv, ',');
 
     for (const auto& measurand_string : measurands_strings) {
         try {
@@ -4456,13 +4462,12 @@ std::vector<Measurand> ChargePointImpl::get_measurands_vec(const std::string& me
     }
     return measurands;
 }
+} // namespace
 
 std::vector<TransactionData>
 ChargePointImpl::get_filtered_transaction_data(const std::shared_ptr<Transaction>& transaction) {
-    const auto stop_txn_sampled_data_measurands =
-        this->get_measurands_vec(this->configuration->getStopTxnSampledData());
-    const auto stop_txn_aligned_data_measurands =
-        this->get_measurands_vec(this->configuration->getStopTxnAlignedData());
+    const auto stop_txn_sampled_data_measurands = get_measurands_vec(this->configuration->getStopTxnSampledData());
+    const auto stop_txn_aligned_data_measurands = get_measurands_vec(this->configuration->getStopTxnAlignedData());
 
     std::vector<TransactionData> filtered_transaction_data_vec;
 

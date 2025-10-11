@@ -12,8 +12,9 @@ namespace ocpp {
 
 namespace v2 {
 
+namespace {
 /// \brief For AlignedDataInterval, SampledDataTxUpdatedInterval and SampledDataTxEndedInterval, zero is allowed
-static bool allow_zero(const Component& component, const Variable& variable) {
+bool allow_zero(const Component& component, const Variable& variable) {
     ComponentVariable component_variable;
     component_variable.component = component;
     component_variable.variable = variable;
@@ -64,6 +65,7 @@ bool filter_criteria_monitor(const std::vector<MonitoringCriterionEnum>& criteri
 
     return any_filter_match;
 }
+} // namespace
 
 void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
                               std::vector<VariableMonitoringMeta>& monitors) {
@@ -105,8 +107,14 @@ bool DeviceModel::component_criteria_match(const Component& component,
     return false;
 }
 
-bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>& component_variables,
-                                            const ocpp::v2::Component& component, const ocpp::v2::Variable& variable) {
+namespace {
+/// @brief Iterates over the given \p component_variables and filters them according to the requirement conditions.
+/// @param component_variables
+/// @param component_ current component
+/// @param variable_ current variable
+/// @return true if the component is found according to any of the requirement conditions.
+bool component_variables_match(const std::vector<ComponentVariable>& component_variables,
+                               const ocpp::v2::Component& component, const ocpp::v2::Variable& variable) {
 
     return std::find_if(
                component_variables.begin(), component_variables.end(), [component, variable](ComponentVariable v) {
@@ -120,6 +128,7 @@ bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>
                            (component.instance == v.component.instance) and (variable == v.variable)); // B08.FR.23
                }) != component_variables.end();
 }
+} // namespace
 
 void DeviceModel::check_variable_has_value(const ComponentVariable& component_variable, const AttributeEnum attribute) {
     std::string value;
@@ -211,6 +220,7 @@ void DeviceModel::check_required_variables() {
     }
 }
 
+namespace {
 bool validate_value(const VariableCharacteristics& characteristics, const std::string& value, bool allow_zero) {
     switch (characteristics.dataType) {
     case DataEnum::string:
@@ -308,6 +318,7 @@ bool include_in_summary_inventory(const ComponentVariable& cv, const VariableAtt
     }
     return false;
 }
+} // namespace
 
 GetVariableStatusEnum DeviceModel::request_value_internal(const Component& component_id, const Variable& variable_id,
                                                           const AttributeEnum& attribute_enum, std::string& value,

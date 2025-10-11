@@ -247,6 +247,7 @@ void ChargePointConfiguration::setInUserConfig(std::string profile, std::string 
     }
 }
 
+namespace {
 std::string to_csl(const std::vector<std::string>& vec) {
     std::string csl;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
@@ -257,6 +258,7 @@ std::string to_csl(const std::vector<std::string>& vec) {
     }
     return csl;
 }
+} // namespace
 
 void ChargePointConfiguration::init_supported_measurands() {
     const auto _supported_measurands = ocpp::split_string(this->config["Internal"]["SupportedMeasurands"], ',');
@@ -1081,6 +1083,7 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
     return true;
 }
 
+namespace {
 bool validate_connector_evse_ids(const std::string& value) {
     if (value.length() > CONNECTOR_EVSE_IDS_MAX_LENGTH) {
         return false;
@@ -1096,6 +1099,7 @@ bool validate_connector_evse_ids(const std::string& value) {
     }
     return true;
 }
+} // namespace
 
 bool ChargePointConfiguration::measurands_supported(std::string csv) {
 
@@ -2086,6 +2090,7 @@ std::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
     return authorization_key;
 }
 
+namespace {
 std::string hexToString(const std::string& s) {
     std::string str;
     for (size_t i = 0; i < s.length(); i += 2) {
@@ -2113,6 +2118,7 @@ bool isHexNotation(const std::string& s) {
     }
     return true;
 }
+} // namespace
 
 void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
 
@@ -2169,7 +2175,8 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
     return true;
 }
 
-bool ChargePointConfiguration::checkTimeOffset(const std::string& offset) {
+namespace {
+bool checkTimeOffset(const std::string& offset) {
     const std::vector<std::string> times = split_string(offset, ':');
     if (times.size() != 2) {
         EVLOG_error << "Could not set display time offset: format not correct (should be something like "
@@ -2210,6 +2217,7 @@ bool isBool(const std::string& str) {
     std::transform(out.begin(), out.end(), out.begin(), ::tolower);
     return out == "true" || out == "false";
 }
+} // namespace
 
 std::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
     std::optional<KeyValue> enabled_kv = std::nullopt;

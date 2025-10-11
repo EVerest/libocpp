@@ -81,14 +81,6 @@ private: // Functions
 
     // Helper functions
     ///
-    /// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of
-    ///        the connectors occupied).
-    /// \param evse Evse to check.
-    /// \return True if at least one connector is not faulted or unavailable.
-    ///
-    bool is_evse_connector_available(EvseInterface& evse) const;
-
-    ///
     /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
     /// \param evse             The evse id that must be checked. Reservation will be checked for all connectors.
     /// \param id_token         The id token to check if it is reserved for that token.

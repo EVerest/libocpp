@@ -46,7 +46,6 @@ private:
     MeterValue averaged_meter_values;
     std::mutex avg_meter_value_mutex;
     std::map<MeterValueMeasurands, MeterValueCalc> aligned_meter_values;
-    bool is_avg_meas(const SampledValue& sample);
     void average_meter_value();
 };
 } // namespace v2
