@@ -144,7 +144,11 @@ MonitoringUpdater::MonitoringUpdater(DeviceModel& device_model, notify_events no
 }
 
 MonitoringUpdater::~MonitoringUpdater() {
-    stop_monitoring();
+    try {
+        stop_monitoring();
+    } catch (...) {
+        return;
+    }
 }
 
 void MonitoringUpdater::start_monitoring() {

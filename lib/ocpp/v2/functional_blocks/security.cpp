@@ -35,8 +35,12 @@ Security::Security(const FunctionalBlockContext& functional_block_context, Messa
 }
 
 Security::~Security() {
-    stop_certificate_signed_timer();
-    stop_certificate_expiration_check_timers();
+    try {
+        stop_certificate_signed_timer();
+        stop_certificate_expiration_check_timers();
+    } catch (...) {
+        return;
+    }
 }
 
 void Security::handle_message(const EnhancedMessage<MessageType>& message) {

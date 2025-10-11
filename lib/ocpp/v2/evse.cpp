@@ -73,9 +73,13 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
 }
 
 Evse::~Evse() {
-    if (this->trigger_metervalue_at_time_timer != nullptr) {
-        this->trigger_metervalue_at_time_timer->stop();
-        this->trigger_metervalue_at_time_timer = nullptr;
+    try {
+        if (this->trigger_metervalue_at_time_timer != nullptr) {
+            this->trigger_metervalue_at_time_timer->stop();
+            this->trigger_metervalue_at_time_timer = nullptr;
+        }
+    } catch (...) {
+        return;
     }
 }
 

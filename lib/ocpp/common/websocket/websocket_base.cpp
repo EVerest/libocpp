@@ -31,7 +31,11 @@ WebsocketBase::WebsocketBase() :
 }
 
 WebsocketBase::~WebsocketBase() {
-    this->cancel_reconnect_timer();
+    try {
+        this->cancel_reconnect_timer();
+    } catch (...) {
+        return;
+    }
 }
 
 void WebsocketBase::set_connection_options_base(const WebsocketConnectionOptions& connection_options) {

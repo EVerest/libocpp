@@ -21,7 +21,11 @@ Availability::Availability(const FunctionalBlockContext& functional_block_contex
 }
 
 Availability::~Availability() {
-    this->stop_heartbeat_timer();
+    try {
+        this->stop_heartbeat_timer();
+    } catch (...) {
+        return;
+    }
 }
 
 void Availability::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {

@@ -350,29 +350,33 @@ WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions&
 }
 
 WebsocketLibwebsockets::~WebsocketLibwebsockets() {
-    std::lock_guard lock(this->connection_mutex);
+    try {
+        const std::lock_guard lock(this->connection_mutex);
 
-    std::shared_ptr<ConnectionData> local_conn_data = conn_data;
-    if (local_conn_data != nullptr) {
-        auto tid = std::this_thread::get_id();
+        const std::shared_ptr<ConnectionData> local_conn_data = conn_data;
+        if (local_conn_data != nullptr) {
+            auto tid = std::this_thread::get_id();
 
-        if (tid == local_conn_data->get_client_thread_id() || tid == local_conn_data->get_message_thread_id()) {
-            EVLOG_error << "Trying to destruct websocket from utility thread!";
-            std::terminate();
+            if (tid == local_conn_data->get_client_thread_id() || tid == local_conn_data->get_message_thread_id()) {
+                EVLOG_error << "Trying to destruct websocket from utility thread!";
+                std::terminate();
+            }
         }
-    }
 
-    if (this->m_is_connected || is_trying_to_connect_internal()) {
-        this->close_internal(WebsocketCloseReason::Normal, "websocket destructor");
-    }
+        if (this->m_is_connected || is_trying_to_connect_internal()) {
+            this->close_internal(WebsocketCloseReason::Normal, "websocket destructor");
+        }
 
-    // In the dtor we must make sure the deferred callback thread
-    // finishes since the callbacks capture a reference to 'this'
-    if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
-        this->stop_deferred_handler.store(true);
-        this->deferred_callback_queue.notify_waiting_thread();
+        // In the dtor we must make sure the deferred callback thread
+        // finishes since the callbacks capture a reference to 'this'
+        if (this->deferred_callback_thread != nullptr && this->deferred_callback_thread->joinable()) {
+            this->stop_deferred_handler.store(true);
+            this->deferred_callback_queue.notify_waiting_thread();
 
-        this->deferred_callback_thread->join();
+            this->deferred_callback_thread->join();
+        }
+    } catch (...) {
+        return;
     }
 }
 
