@@ -486,6 +486,7 @@ using IntermediateProfileRef = std::reference_wrapper<const IntermediateProfile>
 
 inline std::vector<IntermediateProfileRef> convert_to_ref_vector(const std::vector<IntermediateProfile>& profiles) {
     std::vector<IntermediateProfileRef> references{};
+    references.reserve(profiles.size());
     for (auto& profile : profiles) {
         references.push_back(profile);
     }

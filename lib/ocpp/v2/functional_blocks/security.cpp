@@ -358,6 +358,7 @@ void Security::handle_get_installed_certificate_ids_req(Call<GetInstalledCertifi
 
     // convert the common type back to the v2 type(s) for the response
     std::vector<CertificateHashDataChain> certificate_hash_data_chain_v2;
+    certificate_hash_data_chain_v2.reserve(certificate_hash_data_chains.size());
     for (const auto& certificate_hash_data_chain_entry : certificate_hash_data_chains) {
         certificate_hash_data_chain_v2.push_back(
             ocpp::evse_security_conversions::to_ocpp_v2(certificate_hash_data_chain_entry));

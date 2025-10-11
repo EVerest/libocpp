@@ -158,6 +158,7 @@ ocpp::CertificateType from_ocpp_v2(ocpp::v2::GetCertificateIdUseEnum other) {
 
 std::vector<ocpp::CertificateType> from_ocpp_v2(const std::vector<ocpp::v2::GetCertificateIdUseEnum>& other) {
     std::vector<ocpp::CertificateType> certificate_types;
+    certificate_types.reserve(other.size());
     for (const auto& certificate_id_use_enum : other) {
         certificate_types.push_back(from_ocpp_v2(certificate_id_use_enum));
     }

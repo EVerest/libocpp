@@ -2866,7 +2866,8 @@ void ChargePointImpl::handleGetInstalledCertificateIdsRequest(ocpp::Call<GetInst
         // convert ocpp::CertificateHashData to v16::CertificateHashData
         std::optional<std::vector<CertificateHashDataType>> certificate_hash_data_16_vec_opt;
         std::vector<CertificateHashDataType> certificate_hash_data_16_vec;
-        for (const auto certificate_hash_data_chain_entry : certificate_hash_data_chains) {
+        certificate_hash_data_16_vec.reserve(certificate_hash_data_chains.size());
+        for (const auto& certificate_hash_data_chain_entry : certificate_hash_data_chains) {
             certificate_hash_data_16_vec.push_back(
                 CertificateHashDataType(json(certificate_hash_data_chain_entry.certificateHashData)));
         }
@@ -4060,7 +4061,8 @@ void ChargePointImpl::handle_data_transfer_pnc_get_installed_certificates(Call<D
             if (!certificate_hash_data_chains.empty()) {
                 std::optional<std::vector<ocpp::v2::CertificateHashDataChain>> certificate_hash_data_chain_v2_opt;
                 std::vector<ocpp::v2::CertificateHashDataChain> certificate_hash_data_chain_v2;
-                for (const auto certificate_hash_data_chain_entry : certificate_hash_data_chains) {
+                certificate_hash_data_chain_v2.reserve(certificate_hash_data_chains.size());
+                for (const auto& certificate_hash_data_chain_entry : certificate_hash_data_chains) {
                     certificate_hash_data_chain_v2.push_back(
                         ocpp::evse_security_conversions::to_ocpp_v2(certificate_hash_data_chain_entry));
                 }

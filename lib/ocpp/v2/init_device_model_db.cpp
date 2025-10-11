@@ -1282,6 +1282,7 @@ void check_integrity(const std::map<ComponentKey, std::vector<DeviceModelVariabl
             std::vector<std::string> error_messages;
 
             const std::vector<std::string> value_type_errors = check_integrity_value_type(variable);
+            error_messages.reserve(value_type_errors.size());
             for (const std::string& error : value_type_errors) {
                 error_messages.push_back(error);
             }
