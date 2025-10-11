@@ -149,7 +149,7 @@ long WebsocketBase::get_reconnect_interval() {
         return this->reconnect_backoff_ms;
     }
 
-    this->reconnect_backoff_ms = this->reconnect_backoff_ms * 2 + (random_number * 1000);
+    this->reconnect_backoff_ms = (this->reconnect_backoff_ms * 2) + (random_number * 1000);
     return this->reconnect_backoff_ms;
 }
 

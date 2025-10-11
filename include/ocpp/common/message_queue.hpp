@@ -831,8 +831,8 @@ public:
                     // exponential backoff
                     this->in_flight->timestamp =
                         DateTime(this->in_flight->timestamp.to_time_point() +
-                                 std::chrono::seconds(this->config.transaction_message_retry_interval) *
-                                     this->in_flight->message_attempts);
+                                 (std::chrono::seconds(this->config.transaction_message_retry_interval) *
+                                  this->in_flight->message_attempts));
                     EVLOG_debug << "Retry interval > 0: " << this->config.transaction_message_retry_interval
                                 << " attempting to retry message at: " << this->in_flight->timestamp;
                 } else {
