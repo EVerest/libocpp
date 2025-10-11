@@ -46,7 +46,7 @@ public:
     void push(T&& value) {
         {
             const std::lock_guard<std::mutex> lock(mutex);
-            queue.push(value);
+            queue.push(std::move(value));
         }
 
         notify_waiting_thread();

@@ -213,7 +213,7 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
                 break;
             }
 
-            start = std::move(DateTime(now_tp - seconds(seconds_to_go_back)));
+            start = DateTime(now_tp - seconds(seconds_to_go_back));
 
             while (start <= end) {
                 start_times.push_back(start);
