@@ -26,7 +26,7 @@ void to_json(json& j, const SendLocalListRequest& k) {
     // the optional parts of the message
     if (k.localAuthorizationList) {
         j["localAuthorizationList"] = json::array();
-        for (auto val : k.localAuthorizationList.value()) {
+        for (const auto& val : k.localAuthorizationList.value()) {
             j["localAuthorizationList"].push_back(val);
         }
     }
@@ -39,9 +39,9 @@ void from_json(const json& j, SendLocalListRequest& k) {
 
     // the optional parts of the message
     if (j.contains("localAuthorizationList")) {
-        json arr = j.at("localAuthorizationList");
+        const json& arr = j.at("localAuthorizationList");
         std::vector<LocalAuthorizationList> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.localAuthorizationList.emplace(vec);

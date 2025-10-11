@@ -32,7 +32,7 @@ void to_json(json& j, const MeterValuesRequest& k) {
 void from_json(const json& j, MeterValuesRequest& k) {
     // the required parts of the message
     k.evseId = j.at("evseId");
-    for (auto val : j.at("meterValue")) {
+    for (const auto& val : j.at("meterValue")) {
         k.meterValue.push_back(val);
     }
 

@@ -25,7 +25,7 @@ void to_json(json& j, const GetDisplayMessagesRequest& k) {
     // the optional parts of the message
     if (k.id) {
         j["id"] = json::array();
-        for (auto val : k.id.value()) {
+        for (const auto& val : k.id.value()) {
             j["id"].push_back(val);
         }
     }
@@ -46,9 +46,9 @@ void from_json(const json& j, GetDisplayMessagesRequest& k) {
 
     // the optional parts of the message
     if (j.contains("id")) {
-        json arr = j.at("id");
+        const json& arr = j.at("id");
         std::vector<int32_t> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.id.emplace(vec);

@@ -30,7 +30,7 @@ void to_json(json& j, const SetVariableMonitoringRequest& k) {
 
 void from_json(const json& j, SetVariableMonitoringRequest& k) {
     // the required parts of the message
-    for (auto val : j.at("setMonitoringData")) {
+    for (const auto& val : j.at("setMonitoringData")) {
         k.setMonitoringData.push_back(val);
     }
 
@@ -65,7 +65,7 @@ void to_json(json& j, const SetVariableMonitoringResponse& k) {
 
 void from_json(const json& j, SetVariableMonitoringResponse& k) {
     // the required parts of the message
-    for (auto val : j.at("setMonitoringResult")) {
+    for (const auto& val : j.at("setMonitoringResult")) {
         k.setMonitoringResult.push_back(val);
     }
 

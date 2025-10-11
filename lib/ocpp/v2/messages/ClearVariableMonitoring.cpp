@@ -30,7 +30,7 @@ void to_json(json& j, const ClearVariableMonitoringRequest& k) {
 
 void from_json(const json& j, ClearVariableMonitoringRequest& k) {
     // the required parts of the message
-    for (auto val : j.at("id")) {
+    for (const auto& val : j.at("id")) {
         k.id.push_back(val);
     }
 
@@ -65,7 +65,7 @@ void to_json(json& j, const ClearVariableMonitoringResponse& k) {
 
 void from_json(const json& j, ClearVariableMonitoringResponse& k) {
     // the required parts of the message
-    for (auto val : j.at("clearMonitoringResult")) {
+    for (const auto& val : j.at("clearMonitoringResult")) {
         k.clearMonitoringResult.push_back(val);
     }
 

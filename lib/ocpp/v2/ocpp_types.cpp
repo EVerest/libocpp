@@ -132,7 +132,7 @@ void to_json(json& j, const IdToken& k) {
     // the optional parts of the message
     if (k.additionalInfo) {
         j["additionalInfo"] = json::array();
-        for (auto val : k.additionalInfo.value()) {
+        for (const auto& val : k.additionalInfo.value()) {
             j["additionalInfo"].push_back(val);
         }
     }
@@ -149,9 +149,9 @@ void from_json(const json& j, IdToken& k) {
 
     // the optional parts of the message
     if (j.contains("additionalInfo")) {
-        json arr = j.at("additionalInfo");
+        const json& arr = j.at("additionalInfo");
         std::vector<AdditionalInfo> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.additionalInfo.emplace(vec);
@@ -268,7 +268,7 @@ void to_json(json& j, const IdTokenInfo& k) {
     }
     if (k.evseId) {
         j["evseId"] = json::array();
-        for (auto val : k.evseId.value()) {
+        for (const auto& val : k.evseId.value()) {
             j["evseId"].push_back(val);
         }
     }
@@ -302,9 +302,9 @@ void from_json(const json& j, IdTokenInfo& k) {
         k.language2.emplace(j.at("language2"));
     }
     if (j.contains("evseId")) {
-        json arr = j.at("evseId");
+        const json& arr = j.at("evseId");
         std::vector<int32_t> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.evseId.emplace(vec);
@@ -336,12 +336,12 @@ void to_json(json& j, const TariffConditions& k) {
         j["endTimeOfDay"] = k.endTimeOfDay.value();
     }
     if (k.dayOfWeek) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"dayOfWeek", json::array()}};
         } else {
             j["dayOfWeek"] = json::array();
         }
-        for (auto val : k.dayOfWeek.value()) {
+        for (const auto& val : k.dayOfWeek.value()) {
             j["dayOfWeek"].push_back(conversions::day_of_week_enum_to_string(val));
         }
     }
@@ -407,9 +407,9 @@ void from_json(const json& j, TariffConditions& k) {
         k.endTimeOfDay.emplace(j.at("endTimeOfDay"));
     }
     if (j.contains("dayOfWeek")) {
-        json arr = j.at("dayOfWeek");
+        const json& arr = j.at("dayOfWeek");
         std::vector<DayOfWeekEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_day_of_week_enum(val));
         }
         k.dayOfWeek.emplace(vec);
@@ -554,7 +554,7 @@ void to_json(json& j, const TariffEnergy& k) {
     // the optional parts of the message
     if (k.taxRates) {
         j["taxRates"] = json::array();
-        for (auto val : k.taxRates.value()) {
+        for (const auto& val : k.taxRates.value()) {
             j["taxRates"].push_back(val);
         }
     }
@@ -566,15 +566,15 @@ void to_json(json& j, const TariffEnergy& k) {
 /// \brief Conversion from a given json object \p j to a given TariffEnergy \p k
 void from_json(const json& j, TariffEnergy& k) {
     // the required parts of the message
-    for (auto val : j.at("prices")) {
+    for (const auto& val : j.at("prices")) {
         k.prices.push_back(val);
     }
 
     // the optional parts of the message
     if (j.contains("taxRates")) {
-        json arr = j.at("taxRates");
+        const json& arr = j.at("taxRates");
         std::vector<TaxRate> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.taxRates.emplace(vec);
@@ -636,7 +636,7 @@ void to_json(json& j, const TariffTime& k) {
     // the optional parts of the message
     if (k.taxRates) {
         j["taxRates"] = json::array();
-        for (auto val : k.taxRates.value()) {
+        for (const auto& val : k.taxRates.value()) {
             j["taxRates"].push_back(val);
         }
     }
@@ -648,15 +648,15 @@ void to_json(json& j, const TariffTime& k) {
 /// \brief Conversion from a given json object \p j to a given TariffTime \p k
 void from_json(const json& j, TariffTime& k) {
     // the required parts of the message
-    for (auto val : j.at("prices")) {
+    for (const auto& val : j.at("prices")) {
         k.prices.push_back(val);
     }
 
     // the optional parts of the message
     if (j.contains("taxRates")) {
-        json arr = j.at("taxRates");
+        const json& arr = j.at("taxRates");
         std::vector<TaxRate> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.taxRates.emplace(vec);
@@ -685,12 +685,12 @@ void to_json(json& j, const TariffConditionsFixed& k) {
         j["endTimeOfDay"] = k.endTimeOfDay.value();
     }
     if (k.dayOfWeek) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"dayOfWeek", json::array()}};
         } else {
             j["dayOfWeek"] = json::array();
         }
-        for (auto val : k.dayOfWeek.value()) {
+        for (const auto& val : k.dayOfWeek.value()) {
             j["dayOfWeek"].push_back(conversions::day_of_week_enum_to_string(val));
         }
     }
@@ -726,9 +726,9 @@ void from_json(const json& j, TariffConditionsFixed& k) {
         k.endTimeOfDay.emplace(j.at("endTimeOfDay"));
     }
     if (j.contains("dayOfWeek")) {
-        json arr = j.at("dayOfWeek");
+        const json& arr = j.at("dayOfWeek");
         std::vector<DayOfWeekEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_day_of_week_enum(val));
         }
         k.dayOfWeek.emplace(vec);
@@ -805,7 +805,7 @@ void to_json(json& j, const TariffFixed& k) {
     // the optional parts of the message
     if (k.taxRates) {
         j["taxRates"] = json::array();
-        for (auto val : k.taxRates.value()) {
+        for (const auto& val : k.taxRates.value()) {
             j["taxRates"].push_back(val);
         }
     }
@@ -817,15 +817,15 @@ void to_json(json& j, const TariffFixed& k) {
 /// \brief Conversion from a given json object \p j to a given TariffFixed \p k
 void from_json(const json& j, TariffFixed& k) {
     // the required parts of the message
-    for (auto val : j.at("prices")) {
+    for (const auto& val : j.at("prices")) {
         k.prices.push_back(val);
     }
 
     // the optional parts of the message
     if (j.contains("taxRates")) {
-        json arr = j.at("taxRates");
+        const json& arr = j.at("taxRates");
         std::vector<TaxRate> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.taxRates.emplace(vec);
@@ -854,12 +854,12 @@ void to_json(json& j, const Price& k) {
         j["inclTax"] = k.inclTax.value();
     }
     if (k.taxRates) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"taxRates", json::array()}};
         } else {
             j["taxRates"] = json::array();
         }
-        for (auto val : k.taxRates.value()) {
+        for (const auto& val : k.taxRates.value()) {
             j["taxRates"].push_back(val);
         }
     }
@@ -880,9 +880,9 @@ void from_json(const json& j, Price& k) {
         k.inclTax.emplace(j.at("inclTax"));
     }
     if (j.contains("taxRates")) {
-        json arr = j.at("taxRates");
+        const json& arr = j.at("taxRates");
         std::vector<TaxRate> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.taxRates.emplace(vec);
@@ -909,7 +909,7 @@ void to_json(json& j, const Tariff& k) {
     // the optional parts of the message
     if (k.description) {
         j["description"] = json::array();
-        for (auto val : k.description.value()) {
+        for (const auto& val : k.description.value()) {
             j["description"].push_back(val);
         }
     }
@@ -953,9 +953,9 @@ void from_json(const json& j, Tariff& k) {
 
     // the optional parts of the message
     if (j.contains("description")) {
-        json arr = j.at("description");
+        const json& arr = j.at("description");
         std::vector<MessageContent> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.description.emplace(vec);
@@ -1354,7 +1354,7 @@ void from_json(const json& j, CertificateStatusRequestInfo& k) {
     // the required parts of the message
     k.certificateHashData = j.at("certificateHashData");
     k.source = conversions::string_to_certificate_status_source_enum(j.at("source"));
-    for (auto val : j.at("urls")) {
+    for (const auto& val : j.at("urls")) {
         k.urls.push_back(val);
     }
 
@@ -1421,22 +1421,22 @@ void to_json(json& j, const ChargingProfileCriterion& k) {
         j["stackLevel"] = k.stackLevel.value();
     }
     if (k.chargingProfileId) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"chargingProfileId", json::array()}};
         } else {
             j["chargingProfileId"] = json::array();
         }
-        for (auto val : k.chargingProfileId.value()) {
+        for (const auto& val : k.chargingProfileId.value()) {
             j["chargingProfileId"].push_back(val);
         }
     }
     if (k.chargingLimitSource) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"chargingLimitSource", json::array()}};
         } else {
             j["chargingLimitSource"] = json::array();
         }
-        for (auto val : k.chargingLimitSource.value()) {
+        for (const auto& val : k.chargingLimitSource.value()) {
             j["chargingLimitSource"].push_back(val);
         }
     }
@@ -1458,17 +1458,17 @@ void from_json(const json& j, ChargingProfileCriterion& k) {
         k.stackLevel.emplace(j.at("stackLevel"));
     }
     if (j.contains("chargingProfileId")) {
-        json arr = j.at("chargingProfileId");
+        const json& arr = j.at("chargingProfileId");
         std::vector<int32_t> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.chargingProfileId.emplace(vec);
     }
     if (j.contains("chargingLimitSource")) {
-        json arr = j.at("chargingLimitSource");
+        const json& arr = j.at("chargingLimitSource");
         std::vector<CiString<20>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.chargingLimitSource.emplace(vec);
@@ -1612,13 +1612,13 @@ void to_json(json& j, const ChargingSchedulePeriod& k) {
     }
     if (k.v2xFreqWattCurve) {
         j["v2xFreqWattCurve"] = json::array();
-        for (auto val : k.v2xFreqWattCurve.value()) {
+        for (const auto& val : k.v2xFreqWattCurve.value()) {
             j["v2xFreqWattCurve"].push_back(val);
         }
     }
     if (k.v2xSignalWattCurve) {
         j["v2xSignalWattCurve"] = json::array();
-        for (auto val : k.v2xSignalWattCurve.value()) {
+        for (const auto& val : k.v2xSignalWattCurve.value()) {
             j["v2xSignalWattCurve"].push_back(val);
         }
     }
@@ -1688,17 +1688,17 @@ void from_json(const json& j, ChargingSchedulePeriod& k) {
         k.operationMode.emplace(conversions::string_to_operation_mode_enum(j.at("operationMode")));
     }
     if (j.contains("v2xFreqWattCurve")) {
-        json arr = j.at("v2xFreqWattCurve");
+        const json& arr = j.at("v2xFreqWattCurve");
         std::vector<V2XFreqWattPoint> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.v2xFreqWattCurve.emplace(vec);
     }
     if (j.contains("v2xSignalWattCurve")) {
-        json arr = j.at("v2xSignalWattCurve");
+        const json& arr = j.at("v2xSignalWattCurve");
         std::vector<V2XSignalWattPoint> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.v2xSignalWattCurve.emplace(vec);
@@ -1738,7 +1738,7 @@ void from_json(const json& j, CompositeSchedule& k) {
     k.duration = j.at("duration");
     k.scheduleStart = ocpp::DateTime(std::string(j.at("scheduleStart")));
     k.chargingRateUnit = conversions::string_to_charging_rate_unit_enum(j.at("chargingRateUnit"));
-    for (auto val : j.at("chargingSchedulePeriod")) {
+    for (const auto& val : j.at("chargingSchedulePeriod")) {
         k.chargingSchedulePeriod.push_back(val);
     }
 
@@ -1765,7 +1765,7 @@ void to_json(json& j, const CertificateHashDataChain& k) {
     // the optional parts of the message
     if (k.childCertificateHashData) {
         j["childCertificateHashData"] = json::array();
-        for (auto val : k.childCertificateHashData.value()) {
+        for (const auto& val : k.childCertificateHashData.value()) {
             j["childCertificateHashData"].push_back(val);
         }
     }
@@ -1782,9 +1782,9 @@ void from_json(const json& j, CertificateHashDataChain& k) {
 
     // the optional parts of the message
     if (j.contains("childCertificateHashData")) {
-        json arr = j.at("childCertificateHashData");
+        const json& arr = j.at("childCertificateHashData");
         std::vector<CertificateHashDataType> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.childCertificateHashData.emplace(vec);
@@ -2004,13 +2004,13 @@ void to_json(json& j, const TariffAssignment& k) {
     }
     if (k.evseIds) {
         j["evseIds"] = json::array();
-        for (auto val : k.evseIds.value()) {
+        for (const auto& val : k.evseIds.value()) {
             j["evseIds"].push_back(val);
         }
     }
     if (k.idTokens) {
         j["idTokens"] = json::array();
-        for (auto val : k.idTokens.value()) {
+        for (const auto& val : k.idTokens.value()) {
             j["idTokens"].push_back(val);
         }
     }
@@ -2030,17 +2030,17 @@ void from_json(const json& j, TariffAssignment& k) {
         k.validFrom.emplace(j.at("validFrom").get<std::string>());
     }
     if (j.contains("evseIds")) {
-        json arr = j.at("evseIds");
+        const json& arr = j.at("evseIds");
         std::vector<int32_t> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.evseIds.emplace(vec);
     }
     if (j.contains("idTokens")) {
-        json arr = j.at("idTokens");
+        const json& arr = j.at("idTokens");
         std::vector<CiString<255>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.idTokens.emplace(vec);
@@ -2312,7 +2312,7 @@ void to_json(json& j, const MeterValue& k) {
 /// \brief Conversion from a given json object \p j to a given MeterValue \p k
 void from_json(const json& j, MeterValue& k) {
     // the required parts of the message
-    for (auto val : j.at("sampledValue")) {
+    for (const auto& val : j.at("sampledValue")) {
         k.sampledValue.push_back(val);
     }
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
@@ -2453,7 +2453,7 @@ void to_json(json& j, const ConsumptionCost& k) {
 void from_json(const json& j, ConsumptionCost& k) {
     // the required parts of the message
     k.startValue = j.at("startValue");
-    for (auto val : j.at("cost")) {
+    for (const auto& val : j.at("cost")) {
         k.cost.push_back(val);
     }
 
@@ -2482,7 +2482,7 @@ void to_json(json& j, const SalesTariffEntry& k) {
     }
     if (k.consumptionCost) {
         j["consumptionCost"] = json::array();
-        for (auto val : k.consumptionCost.value()) {
+        for (const auto& val : k.consumptionCost.value()) {
             j["consumptionCost"].push_back(val);
         }
     }
@@ -2501,9 +2501,9 @@ void from_json(const json& j, SalesTariffEntry& k) {
         k.ePriceLevel.emplace(j.at("ePriceLevel"));
     }
     if (j.contains("consumptionCost")) {
-        json arr = j.at("consumptionCost");
+        const json& arr = j.at("consumptionCost");
         std::vector<ConsumptionCost> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.consumptionCost.emplace(vec);
@@ -2543,7 +2543,7 @@ void to_json(json& j, const SalesTariff& k) {
 void from_json(const json& j, SalesTariff& k) {
     // the required parts of the message
     k.id = j.at("id");
-    for (auto val : j.at("salesTariffEntry")) {
+    for (const auto& val : j.at("salesTariffEntry")) {
         k.salesTariffEntry.push_back(val);
     }
 
@@ -2671,7 +2671,7 @@ void to_json(json& j, const PriceRuleStack& k) {
 void from_json(const json& j, PriceRuleStack& k) {
     // the required parts of the message
     k.duration = j.at("duration");
-    for (auto val : j.at("priceRule")) {
+    for (const auto& val : j.at("priceRule")) {
         k.priceRule.push_back(val);
     }
 
@@ -2801,7 +2801,7 @@ void to_json(json& j, const OverstayRuleList& k) {
 /// \brief Conversion from a given json object \p j to a given OverstayRuleList \p k
 void from_json(const json& j, OverstayRuleList& k) {
     // the required parts of the message
-    for (auto val : j.at("overstayRule")) {
+    for (const auto& val : j.at("overstayRule")) {
         k.overstayRule.push_back(val);
     }
 
@@ -2879,7 +2879,7 @@ void to_json(json& j, const AbsolutePriceSchedule& k) {
     }
     if (k.taxRules) {
         j["taxRules"] = json::array();
-        for (auto val : k.taxRules.value()) {
+        for (const auto& val : k.taxRules.value()) {
             j["taxRules"].push_back(val);
         }
     }
@@ -2888,7 +2888,7 @@ void to_json(json& j, const AbsolutePriceSchedule& k) {
     }
     if (k.additionalSelectedServices) {
         j["additionalSelectedServices"] = json::array();
-        for (auto val : k.additionalSelectedServices.value()) {
+        for (const auto& val : k.additionalSelectedServices.value()) {
             j["additionalSelectedServices"].push_back(val);
         }
     }
@@ -2905,7 +2905,7 @@ void from_json(const json& j, AbsolutePriceSchedule& k) {
     k.currency = j.at("currency");
     k.language = j.at("language");
     k.priceAlgorithm = j.at("priceAlgorithm");
-    for (auto val : j.at("priceRuleStacks")) {
+    for (const auto& val : j.at("priceRuleStacks")) {
         k.priceRuleStacks.push_back(val);
     }
 
@@ -2920,9 +2920,9 @@ void from_json(const json& j, AbsolutePriceSchedule& k) {
         k.maximumCost.emplace(j.at("maximumCost"));
     }
     if (j.contains("taxRules")) {
-        json arr = j.at("taxRules");
+        const json& arr = j.at("taxRules");
         std::vector<TaxRule> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.taxRules.emplace(vec);
@@ -2931,9 +2931,9 @@ void from_json(const json& j, AbsolutePriceSchedule& k) {
         k.overstayRuleList.emplace(j.at("overstayRuleList"));
     }
     if (j.contains("additionalSelectedServices")) {
-        json arr = j.at("additionalSelectedServices");
+        const json& arr = j.at("additionalSelectedServices");
         std::vector<AdditionalSelectedServices> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.additionalSelectedServices.emplace(vec);
@@ -3003,7 +3003,7 @@ void to_json(json& j, const PriceLevelSchedule& k) {
 /// \brief Conversion from a given json object \p j to a given PriceLevelSchedule \p k
 void from_json(const json& j, PriceLevelSchedule& k) {
     // the required parts of the message
-    for (auto val : j.at("priceLevelScheduleEntries")) {
+    for (const auto& val : j.at("priceLevelScheduleEntries")) {
         k.priceLevelScheduleEntries.push_back(val);
     }
     k.timeAnchor = ocpp::DateTime(std::string(j.at("timeAnchor")));
@@ -3081,7 +3081,7 @@ void from_json(const json& j, ChargingSchedule& k) {
     // the required parts of the message
     k.id = j.at("id");
     k.chargingRateUnit = conversions::string_to_charging_rate_unit_enum(j.at("chargingRateUnit"));
-    for (auto val : j.at("chargingSchedulePeriod")) {
+    for (const auto& val : j.at("chargingSchedulePeriod")) {
         k.chargingSchedulePeriod.push_back(val);
     }
 
@@ -3202,7 +3202,7 @@ void to_json(json& j, const MessageInfo& k) {
     }
     if (k.messageExtra) {
         j["messageExtra"] = json::array();
-        for (auto val : k.messageExtra.value()) {
+        for (const auto& val : k.messageExtra.value()) {
             j["messageExtra"].push_back(val);
         }
     }
@@ -3235,9 +3235,9 @@ void from_json(const json& j, MessageInfo& k) {
         k.transactionId.emplace(j.at("transactionId"));
     }
     if (j.contains("messageExtra")) {
-        json arr = j.at("messageExtra");
+        const json& arr = j.at("messageExtra");
         std::vector<MessageContent> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.messageExtra.emplace(vec);
@@ -3296,12 +3296,12 @@ void to_json(json& j, const DERChargingParameters& k) {
     j = json({}, true);
     // the optional parts of the message
     if (k.evSupportedDERControl) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"evSupportedDERControl", json::array()}};
         } else {
             j["evSupportedDERControl"] = json::array();
         }
-        for (auto val : k.evSupportedDERControl.value()) {
+        for (const auto& val : k.evSupportedDERControl.value()) {
             j["evSupportedDERControl"].push_back(conversions::dercontrol_enum_to_string(val));
         }
     }
@@ -3402,12 +3402,12 @@ void to_json(json& j, const DERChargingParameters& k) {
         j["evInverterHwVersion"] = k.evInverterHwVersion.value();
     }
     if (k.evIslandingDetectionMethod) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"evIslandingDetectionMethod", json::array()}};
         } else {
             j["evIslandingDetectionMethod"] = json::array();
         }
-        for (auto val : k.evIslandingDetectionMethod.value()) {
+        for (const auto& val : k.evIslandingDetectionMethod.value()) {
             j["evIslandingDetectionMethod"].push_back(conversions::islanding_detection_enum_to_string(val));
         }
     }
@@ -3443,9 +3443,9 @@ void from_json(const json& j, DERChargingParameters& k) {
 
     // the optional parts of the message
     if (j.contains("evSupportedDERControl")) {
-        json arr = j.at("evSupportedDERControl");
+        const json& arr = j.at("evSupportedDERControl");
         std::vector<DERControlEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_dercontrol_enum(val));
         }
         k.evSupportedDERControl.emplace(vec);
@@ -3547,9 +3547,9 @@ void from_json(const json& j, DERChargingParameters& k) {
         k.evInverterHwVersion.emplace(j.at("evInverterHwVersion"));
     }
     if (j.contains("evIslandingDetectionMethod")) {
-        json arr = j.at("evIslandingDetectionMethod");
+        const json& arr = j.at("evIslandingDetectionMethod");
         std::vector<IslandingDetectionEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_islanding_detection_enum(val));
         }
         k.evIslandingDetectionMethod.emplace(vec);
@@ -3636,7 +3636,7 @@ void to_json(json& j, const EVAbsolutePriceScheduleEntry& k) {
 void from_json(const json& j, EVAbsolutePriceScheduleEntry& k) {
     // the required parts of the message
     k.duration = j.at("duration");
-    for (auto val : j.at("evPriceRule")) {
+    for (const auto& val : j.at("evPriceRule")) {
         k.evPriceRule.push_back(val);
     }
 
@@ -3674,7 +3674,7 @@ void from_json(const json& j, EVAbsolutePriceSchedule& k) {
     // the required parts of the message
     k.timeAnchor = ocpp::DateTime(std::string(j.at("timeAnchor")));
     k.currency = j.at("currency");
-    for (auto val : j.at("evAbsolutePriceScheduleEntries")) {
+    for (const auto& val : j.at("evAbsolutePriceScheduleEntries")) {
         k.evAbsolutePriceScheduleEntries.push_back(val);
     }
     k.priceAlgorithm = j.at("priceAlgorithm");
@@ -3740,7 +3740,7 @@ void to_json(json& j, const EVPowerSchedule& k) {
 /// \brief Conversion from a given json object \p j to a given EVPowerSchedule \p k
 void from_json(const json& j, EVPowerSchedule& k) {
     // the required parts of the message
-    for (auto val : j.at("evPowerScheduleEntries")) {
+    for (const auto& val : j.at("evPowerScheduleEntries")) {
         k.evPowerScheduleEntries.push_back(val);
     }
     k.timeAnchor = ocpp::DateTime(std::string(j.at("timeAnchor")));
@@ -4057,7 +4057,7 @@ void to_json(json& j, const ChargingNeeds& k) {
     }
     if (k.availableEnergyTransfer) {
         j["availableEnergyTransfer"] = json::array();
-        for (auto val : k.availableEnergyTransfer.value()) {
+        for (const auto& val : k.availableEnergyTransfer.value()) {
             j["availableEnergyTransfer"].push_back(conversions::energy_transfer_mode_enum_to_string(val));
         }
     }
@@ -4097,9 +4097,9 @@ void from_json(const json& j, ChargingNeeds& k) {
         k.v2xChargingParameters.emplace(j.at("v2xChargingParameters"));
     }
     if (j.contains("availableEnergyTransfer")) {
-        json arr = j.at("availableEnergyTransfer");
+        const json& arr = j.at("availableEnergyTransfer");
         std::vector<EnergyTransferModeEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_energy_transfer_mode_enum(val));
         }
         k.availableEnergyTransfer.emplace(vec);
@@ -4272,7 +4272,7 @@ void from_json(const json& j, MonitoringData& k) {
     // the required parts of the message
     k.component = j.at("component");
     k.variable = j.at("variable");
-    for (auto val : j.at("variableMonitoring")) {
+    for (const auto& val : j.at("variableMonitoring")) {
         k.variableMonitoring.push_back(val);
     }
 
@@ -4339,7 +4339,7 @@ void to_json(json& j, const NotifyPeriodicEventStream& k) {
 /// \brief Conversion from a given json object \p j to a given NotifyPeriodicEventStream \p k
 void from_json(const json& j, NotifyPeriodicEventStream& k) {
     // the required parts of the message
-    for (auto val : j.at("data")) {
+    for (const auto& val : j.at("data")) {
         k.data.push_back(val);
     }
     k.id = j.at("id");
@@ -4516,7 +4516,7 @@ void from_json(const json& j, ReportData& k) {
     // the required parts of the message
     k.component = j.at("component");
     k.variable = j.at("variable");
-    for (auto val : j.at("variableAttribute")) {
+    for (const auto& val : j.at("variableAttribute")) {
         k.variableAttribute.push_back(val);
     }
 
@@ -4733,7 +4733,7 @@ void from_json(const json& j, ChargingProfile& k) {
     k.stackLevel = j.at("stackLevel");
     k.chargingProfilePurpose = conversions::string_to_charging_profile_purpose_enum(j.at("chargingProfilePurpose"));
     k.chargingProfileKind = conversions::string_to_charging_profile_kind_enum(j.at("chargingProfileKind"));
-    for (auto val : j.at("chargingSchedule")) {
+    for (const auto& val : j.at("chargingSchedule")) {
         k.chargingSchedule.push_back(val);
     }
 
@@ -4986,7 +4986,7 @@ void to_json(json& j, const DERCurve& k) {
 /// \brief Conversion from a given json object \p j to a given DERCurve \p k
 void from_json(const json& j, DERCurve& k) {
     // the required parts of the message
-    for (auto val : j.at("curveData")) {
+    for (const auto& val : j.at("curveData")) {
         k.curveData.push_back(val);
     }
     k.priority = j.at("priority");
@@ -5991,7 +5991,7 @@ void to_json(json& j, const ChargingPeriod& k) {
     // the optional parts of the message
     if (k.dimensions) {
         j["dimensions"] = json::array();
-        for (auto val : k.dimensions.value()) {
+        for (const auto& val : k.dimensions.value()) {
             j["dimensions"].push_back(val);
         }
     }
@@ -6010,9 +6010,9 @@ void from_json(const json& j, ChargingPeriod& k) {
 
     // the optional parts of the message
     if (j.contains("dimensions")) {
-        json arr = j.at("dimensions");
+        const json& arr = j.at("dimensions");
         std::vector<CostDimension> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.dimensions.emplace(vec);
@@ -6191,7 +6191,7 @@ void to_json(json& j, const CostDetails& k) {
     // the optional parts of the message
     if (k.chargingPeriods) {
         j["chargingPeriods"] = json::array();
-        for (auto val : k.chargingPeriods.value()) {
+        for (const auto& val : k.chargingPeriods.value()) {
             j["chargingPeriods"].push_back(val);
         }
     }
@@ -6214,9 +6214,9 @@ void from_json(const json& j, CostDetails& k) {
 
     // the optional parts of the message
     if (j.contains("chargingPeriods")) {
-        json arr = j.at("chargingPeriods");
+        const json& arr = j.at("chargingPeriods");
         std::vector<ChargingPeriod> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.chargingPeriods.emplace(vec);

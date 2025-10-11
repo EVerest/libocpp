@@ -25,7 +25,7 @@ void to_json(json& j, const NotifyChargingLimitRequest& k) {
     // the optional parts of the message
     if (k.chargingSchedule) {
         j["chargingSchedule"] = json::array();
-        for (auto val : k.chargingSchedule.value()) {
+        for (const auto& val : k.chargingSchedule.value()) {
             j["chargingSchedule"].push_back(val);
         }
     }
@@ -43,9 +43,9 @@ void from_json(const json& j, NotifyChargingLimitRequest& k) {
 
     // the optional parts of the message
     if (j.contains("chargingSchedule")) {
-        json arr = j.at("chargingSchedule");
+        const json& arr = j.at("chargingSchedule");
         std::vector<ChargingSchedule> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.chargingSchedule.emplace(vec);

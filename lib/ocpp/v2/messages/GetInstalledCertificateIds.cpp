@@ -22,12 +22,12 @@ void to_json(json& j, const GetInstalledCertificateIdsRequest& k) {
     j = json({}, true);
     // the optional parts of the message
     if (k.certificateType) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"certificateType", json::array()}};
         } else {
             j["certificateType"] = json::array();
         }
-        for (auto val : k.certificateType.value()) {
+        for (const auto& val : k.certificateType.value()) {
             j["certificateType"].push_back(conversions::get_certificate_id_use_enum_to_string(val));
         }
     }
@@ -41,9 +41,9 @@ void from_json(const json& j, GetInstalledCertificateIdsRequest& k) {
 
     // the optional parts of the message
     if (j.contains("certificateType")) {
-        json arr = j.at("certificateType");
+        const json& arr = j.at("certificateType");
         std::vector<GetCertificateIdUseEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_get_certificate_id_use_enum(val));
         }
         k.certificateType.emplace(vec);
@@ -76,7 +76,7 @@ void to_json(json& j, const GetInstalledCertificateIdsResponse& k) {
     }
     if (k.certificateHashDataChain) {
         j["certificateHashDataChain"] = json::array();
-        for (auto val : k.certificateHashDataChain.value()) {
+        for (const auto& val : k.certificateHashDataChain.value()) {
             j["certificateHashDataChain"].push_back(val);
         }
     }
@@ -94,9 +94,9 @@ void from_json(const json& j, GetInstalledCertificateIdsResponse& k) {
         k.statusInfo.emplace(j.at("statusInfo"));
     }
     if (j.contains("certificateHashDataChain")) {
-        json arr = j.at("certificateHashDataChain");
+        const json& arr = j.at("certificateHashDataChain");
         std::vector<CertificateHashDataChain> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.certificateHashDataChain.emplace(vec);

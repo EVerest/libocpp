@@ -25,7 +25,7 @@ void to_json(json& j, const PublishFirmwareStatusNotificationRequest& k) {
     // the optional parts of the message
     if (k.location) {
         j["location"] = json::array();
-        for (auto val : k.location.value()) {
+        for (const auto& val : k.location.value()) {
             j["location"].push_back(val);
         }
     }
@@ -46,9 +46,9 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
 
     // the optional parts of the message
     if (j.contains("location")) {
-        json arr = j.at("location");
+        const json& arr = j.at("location");
         std::vector<CiString<2000>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.location.emplace(vec);

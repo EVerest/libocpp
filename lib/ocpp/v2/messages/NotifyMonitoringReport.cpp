@@ -27,7 +27,7 @@ void to_json(json& j, const NotifyMonitoringReportRequest& k) {
     // the optional parts of the message
     if (k.monitor) {
         j["monitor"] = json::array();
-        for (auto val : k.monitor.value()) {
+        for (const auto& val : k.monitor.value()) {
             j["monitor"].push_back(val);
         }
     }
@@ -47,9 +47,9 @@ void from_json(const json& j, NotifyMonitoringReportRequest& k) {
 
     // the optional parts of the message
     if (j.contains("monitor")) {
-        json arr = j.at("monitor");
+        const json& arr = j.at("monitor");
         std::vector<MonitoringData> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.monitor.emplace(vec);

@@ -30,7 +30,7 @@ void to_json(json& j, const GetCertificateChainStatusRequest& k) {
 
 void from_json(const json& j, GetCertificateChainStatusRequest& k) {
     // the required parts of the message
-    for (auto val : j.at("certificateStatusRequests")) {
+    for (const auto& val : j.at("certificateStatusRequests")) {
         k.certificateStatusRequests.push_back(val);
     }
 
@@ -65,7 +65,7 @@ void to_json(json& j, const GetCertificateChainStatusResponse& k) {
 
 void from_json(const json& j, GetCertificateChainStatusResponse& k) {
     // the required parts of the message
-    for (auto val : j.at("certificateStatus")) {
+    for (const auto& val : j.at("certificateStatus")) {
         k.certificateStatus.push_back(val);
     }
 

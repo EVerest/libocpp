@@ -22,12 +22,12 @@ void to_json(json& j, const GetConfigurationRequest& k) {
     j = json({}, true);
     // the optional parts of the message
     if (k.key) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"key", json::array()}};
         } else {
             j["key"] = json::array();
         }
-        for (auto val : k.key.value()) {
+        for (const auto& val : k.key.value()) {
             j["key"].push_back(val);
         }
     }
@@ -38,9 +38,9 @@ void from_json(const json& j, GetConfigurationRequest& k) {
 
     // the optional parts of the message
     if (j.contains("key")) {
-        json arr = j.at("key");
+        const json& arr = j.at("key");
         std::vector<CiString<50>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.key.emplace(vec);
@@ -63,22 +63,22 @@ void to_json(json& j, const GetConfigurationResponse& k) {
     j = json({}, true);
     // the optional parts of the message
     if (k.configurationKey) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"configurationKey", json::array()}};
         } else {
             j["configurationKey"] = json::array();
         }
-        for (auto val : k.configurationKey.value()) {
+        for (const auto& val : k.configurationKey.value()) {
             j["configurationKey"].push_back(val);
         }
     }
     if (k.unknownKey) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"unknownKey", json::array()}};
         } else {
             j["unknownKey"] = json::array();
         }
-        for (auto val : k.unknownKey.value()) {
+        for (const auto& val : k.unknownKey.value()) {
             j["unknownKey"].push_back(val);
         }
     }
@@ -89,17 +89,17 @@ void from_json(const json& j, GetConfigurationResponse& k) {
 
     // the optional parts of the message
     if (j.contains("configurationKey")) {
-        json arr = j.at("configurationKey");
+        const json& arr = j.at("configurationKey");
         std::vector<KeyValue> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.configurationKey.emplace(vec);
     }
     if (j.contains("unknownKey")) {
-        json arr = j.at("unknownKey");
+        const json& arr = j.at("unknownKey");
         std::vector<CiString<50>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.unknownKey.emplace(vec);

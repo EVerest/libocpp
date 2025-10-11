@@ -23,7 +23,7 @@ void to_json(json& j, const NotifyAllowedEnergyTransferRequest& k) {
         {"transactionId", k.transactionId},
         {"allowedEnergyTransfer", json::array()},
     };
-    for (auto val : k.allowedEnergyTransfer) {
+    for (const auto& val : k.allowedEnergyTransfer) {
         j["allowedEnergyTransfer"].push_back(ocpp::v2::conversions::energy_transfer_mode_enum_to_string(val));
     }
     // the optional parts of the message
@@ -35,7 +35,7 @@ void to_json(json& j, const NotifyAllowedEnergyTransferRequest& k) {
 void from_json(const json& j, NotifyAllowedEnergyTransferRequest& k) {
     // the required parts of the message
     k.transactionId = j.at("transactionId");
-    for (auto val : j.at("allowedEnergyTransfer")) {
+    for (const auto& val : j.at("allowedEnergyTransfer")) {
         k.allowedEnergyTransfer.push_back(ocpp::v2::conversions::string_to_energy_transfer_mode_enum(val));
     }
 

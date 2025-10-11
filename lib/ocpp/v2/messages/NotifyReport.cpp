@@ -27,7 +27,7 @@ void to_json(json& j, const NotifyReportRequest& k) {
     // the optional parts of the message
     if (k.reportData) {
         j["reportData"] = json::array();
-        for (auto val : k.reportData.value()) {
+        for (const auto& val : k.reportData.value()) {
             j["reportData"].push_back(val);
         }
     }
@@ -47,9 +47,9 @@ void from_json(const json& j, NotifyReportRequest& k) {
 
     // the optional parts of the message
     if (j.contains("reportData")) {
-        json arr = j.at("reportData");
+        const json& arr = j.at("reportData");
         std::vector<ReportData> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.reportData.emplace(vec);

@@ -37,7 +37,7 @@ void from_json(const json& j, NotifyEventRequest& k) {
     // the required parts of the message
     k.generatedAt = ocpp::DateTime(std::string(j.at("generatedAt")));
     k.seqNo = j.at("seqNo");
-    for (auto val : j.at("eventData")) {
+    for (const auto& val : j.at("eventData")) {
         k.eventData.push_back(val);
     }
 

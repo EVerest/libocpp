@@ -25,13 +25,13 @@ void to_json(json& j, const GetMonitoringReportRequest& k) {
     // the optional parts of the message
     if (k.componentVariable) {
         j["componentVariable"] = json::array();
-        for (auto val : k.componentVariable.value()) {
+        for (const auto& val : k.componentVariable.value()) {
             j["componentVariable"].push_back(val);
         }
     }
     if (k.monitoringCriteria) {
         j["monitoringCriteria"] = json::array();
-        for (auto val : k.monitoringCriteria.value()) {
+        for (const auto& val : k.monitoringCriteria.value()) {
             j["monitoringCriteria"].push_back(conversions::monitoring_criterion_enum_to_string(val));
         }
     }
@@ -46,17 +46,17 @@ void from_json(const json& j, GetMonitoringReportRequest& k) {
 
     // the optional parts of the message
     if (j.contains("componentVariable")) {
-        json arr = j.at("componentVariable");
+        const json& arr = j.at("componentVariable");
         std::vector<ComponentVariable> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.componentVariable.emplace(vec);
     }
     if (j.contains("monitoringCriteria")) {
-        json arr = j.at("monitoringCriteria");
+        const json& arr = j.at("monitoringCriteria");
         std::vector<MonitoringCriterionEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_monitoring_criterion_enum(val));
         }
         k.monitoringCriteria.emplace(vec);

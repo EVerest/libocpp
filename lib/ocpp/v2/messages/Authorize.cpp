@@ -28,7 +28,7 @@ void to_json(json& j, const AuthorizeRequest& k) {
     }
     if (k.iso15118CertificateHashData) {
         j["iso15118CertificateHashData"] = json::array();
-        for (auto val : k.iso15118CertificateHashData.value()) {
+        for (const auto& val : k.iso15118CertificateHashData.value()) {
             j["iso15118CertificateHashData"].push_back(val);
         }
     }
@@ -46,9 +46,9 @@ void from_json(const json& j, AuthorizeRequest& k) {
         k.certificate.emplace(j.at("certificate"));
     }
     if (j.contains("iso15118CertificateHashData")) {
-        json arr = j.at("iso15118CertificateHashData");
+        const json& arr = j.at("iso15118CertificateHashData");
         std::vector<OCSPRequestData> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.iso15118CertificateHashData.emplace(vec);
@@ -80,7 +80,7 @@ void to_json(json& j, const AuthorizeResponse& k) {
     }
     if (k.allowedEnergyTransfer) {
         j["allowedEnergyTransfer"] = json::array();
-        for (auto val : k.allowedEnergyTransfer.value()) {
+        for (const auto& val : k.allowedEnergyTransfer.value()) {
             j["allowedEnergyTransfer"].push_back(conversions::energy_transfer_mode_enum_to_string(val));
         }
     }
@@ -102,9 +102,9 @@ void from_json(const json& j, AuthorizeResponse& k) {
             conversions::string_to_authorize_certificate_status_enum(j.at("certificateStatus")));
     }
     if (j.contains("allowedEnergyTransfer")) {
-        json arr = j.at("allowedEnergyTransfer");
+        const json& arr = j.at("allowedEnergyTransfer");
         std::vector<EnergyTransferModeEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_energy_transfer_mode_enum(val));
         }
         k.allowedEnergyTransfer.emplace(vec);

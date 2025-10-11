@@ -33,7 +33,7 @@ void to_json(json& j, const NotifyPeriodicEventStream& k) {
 
 void from_json(const json& j, NotifyPeriodicEventStream& k) {
     // the required parts of the message
-    for (auto val : j.at("data")) {
+    for (const auto& val : j.at("data")) {
         k.data.push_back(val);
     }
     k.id = j.at("id");

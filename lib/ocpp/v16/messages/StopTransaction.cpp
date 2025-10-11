@@ -33,7 +33,7 @@ void to_json(json& j, const StopTransactionRequest& k) {
     }
     if (k.transactionData) {
         j["transactionData"] = json::array();
-        for (auto val : k.transactionData.value()) {
+        for (const auto& val : k.transactionData.value()) {
             j["transactionData"].push_back(val);
         }
     }
@@ -53,9 +53,9 @@ void from_json(const json& j, StopTransactionRequest& k) {
         k.reason.emplace(conversions::string_to_reason(j.at("reason")));
     }
     if (j.contains("transactionData")) {
-        json arr = j.at("transactionData");
+        const json& arr = j.at("transactionData");
         std::vector<TransactionData> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.transactionData.emplace(vec);

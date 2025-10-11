@@ -52,12 +52,12 @@ void to_json(json& j, const GetPeriodicEventStreamResponse& k) {
     j = json({}, true);
     // the optional parts of the message
     if (k.constantStreamData) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"constantStreamData", json::array()}};
         } else {
             j["constantStreamData"] = json::array();
         }
-        for (auto val : k.constantStreamData.value()) {
+        for (const auto& val : k.constantStreamData.value()) {
             j["constantStreamData"].push_back(val);
         }
     }
@@ -71,9 +71,9 @@ void from_json(const json& j, GetPeriodicEventStreamResponse& k) {
 
     // the optional parts of the message
     if (j.contains("constantStreamData")) {
-        json arr = j.at("constantStreamData");
+        const json& arr = j.at("constantStreamData");
         std::vector<ConstantStreamData> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.constantStreamData.emplace(vec);

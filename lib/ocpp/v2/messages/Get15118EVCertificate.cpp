@@ -30,7 +30,7 @@ void to_json(json& j, const Get15118EVCertificateRequest& k) {
     }
     if (k.prioritizedEMAIDs) {
         j["prioritizedEMAIDs"] = json::array();
-        for (auto val : k.prioritizedEMAIDs.value()) {
+        for (const auto& val : k.prioritizedEMAIDs.value()) {
             j["prioritizedEMAIDs"].push_back(val);
         }
     }
@@ -50,9 +50,9 @@ void from_json(const json& j, Get15118EVCertificateRequest& k) {
         k.maximumContractCertificateChains.emplace(j.at("maximumContractCertificateChains"));
     }
     if (j.contains("prioritizedEMAIDs")) {
-        json arr = j.at("prioritizedEMAIDs");
+        const json& arr = j.at("prioritizedEMAIDs");
         std::vector<CiString<255>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.prioritizedEMAIDs.emplace(vec);

@@ -38,7 +38,7 @@ void from_json(const json& j, ReportChargingProfilesRequest& k) {
     // the required parts of the message
     k.requestId = j.at("requestId");
     k.chargingLimitSource = j.at("chargingLimitSource");
-    for (auto val : j.at("chargingProfile")) {
+    for (const auto& val : j.at("chargingProfile")) {
         k.chargingProfile.push_back(val);
     }
     k.evseId = j.at("evseId");
