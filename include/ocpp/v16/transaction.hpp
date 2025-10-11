@@ -18,9 +18,7 @@ namespace v16 {
 struct StampedEnergyWh {
     ocpp::DateTime timestamp; ///< A timestamp associated with the energy value
     double energy_Wh;         ///< The energy value in Wh
-    StampedEnergyWh(ocpp::DateTime timestamp, double energy_Wh) {
-        this->timestamp = timestamp;
-        this->energy_Wh = energy_Wh;
+    StampedEnergyWh(ocpp::DateTime timestamp, double energy_Wh) : timestamp(timestamp), energy_Wh(energy_Wh) {
     }
 };
 

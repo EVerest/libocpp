@@ -27,9 +27,9 @@ const size_t AUTHORIZATION_KEY_MIN_LENGTH = 8;
 const int32_t MAX_WAIT_FOR_SET_USER_PRICE_TIMEOUT_MS = 30000;
 
 ChargePointConfiguration::ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
-                                                   const fs::path& user_config_path) {
+                                                   const fs::path& user_config_path) :
+    user_config_path(user_config_path) {
 
-    this->user_config_path = user_config_path;
     if (!fs::exists(this->user_config_path)) {
         EVLOG_critical << "User config file does not exist";
         throw std::runtime_error("User config file does not exist");

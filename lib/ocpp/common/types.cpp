@@ -83,11 +83,8 @@ bool operator==(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
 CallError::CallError() = default;
 
 CallError::CallError(const MessageId& uniqueId, const std::string& errorCode, const std::string& errorDescription,
-                     const json& errorDetails) {
-    this->uniqueId = uniqueId;
-    this->errorCode = errorCode;
-    this->errorDescription = errorDescription;
-    this->errorDetails = errorDetails;
+                     const json& errorDetails) :
+    uniqueId(uniqueId), errorCode(errorCode), errorDescription(errorDescription), errorDetails(errorDetails) {
 }
 
 void to_json(json& j, const CallError& c) {

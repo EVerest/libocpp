@@ -113,11 +113,9 @@ public:
     [[nodiscard]] const char* what() const noexcept override {
         return this->reason.c_str();
     }
-    explicit InitDeviceModelDbError(std::string msg) {
-        this->reason = std::move(msg);
+    explicit InitDeviceModelDbError(std::string msg) : reason(std::move(msg)) {
     }
-    explicit InitDeviceModelDbError(const char* msg) {
-        this->reason = std::string(msg);
+    explicit InitDeviceModelDbError(const char* msg) : reason(std::string(msg)) {
     }
 
 private:

@@ -103,7 +103,7 @@ static const FSMDefinition FSM_DEF_CONNECTOR_ZERO = {
 };
 
 ErrorInfo::ErrorInfo(const std::string uuid, const ChargePointErrorCode error_code, const bool is_fault) :
-    uuid(uuid), timestamp(DateTime()), error_code(error_code), is_fault(is_fault) {
+    uuid(uuid), error_code(error_code), is_fault(is_fault) {
 }
 
 ErrorInfo::ErrorInfo(const std::string uuid, const ChargePointErrorCode error_code, const bool is_fault,

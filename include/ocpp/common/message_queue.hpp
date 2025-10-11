@@ -405,10 +405,9 @@ public:
         running(true),
         new_message(false),
         is_registration_status_accepted(false),
-        start_transaction_message_retry_callback(start_transaction_message_retry_callback) {
-
-        this->send_callback = send_callback;
-        this->in_flight = nullptr;
+        start_transaction_message_retry_callback(start_transaction_message_retry_callback),
+        send_callback(send_callback),
+        in_flight(nullptr) {
     }
 
     MessageQueue(const std::function<bool(json message)>& send_callback, const MessageQueueConfig<M>& config,

@@ -22,9 +22,7 @@ Transaction::Transaction(const int32_t internal_transaction_id, const int32_t& c
     active(true),
     finished(false),
     has_signed_meter_values(false),
-    meter_values_sample_timer(std::move(meter_values_sample_timer)),
-    start_transaction_message_id(""),
-    stop_transaction_message_id("") {
+    meter_values_sample_timer(std::move(meter_values_sample_timer)) {
 }
 
 int32_t Transaction::get_connector() const {
