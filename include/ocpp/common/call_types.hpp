@@ -49,7 +49,7 @@ enum class MessageTypeId {
     CALL = 2,
     CALLRESULT = 3,
     CALLERROR = 4,
-    UNKNOWN,
+    UNKNOWN = 5,
 };
 
 /// \brief Creates a unique message ID
