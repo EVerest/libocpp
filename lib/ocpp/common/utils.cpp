@@ -5,6 +5,7 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
+#include <cstdlib>
 #include <mutex>
 #include <regex>
 #include <sstream>
@@ -111,6 +112,13 @@ bool is_equal(const float& value1, const float& value2, const double& epsilon) {
 
 bool is_equal(const double& value1, const double& value2, const double& epsilon) {
     return fabs(value1 - value2) < epsilon;
+}
+
+std::size_t convert_to_positive_size_t(float value) {
+    if (value < 0) {
+        return 0;
+    }
+    return clamp_to<std::size_t>(std::llround(std::ceil(value)));
 }
 
 } // namespace ocpp
