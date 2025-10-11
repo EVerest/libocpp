@@ -125,7 +125,8 @@ inline std::string base64_decode(const std::string& input) {
     int i = 0;
     int j = 0;
     int in_ = 0;
-    unsigned char char_array_4[4], char_array_3[3];
+    unsigned char char_array_4[4];
+    unsigned char char_array_3[3];
     std::string ret;
 
     while (((in_len--) != 0) && (input[in_] != '=') && is_base64(input[in_])) {

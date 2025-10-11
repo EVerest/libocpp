@@ -390,7 +390,8 @@ void MessageLogging::log_output(LogType typ, const std::string& message_type, co
 
         const std::string ts = DateTime().to_rfc3339();
 
-        std::string origin, target;
+        std::string origin;
+        std::string target;
 
         if (typ == LogType::ChargePoint) {
             origin = "ChargePoint";
