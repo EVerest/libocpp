@@ -24,13 +24,12 @@ struct RequestStopTransactionRequest;
 struct TriggerMessageRequest;
 struct UnlockConnectorResponse;
 
-typedef std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)>
-    UnlockConnectorCallback;
-typedef std::function<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
-                                                 const bool authorize_remote_start)>
-    RemoteStartTransactionCallback;
-typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
-    StopTransactionCallback;
+using UnlockConnectorCallback =
+    std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)>;
+using RemoteStartTransactionCallback = std::function<RequestStartStopStatusEnum(
+    const RequestStartTransactionRequest& request, const bool authorize_remote_start)>;
+using StopTransactionCallback =
+    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>;
 
 class RemoteTransactionControlInterface : public MessageHandlerInterface {
 public:

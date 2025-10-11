@@ -23,8 +23,8 @@ struct InstallCertificateRequest;
 struct DeleteCertificateRequest;
 struct SignCertificateResponse;
 
-typedef std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>
-    SecurityEventCallback;
+using SecurityEventCallback =
+    std::function<void(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info)>;
 
 class SecurityInterface : public MessageHandlerInterface {
 

@@ -93,8 +93,8 @@ public:
     }
 };
 
-typedef std::function<void(const std::vector<EventData>&)> notify_events;
-typedef std::function<bool()> is_offline;
+using notify_events = std::function<void(const std::vector<EventData>&)>;
+using is_offline = std::function<bool()>;
 
 class MonitoringUpdater {
 

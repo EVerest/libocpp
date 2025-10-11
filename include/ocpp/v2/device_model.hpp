@@ -81,16 +81,17 @@ template <DataEnum T> bool is_type_numeric() {
     }
 }
 
-typedef std::function<void(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
-                           const Component& component, const Variable& variable,
-                           const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
-                           const std::string& value_previous, const std::string& value_current)>
-    on_variable_changed;
+void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
+                              std::vector<VariableMonitoringMeta>& monitors);
 
-typedef std::function<void(const VariableMonitoringMeta& updated_monitor, const Component& component,
-                           const Variable& variable, const VariableCharacteristics& characteristics,
-                           const VariableAttribute& attribute, const std::string& current_value)>
-    on_monitor_updated;
+using on_variable_changed = std::function<void(
+    const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors, const Component& component,
+    const Variable& variable, const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
+    const std::string& value_previous, const std::string& value_current)>;
+
+using on_monitor_updated = std::function<void(const VariableMonitoringMeta& updated_monitor, const Component& component,
+                                              const Variable& variable, const VariableCharacteristics& characteristics,
+                                              const VariableAttribute& attribute, const std::string& current_value)>;
 
 /// \brief This class manages access to the device model representation and to the device model interface and provides
 /// functionality to support the use cases defined in the functional block Provisioning

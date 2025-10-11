@@ -3,6 +3,7 @@
 #ifndef OCPP_WEBSOCKET_URI_HPP
 #define OCPP_WEBSOCKET_URI_HPP
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -10,7 +11,7 @@
 
 namespace ocpp {
 
-typedef ocpp::uri ev_uri;
+using ev_uri = ocpp::uri;
 class Uri {
 public:
     Uri() = default;

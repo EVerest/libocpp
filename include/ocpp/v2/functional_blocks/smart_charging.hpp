@@ -11,8 +11,8 @@ namespace ocpp::v2 {
 struct FunctionalBlockContext;
 class SmartChargingHandlerInterface;
 
-typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
-    StopTransactionCallback;
+using StopTransactionCallback =
+    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>;
 
 struct LimitsSetpointsForOperationMode;
 

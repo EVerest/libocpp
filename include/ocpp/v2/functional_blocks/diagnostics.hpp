@@ -19,15 +19,13 @@ struct SetMonitoringLevelRequest;
 struct GetMonitoringReportRequest;
 struct ClearVariableMonitoringRequest;
 
-typedef std::function<GetLogResponse(const GetLogRequest& request)> GetLogRequestCallback;
-typedef std::function<std::string(const std::optional<CertificateHashDataType> customer_certificate,
-                                  const std::optional<IdToken> id_token,
-                                  const std::optional<CiString<64>> customer_identifier)>
-    GetCustomerInformationCallback;
-typedef std::function<void(const std::optional<CertificateHashDataType> customer_certificate,
-                           const std::optional<IdToken> id_token,
-                           const std::optional<CiString<64>> customer_identifier)>
-    ClearCustomerInformationCallback;
+using GetLogRequestCallback = std::function<GetLogResponse(const GetLogRequest& request)>;
+using GetCustomerInformationCallback = std::function<std::string(
+    const std::optional<CertificateHashDataType> customer_certificate, const std::optional<IdToken> id_token,
+    const std::optional<CiString<64>> customer_identifier)>;
+using ClearCustomerInformationCallback =
+    std::function<void(const std::optional<CertificateHashDataType> customer_certificate,
+                       const std::optional<IdToken> id_token, const std::optional<CiString<64>> customer_identifier)>;
 
 class DiagnosticsInterface : public MessageHandlerInterface {
 public:

@@ -69,8 +69,8 @@ public:
     virtual void stop_heartbeat_timer() = 0;
 };
 
-typedef std::function<void(const ocpp::DateTime& currentTime)> TimeSyncCallback;
-typedef std::function<void()> AllConnectorsUnavailableCallback;
+using TimeSyncCallback = std::function<void(const ocpp::DateTime& currentTime)>;
+using AllConnectorsUnavailableCallback = std::function<void()>;
 
 class Availability : public AvailabilityInterface {
 private: // Members

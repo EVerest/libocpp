@@ -35,7 +35,7 @@ private:
     const bool _allows_retry;
 };
 
-typedef std::function<GetCertificateStatusResponse(GetCertificateStatusRequest)> cert_status_func;
+using cert_status_func = std::function<GetCertificateStatusResponse(GetCertificateStatusRequest)>;
 
 // Forward declarations to avoid include loops
 class ChargePoint;

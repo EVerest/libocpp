@@ -12,9 +12,9 @@
 
 namespace ocpp::v2 {
 
-typedef std::function<bool(const std::vector<ocpp::v2::EnergyTransferModeEnum> allowed_energy_transfer_modes,
-                           const CiString<36> transaction_id)>
-    NotifyAllowedEnergyTransferCallback;
+using NotifyAllowedEnergyTransferCallback =
+    std::function<bool(const std::vector<ocpp::v2::EnergyTransferModeEnum> allowed_energy_transfer_modes,
+                       const CiString<36> transaction_id)>;
 
 class BidirectionalInterface : public MessageHandlerInterface {
 public:

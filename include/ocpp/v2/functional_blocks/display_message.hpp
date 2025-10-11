@@ -32,12 +32,12 @@ std::optional<MessageInfo> display_message_to_message_info_type(const DisplayMes
 ///
 DisplayMessage message_info_to_display_message(const MessageInfo& message_info);
 
-typedef std::function<std::vector<ocpp::DisplayMessage>(const GetDisplayMessagesRequest& request)>
-    GetDisplayMessageCallback;
-typedef std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>
-    SetDisplayMessageCallback;
-typedef std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request)>
-    ClearDisplayMessageCallback;
+using GetDisplayMessageCallback =
+    std::function<std::vector<ocpp::DisplayMessage>(const GetDisplayMessagesRequest& request)>;
+using SetDisplayMessageCallback =
+    std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>;
+using ClearDisplayMessageCallback =
+    std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request)>;
 
 class DisplayMessageInterface : public MessageHandlerInterface {
 public:

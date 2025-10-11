@@ -14,14 +14,13 @@ class TariffAndCostInterface;
 
 struct GetTransactionStatusRequest;
 
-typedef std::function<void(const TransactionEventRequest& transaction_event)> TransactionEventCallback;
-typedef std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> ResetCallback;
-typedef std::function<void(const TransactionEventRequest& transaction_event,
-                           const TransactionEventResponse& transaction_event_response)>
-    TransactionEventResponseCallback;
-typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
-    StopTransactionCallback;
-typedef std::function<void(const int32_t evse_id)> PauseChargingCallback;
+using TransactionEventCallback = std::function<void(const TransactionEventRequest& transaction_event)>;
+using ResetCallback = std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>;
+using TransactionEventResponseCallback = std::function<void(
+    const TransactionEventRequest& transaction_event, const TransactionEventResponse& transaction_event_response)>;
+using StopTransactionCallback =
+    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>;
+using PauseChargingCallback = std::function<void(const int32_t evse_id)>;
 
 class TransactionInterface : public MessageHandlerInterface {
 public:

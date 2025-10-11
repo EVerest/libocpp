@@ -12,11 +12,10 @@ class EvseInterface;
 struct ReserveNowRequest;
 struct CancelReservationRequest;
 
-typedef std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)> ReserveNowCallback;
-typedef std::function<bool(const int32_t reservationId)> CancelReservationCallback;
-typedef std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<255> idToken,
-                                                   const std::optional<CiString<255>> groupIdToken)>
-    IsReservationForTokenCallback;
+using ReserveNowCallback = std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)>;
+using CancelReservationCallback = std::function<bool(const int32_t reservationId)>;
+using IsReservationForTokenCallback = std::function<ocpp::ReservationCheckStatus(
+    const int32_t evse_id, const CiString<255> idToken, const std::optional<CiString<255>> groupIdToken)>;
 
 class ReservationInterface : public MessageHandlerInterface {
 public:

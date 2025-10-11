@@ -15,8 +15,8 @@ struct UpdateFirmwareRequest;
 struct UpdateFirmwareResponse;
 
 // Typedef
-typedef std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> UpdateFirmwareRequestCallback;
-typedef std::function<void()> AllConnectorsUnavailableCallback;
+using UpdateFirmwareRequestCallback = std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)>;
+using AllConnectorsUnavailableCallback = std::function<void()>;
 
 class FirmwareUpdateInterface : public MessageHandlerInterface {
 public:
