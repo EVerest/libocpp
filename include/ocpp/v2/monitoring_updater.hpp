@@ -82,8 +82,8 @@ public:
             throw std::runtime_error("Clear state should never be used on a non-trigger meta!");
         }
 
-        if (meta_trigger.is_cleared != is_cleared) {
-            meta_trigger.is_cleared = is_cleared;
+        if (meta_trigger.is_cleared != static_cast<int>(is_cleared)) {
+            meta_trigger.is_cleared = static_cast<int>(is_cleared);
 
             // On a state change reset the CSMS sent status and
             // event generation status

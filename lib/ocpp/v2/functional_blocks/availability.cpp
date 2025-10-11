@@ -57,7 +57,7 @@ void Availability::heartbeat_req(const bool initiated_by_trigger_message) {
 }
 
 void Availability::handle_scheduled_change_availability_requests(const int32_t evse_id) {
-    if (this->scheduled_change_availability_requests.count(evse_id)) {
+    if (this->scheduled_change_availability_requests.count(evse_id) != 0) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
         const auto req = this->scheduled_change_availability_requests[evse_id].request;
         const auto persist = this->scheduled_change_availability_requests[evse_id].persist;

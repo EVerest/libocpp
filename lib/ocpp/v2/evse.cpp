@@ -229,7 +229,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
                             const MeterValue& meter_start, const std::optional<IdToken>& id_token,
                             const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
                             const ChargingStateEnum charging_state) {
-    if (!this->id_connector_map.count(connector_id)) {
+    if (this->id_connector_map.count(connector_id) == 0) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
 
@@ -310,7 +310,7 @@ bool Evse::has_active_transaction() const {
 }
 
 bool Evse::has_active_transaction(int32_t connector_id) const {
-    if (!this->id_connector_map.count(connector_id)) {
+    if (this->id_connector_map.count(connector_id) == 0) {
         EVLOG_warning << "has_active_transaction called for invalid connector_id";
         return false;
     }

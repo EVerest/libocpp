@@ -214,7 +214,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
                     // Try to generate the OCSP data from the certificate chain and use that
                     const auto generated_ocsp_request_data_list = ocpp::evse_security_conversions::to_ocpp_v2(
                         this->context.evse_security.get_mo_ocsp_request_data(certificate.value()));
-                    if (generated_ocsp_request_data_list.size() > 0) {
+                    if (!generated_ocsp_request_data_list.empty()) {
                         EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
                         forwarded_to_csms = true;

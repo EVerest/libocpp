@@ -182,7 +182,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     this->load_charging_profiles();
 
     // ISO15118 PnC handlers
-    if (this->configuration->getSupportedFeatureProfilesSet().count(SupportedFeatureProfiles::PnC)) {
+    if (this->configuration->getSupportedFeatureProfilesSet().count(SupportedFeatureProfiles::PnC) != 0) {
         this->data_transfer_pnc_callbacks[conversions::messagetype_to_string(MessageType::TriggerMessage)] =
             [this](ocpp::Call<ocpp::v16::DataTransferRequest> call) {
                 this->handle_data_transfer_pnc_trigger_message(call);
@@ -977,7 +977,7 @@ MeterValue ChargePointImpl::get_signed_meter_value(const std::string& signed_val
 
 void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value, bool initiated_by_trigger_message) {
 
-    if (meter_value.sampledValue.size() == 0) {
+    if (meter_value.sampledValue.empty()) {
         return;
     }
 
@@ -1964,7 +1964,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
         this->message_dispatcher->dispatch_call_result(call_result);
     }
 
-    if (this->configuration_key_changed_callbacks.count(call.msg.key) and
+    if ((this->configuration_key_changed_callbacks.count(call.msg.key) != 0) and
         this->configuration_key_changed_callbacks[call.msg.key] != nullptr and
         response.status == ConfigurationStatus::Accepted) {
         kv.value().value = call.msg.value;
@@ -2036,7 +2036,7 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
         if (vendorId == ISO15118_PNC_VENDOR_ID and !this->is_iso15118_certificate_management_enabled()) {
             response.status = DataTransferStatus::UnknownVendorId;
         } else if (vendorId == ISO15118_PNC_VENDOR_ID and this->is_iso15118_certificate_management_enabled()) {
-            if (this->data_transfer_pnc_callbacks.count(messageId)) {
+            if (this->data_transfer_pnc_callbacks.count(messageId) != 0) {
                 // there is a ISO15118 PnC callback registered for this vendorId and messageId
                 const auto callback = this->data_transfer_pnc_callbacks[messageId];
                 callback(call); // DataTransfer PnC callback is responsible to send DataTransfer.conf
@@ -2049,7 +2049,7 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
             }
         } else if (this->data_transfer_callbacks.count(vendorId) == 0) {
             response.status = DataTransferStatus::UnknownVendorId;
-        } else if (this->data_transfer_callbacks.count(vendorId) and
+        } else if ((this->data_transfer_callbacks.count(vendorId) != 0) and
                    this->data_transfer_callbacks[vendorId].count(messageId) == 0) {
             response.status = DataTransferStatus::UnknownMessageId;
         } else {
@@ -3093,8 +3093,8 @@ void ChargePointImpl::handleSendLocalListRequest(ocpp::Call<SendLocalListRequest
     response.status = UpdateStatus::Failed;
 
     try {
-        if (!this->configuration->getSupportedFeatureProfilesSet().count(
-                SupportedFeatureProfiles::LocalAuthListManagement) or
+        if ((this->configuration->getSupportedFeatureProfilesSet().count(
+                 SupportedFeatureProfiles::LocalAuthListManagement) == 0) or
             !this->configuration->getLocalAuthListEnabled()) {
             response.status = UpdateStatus::NotSupported;
         } else if (call.msg.updateType == UpdateType::Full) {
@@ -3144,8 +3144,8 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
     EVLOG_debug << "Received GetLocalListVersionRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     GetLocalListVersionResponse response;
-    if (!this->configuration->getSupportedFeatureProfilesSet().count(
-            SupportedFeatureProfiles::LocalAuthListManagement) or
+    if ((this->configuration->getSupportedFeatureProfilesSet().count(
+             SupportedFeatureProfiles::LocalAuthListManagement) == 0) or
         !this->configuration->getLocalAuthListEnabled()) {
         // if Local Authorization List is not supported, report back -1 as list version
         response.listVersion = -1;
@@ -3599,12 +3599,12 @@ ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t dur
 }
 
 bool ChargePointImpl::is_pnc_enabled() {
-    return this->configuration->getSupportedFeatureProfilesSet().count(SupportedFeatureProfiles::PnC) and
+    return (this->configuration->getSupportedFeatureProfilesSet().count(SupportedFeatureProfiles::PnC) != 0) and
            this->configuration->getISO15118PnCEnabled();
 }
 
 bool ChargePointImpl::is_iso15118_certificate_management_enabled() {
-    return this->configuration->getSupportedFeatureProfilesSet().count(SupportedFeatureProfiles::PnC) and
+    return (this->configuration->getSupportedFeatureProfilesSet().count(SupportedFeatureProfiles::PnC) != 0) and
            this->configuration->getISO15118CertificateManagementEnabled();
 }
 
@@ -3667,7 +3667,7 @@ ocpp::v2::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
                 // Try to generate the OCSP data from the certificate chain and use that
                 const auto generated_ocsp_request_data_list = ocpp::evse_security_conversions::to_ocpp_v2(
                     this->evse_security->get_mo_ocsp_request_data(certificate.value()));
-                if (generated_ocsp_request_data_list.size() > 0) {
+                if (!generated_ocsp_request_data_list.empty()) {
                     EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                     authorize_req.iso15118CertificateHashData = generated_ocsp_request_data_list;
                     forward_to_csms = true;
@@ -4885,7 +4885,7 @@ ConfigurationStatus ChargePointImpl::set_custom_configuration_key(CiString<50> k
     }
 
     // notify callback if registered and change was accepted
-    if (this->configuration_key_changed_callbacks.count(key) and
+    if ((this->configuration_key_changed_callbacks.count(key) != 0) and
         this->configuration_key_changed_callbacks[key] != nullptr and result == ConfigurationStatus::Accepted) {
         const KeyValue kv = {key, false, value};
         this->configuration_key_changed_callbacks[key](kv);

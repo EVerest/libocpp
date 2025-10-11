@@ -205,7 +205,7 @@ public:
         // Causes a deadlock in callback_minimal if not reset
         this->lws_ctx = std::unique_ptr<lws_context>(lws_ctx);
 
-        if (ssl_ctx) {
+        if (ssl_ctx != nullptr) {
             this->sec_context = std::unique_ptr<SSL_CTX>(ssl_ctx);
         }
     }
@@ -488,7 +488,7 @@ bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chai
             return false;
         }
 
-        if (false == SSL_CTX_check_private_key(ctx)) {
+        if (0 == SSL_CTX_check_private_key(ctx)) {
             ERR_print_errors_fp(stderr);
             EVLOG_error << "Could not check private key within SSL context";
 
@@ -572,8 +572,9 @@ void WebsocketLibwebsockets::thread_websocket_message_recv_loop(std::shared_ptr<
             std::string message{};
 
             {
-                if (recv_message_queue.empty())
+                if (recv_message_queue.empty()) {
                     break;
+                }
 
                 message = recv_message_queue.pop();
             }
@@ -1070,8 +1071,9 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
     const size_t message_len = message.length();
     const size_t buff_req_size = message_len + LWS_PRE;
 
-    if (buff.size() < buff_req_size)
+    if (buff.size() < buff_req_size) {
         buff.resize(buff_req_size);
+    }
 
     // Copy data in send buffer
     memcpy(&buff[LWS_PRE], message.data(), message_len);
@@ -1632,8 +1634,9 @@ void WebsocketLibwebsockets::on_conn_writable() {
     // Execute while we have messages that were polled
     while (true) {
         // Break if we have en empty queue
-        if (message_queue.empty())
+        if (message_queue.empty()) {
             break;
+        }
 
         auto message = message_queue.front();
 

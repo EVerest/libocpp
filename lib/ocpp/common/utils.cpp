@@ -59,7 +59,7 @@ bool is_decimal_number(const std::string& value) {
             if (++decimal_point_count > 1) {
                 return false;
             }
-        } else if (!std::isdigit(value[i])) {
+        } else if (std::isdigit(value[i]) == 0) {
             return false;
         }
     }

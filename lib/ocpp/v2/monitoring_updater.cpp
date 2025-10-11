@@ -524,7 +524,7 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
             // N07.FR.19
             if (monitor.type != MonitorEnum::Delta) {
                 // Mark if the event is cleared (returned to normal) if that is the case
-                notify_event.cleared = (updater_meta_data.meta_trigger.is_cleared == true);
+                notify_event.cleared = (updater_meta_data.meta_trigger.is_cleared == 1);
             }
 
             // Add it to the list of generated events
@@ -536,18 +536,19 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
 bool MonitoringUpdater::should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data) {
     if (updater_meta_data.type == UpdateMonitorMetaType::PERIODIC) {
         return false;
-    } else if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
+    }
+    if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
         bool should_clear = false;
 
-        if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == false) &&
-            (updater_meta_data.meta_trigger.is_cleared == true)) {
+        if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == 0) &&
+            (updater_meta_data.meta_trigger.is_cleared == 1)) { // NOLINT(bugprone-branch-clone): readability
             // If we never sent to the CSMS a 'trigger' and we are cleared then it means the CSMS
             // does not know of our trigger event, and in case of a return to normal we can simply
             // remove this from the list
             should_clear = true;
-        } else if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == true) &&
-                   (updater_meta_data.meta_trigger.is_cleared == true) &&
-                   (updater_meta_data.meta_trigger.is_csms_sent == true)) {
+        } else if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == 1) &&
+                   (updater_meta_data.meta_trigger.is_cleared == 1) &&
+                   (updater_meta_data.meta_trigger.is_csms_sent == 1)) {
             // If we sent a 'trigger' to the CSMS but now we are cleared and the current
             // state was also sent to the CSMS it means this trigger can be safely removed
             // as the CSMS knows everything
@@ -644,7 +645,7 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
                     // If this was a state trigger, them also mark that
                     // we sent this 'dangerous' state to the CSMS at least once
                     // since in that case the clear logic changes
-                    if (updater_monitor_meta.meta_trigger.is_cleared == false) {
+                    if (updater_monitor_meta.meta_trigger.is_cleared == 0) {
                         updater_monitor_meta.meta_trigger.is_csms_sent_triggered = true;
                     }
                 }

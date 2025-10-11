@@ -209,7 +209,7 @@ bool ChargePointFSM::handle_event(FSMEvent event, const ocpp::DateTime timestamp
 }
 
 bool ChargePointFSM::handle_error(const ErrorInfo& error_info) {
-    if (this->active_errors.count(error_info.uuid)) {
+    if (this->active_errors.count(error_info.uuid) != 0) {
         // has already been handled and reported
         return false;
     }
@@ -247,7 +247,7 @@ bool ChargePointFSM::handle_error_cleared(const std::string uuid) {
     std::optional<CiString<50>> vendor_error_code;
 
     // report the latest error if there are still errors active
-    if (this->active_errors.size() > 0) {
+    if (not this->active_errors.empty()) {
         const auto latest_error_opt = this->get_latest_error();
         if (latest_error_opt.has_value()) {
             const auto& latest_error = latest_error_opt.value();

@@ -759,7 +759,7 @@ void from_json(const json& j, TriggerMeterValue& t) {
                                 << ") is not a valid chargepoint status: " << e.what();
                 }
             }
-            if (trigger_cp_status.size() > 0) {
+            if (!trigger_cp_status.empty()) {
                 t.at_chargepoint_status = trigger_cp_status;
             }
         }

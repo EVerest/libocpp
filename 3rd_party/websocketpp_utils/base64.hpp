@@ -69,7 +69,7 @@ inline std::string base64_encode(const unsigned char* input, size_t len) {
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
 
-    while (len--) {
+    while ((len--) != 0) {
         char_array_3[i++] = *(input++);
         if (i == 3) {
             char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
@@ -84,7 +84,7 @@ inline std::string base64_encode(const unsigned char* input, size_t len) {
         }
     }
 
-    if (i) {
+    if (i != 0) {
         for (j = i; j < 3; j++) {
             char_array_3[j] = '\0';
         }
@@ -128,7 +128,7 @@ inline std::string base64_decode(const std::string& input) {
     unsigned char char_array_4[4], char_array_3[3];
     std::string ret;
 
-    while (in_len-- && (input[in_] != '=') && is_base64(input[in_])) {
+    while (((in_len--) != 0) && (input[in_] != '=') && is_base64(input[in_])) {
         char_array_4[i++] = input[in_];
         in_++;
         if (i == 4) {
@@ -147,12 +147,14 @@ inline std::string base64_decode(const std::string& input) {
         }
     }
 
-    if (i) {
-        for (j = i; j < 4; j++)
+    if (i != 0) {
+        for (j = i; j < 4; j++) {
             char_array_4[j] = 0;
+        }
 
-        for (j = 0; j < 4; j++)
+        for (j = 0; j < 4; j++) {
             char_array_4[j] = static_cast<unsigned char>(base64_chars.find(char_array_4[j]));
+        }
 
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);

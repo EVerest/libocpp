@@ -1239,7 +1239,7 @@ GetCompositeScheduleResponse SmartCharging::get_composite_schedule_internal(cons
         if (unit_supported) {
             charging_rate_unit = request.chargingRateUnit.value();
         }
-    } else if (supported_charging_rate_units.size() > 0) {
+    } else if (!supported_charging_rate_units.empty()) {
         charging_rate_unit = conversions::string_to_charging_rate_unit_enum(supported_charging_rate_units.at(0));
     }
 

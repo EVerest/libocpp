@@ -472,7 +472,7 @@ void MessageLogging::start_session_logging(const std::string& session_id, const 
 
 void MessageLogging::stop_session_logging(const std::string& session_id) {
     const std::scoped_lock lock(this->session_id_logging_mutex);
-    if (this->session_id_logging.count(session_id)) {
+    if (this->session_id_logging.count(session_id) != 0) {
         auto old_file_path =
             this->session_id_logging.at(session_id)->get_message_log_path() + "/" + "incomplete-ocpp.html";
         auto new_file_path = this->session_id_logging.at(session_id)->get_message_log_path() + "/" + "ocpp.html";

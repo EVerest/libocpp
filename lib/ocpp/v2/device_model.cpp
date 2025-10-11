@@ -528,10 +528,14 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             if (component.name == "EVSE") {
                 nr_evse_components++;
             } else if (component.name == "Connector") {
-                if (evse_id_nr_connector_components.count(component.evse.value().id)) {
-                    evse_id_nr_connector_components[component.evse.value().id] += 1;
+                if (not component.evse.has_value()) {
+                    throw DeviceModelError("EVSE component did not contain evse member");
+                }
+                const auto& evse = component.evse.value();
+                if (evse_id_nr_connector_components.count(evse.id) != 0) {
+                    evse_id_nr_connector_components[evse.id] += 1;
                 } else {
-                    evse_id_nr_connector_components[component.evse.value().id] = 1;
+                    evse_id_nr_connector_components[evse.id] = 1;
                 }
             }
         }
@@ -555,7 +559,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             Component evse_component;
             evse_component.name = "EVSE";
             evse_component.evse = evse;
-            if (!this->device_model_map.count(evse_component)) {
+            if (this->device_model_map.count(evse_component) == 0) {
                 throw DeviceModelError("Could not find required EVSE component in device model");
             }
 
@@ -567,7 +571,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             const auto& variable =
                 EvseComponentVariables::get_component_variable(evse_id, EvseComponentVariables::Power);
             std::map<Variable, VariableMetaData>& v = device_model_map[evse_component];
-            if (!v.count(EvseComponentVariables::Power)) {
+            if (v.count(EvseComponentVariables::Power) == 0) {
                 throw DeviceModelError("Could not find required 'Power' variable in EVSE component in device model");
             }
 
@@ -578,7 +582,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             Component v2x_component;
             v2x_component.name = "V2XChargingCtrlr";
             v2x_component.evse = evse;
-            if (this->device_model_map.count(v2x_component) and
+            if ((this->device_model_map.count(v2x_component) != 0) and
                 std::any_of(evse_connector_structure.begin(), evse_connector_structure.end(),
                             [this](const auto& entry) {
                                 const auto& [evse, connectors] = entry;
@@ -595,7 +599,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             for (size_t connector_id = 1; connector_id <= nr_of_connectors; connector_id++) {
                 evse_component.name = "Connector";
                 evse_component.evse.value().connectorId = connector_id;
-                if (!this->device_model_map.count(evse_component)) {
+                if (this->device_model_map.count(evse_component) == 0) {
                     throw DeviceModelError("Could not find required Connector component in device model");
                 }
 
@@ -949,7 +953,7 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
 }
 std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector<int>& request_ids,
                                                                bool allow_protected) {
-    if (request_ids.size() <= 0) {
+    if (request_ids.empty()) {
         return {};
     }
 

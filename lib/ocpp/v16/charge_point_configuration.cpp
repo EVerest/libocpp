@@ -1031,7 +1031,7 @@ std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_
         MeasurandWithPhase measurand_with_phase;
         const Measurand measurand = conversions::string_to_measurand(component);
         // check if this measurand can be provided on multiple phases
-        if (this->supported_measurands.count(measurand) and this->supported_measurands.at(measurand).size() > 0) {
+        if ((this->supported_measurands.count(measurand) != 0) and !this->supported_measurands.at(measurand).empty()) {
             // multiple phases are available
             // also add the measurand without a phase as a total value
             measurand_with_phase.measurand = measurand;
@@ -2144,7 +2144,7 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
         elements.erase(std::remove(elements.begin(), elements.end(), myNotDefined), elements.end());
     }
     // if all elemens are hit, accept it, else check the remaining
-    if (elements.size() == 0) {
+    if (elements.empty()) {
         return true;
     }
 
@@ -3489,14 +3489,14 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Firmware Management
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::FirmwareManagement)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::FirmwareManagement) != 0) {
         if (key == "SupportedFileTransferProtocols") {
             return this->getSupportedFileTransferProtocolsKeyValue();
         }
     }
 
     // PnC
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::PnC)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::PnC) != 0) {
         if (key == "ISO15118CertificateManagementEnabled") {
             return this->getISO15118CertificateManagementEnabledKeyValue();
         }
@@ -3518,7 +3518,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Smart Charging
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::SmartCharging)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::SmartCharging) != 0) {
         if (key == "ChargeProfileMaxStackLevel") {
             return this->getChargeProfileMaxStackLevelKeyValue();
         }
@@ -3537,7 +3537,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Security (always added as supported feature profile)
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Security)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Security) != 0) {
         if (key == "AdditionalRootCertificateCheck") {
             return this->getAdditionalRootCertificateCheckKeyValue();
         }
@@ -3563,7 +3563,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Local Auth List Managementg
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement) != 0) {
         if (key == "LocalAuthListEnabled") {
             return this->getLocalAuthListEnabledKeyValue();
         }
@@ -3575,7 +3575,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         }
     }
 
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::CostAndPrice)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::CostAndPrice) != 0) {
         // California Pricing
         if (key == "CustomDisplayCostAndPrice") {
             return this->getCustomDisplayCostAndPriceEnabledKeyValue();
@@ -3620,7 +3620,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         }
     }
 
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Custom)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Custom) != 0) {
         return this->getCustomKeyValue(key);
     }
 
@@ -4014,7 +4014,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
 
     // Local Auth List Management
     if (key == "LocalAuthListEnabled") {
-        if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement)) {
+        if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement) != 0) {
             if (isBool(value.get())) {
                 this->setLocalAuthListEnabled(ocpp::conversions::string_to_bool(value.get()));
             } else {

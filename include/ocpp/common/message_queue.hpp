@@ -1018,7 +1018,7 @@ public:
 
     void add_meter_value_message_id(const std::string& start_transaction_message_id,
                                     const std::string& meter_value_message_id) {
-        if (this->start_transaction_mid_meter_values_mid_map.count(start_transaction_message_id)) {
+        if (this->start_transaction_mid_meter_values_mid_map.count(start_transaction_message_id) != 0) {
             this->start_transaction_mid_meter_values_mid_map.at(start_transaction_message_id)
                 .push_back(meter_value_message_id);
         } else {
@@ -1034,8 +1034,8 @@ public:
 
         // replace transaction id in meter values if start_transaction_message_id is present in map
         // this is necessary when the chargepoint queued MeterValue.req for a transaction with unknown transaction_id
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
-        if (this->start_transaction_mid_meter_values_mid_map.count(start_transaction_message_id)) {
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        if (this->start_transaction_mid_meter_values_mid_map.count(start_transaction_message_id) != 0) {
             for (auto it = this->transaction_message_queue.begin(); it != transaction_message_queue.end(); ++it) {
                 for (const auto& meter_value_message_id :
                      this->start_transaction_mid_meter_values_mid_map.at(start_transaction_message_id)) {
