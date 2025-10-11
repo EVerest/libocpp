@@ -366,10 +366,9 @@ private:
         if (drop_count > 0) {
             EVLOG_warning << "Dropped " << drop_count << " transactional update messages to reduce queue size.";
             return true;
-        } else {
-            EVLOG_warning << "There are no further transaction update messages to drop!";
-            return false;
         }
+        EVLOG_warning << "There are no further transaction update messages to drop!";
+        return false;
     }
 
     // The public resume() delegates the actual resumption to this method
@@ -444,9 +443,8 @@ public:
                 if (this->in_flight != nullptr) {
                     // There already is a message in flight, not progressing further
                     continue;
-                } else {
-                    EVLOG_debug << "There is no message in flight, checking message queue for a new message.";
                 }
+                EVLOG_debug << "There is no message in flight, checking message queue for a new message.";
 
                 // prioritize the message with the oldest timestamp
                 std::shared_ptr<ControlMessage<M>> message = nullptr;

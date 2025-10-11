@@ -297,7 +297,8 @@ void ChargePointStates::reset(std::map<int, ChargePointStatus> connector_status_
             initial_state != ChargePointStatus::Unavailable and initial_state != ChargePointStatus::Faulted) {
             throw std::runtime_error("Invalid initial status for connector 0: " +
                                      conversions::charge_point_status_to_string(initial_state));
-        } else if (connector_id == 0) {
+        }
+        if (connector_id == 0) {
             state_machine_connector_zero = std::make_unique<ChargePointFSM>(
                 [this](const ChargePointStatus status, const ChargePointErrorCode error_code,
                        const ocpp::DateTime& timestamp, const std::optional<CiString<50>>& info,
@@ -379,7 +380,8 @@ ChargePointStatus ChargePointStates::get_state(int connector_id) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
     if (connector_id > 0 && static_cast<size_t>(connector_id) <= this->state_machines.size()) {
         return state_machines.at(connector_id - 1).get_state();
-    } else if (connector_id == 0) {
+    }
+    if (connector_id == 0) {
         return state_machine_connector_zero->get_state();
     }
 
@@ -391,9 +393,8 @@ std::optional<ErrorInfo> ChargePointStates::get_latest_error(int connector_id) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
     if (connector_id > 0 && static_cast<size_t>(connector_id) <= this->state_machines.size()) {
         return state_machines.at(connector_id - 1).get_latest_error();
-    } else {
-        return state_machine_connector_zero->get_latest_error();
     }
+    return state_machine_connector_zero->get_latest_error();
 }
 
 } // namespace v16

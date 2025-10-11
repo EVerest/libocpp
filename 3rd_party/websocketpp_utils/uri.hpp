@@ -95,11 +95,11 @@ public:
 
             if (temp == uri_string.end()) {
                 return;
-            } else {
-                // validate IPv6 literal parts
-                // can contain numbers, a-f and A-F
-                m_host.append(it, temp);
             }
+            // validate IPv6 literal parts
+            // can contain numbers, a-f and A-F
+            m_host.append(it, temp);
+
             it = temp + 1;
             if (it == uri_string.end()) {
                 state = 2;
@@ -120,7 +120,8 @@ public:
                 if (it == uri_string.end()) {
                     state = 2;
                     break;
-                } else if (*it == '/') {
+                }
+                if (*it == '/') {
                     state = 2;
                 } else if (*it == ':') {
                     // end hostname start port
@@ -141,7 +142,8 @@ public:
                 // refactoring
                 // state = 3;
                 break;
-            } else if (*it == '/') {
+            }
+            if (*it == '/') {
                 state = 3;
             } else {
                 port += *it;
@@ -223,11 +225,10 @@ public:
     std::string get_host_port() const {
         if (m_port == (m_secure ? uri_default_secure_port : uri_default_port)) {
             return m_host;
-        } else {
-            std::stringstream p;
-            p << m_host << ":" << m_port;
-            return p.str();
         }
+        std::stringstream p;
+        p << m_host << ":" << m_port;
+        return p.str();
     }
 
     std::string get_authority() const {
@@ -274,9 +275,8 @@ public:
         const std::size_t found = m_resource.find('?');
         if (found != std::string::npos) {
             return m_resource.substr(found + 1);
-        } else {
-            return "";
         }
+        return "";
     }
 
 private:

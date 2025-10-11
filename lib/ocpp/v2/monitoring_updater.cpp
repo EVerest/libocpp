@@ -25,19 +25,19 @@ bool triggers_monitor(const VariableMonitoringMeta& monitor_meta, const std::str
                 auto delta = std::abs(raw_val_reference - raw_val_current);
 
                 return (delta > monitor_meta.monitor.value);
-            } else {
-                EVLOG_error << "Invalid reference value for monitor: " << monitor_meta.monitor;
-                return false;
             }
-        } else if (monitor_meta.monitor.type == MonitorEnum::LowerThreshold) {
-            return (raw_val_current < monitor_meta.monitor.value);
-        } else if (monitor_meta.monitor.type == MonitorEnum::UpperThreshold) {
-            return (raw_val_current > monitor_meta.monitor.value);
-        } else {
-            EVLOG_error << "Requested unsupported trigger monitor of type: "
-                        << conversions::monitor_enum_to_string(monitor_meta.monitor.type);
+            EVLOG_error << "Invalid reference value for monitor: " << monitor_meta.monitor;
             return false;
         }
+        if (monitor_meta.monitor.type == MonitorEnum::LowerThreshold) {
+            return (raw_val_current < monitor_meta.monitor.value);
+        }
+        if (monitor_meta.monitor.type == MonitorEnum::UpperThreshold) {
+            return (raw_val_current > monitor_meta.monitor.value);
+        }
+        EVLOG_error << "Requested unsupported trigger monitor of type: "
+                    << conversions::monitor_enum_to_string(monitor_meta.monitor.type);
+        return false;
     }
 
     return false;

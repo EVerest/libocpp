@@ -267,12 +267,10 @@ std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t e
     request.chargingRateUnit = unit;
 
     auto composite_schedule_response = this->get_composite_schedule_internal(request, false);
-    if (composite_schedule_response.status == GenericStatusEnum::Accepted and
-        composite_schedule_response.schedule.has_value()) {
-        return composite_schedule_response.schedule.value();
-    } else {
-        return std::nullopt;
+    if (composite_schedule_response.status == GenericStatusEnum::Accepted) {
+        return composite_schedule_response.schedule;
     }
+    return std::nullopt;
 }
 
 ProfileValidationResultEnum SmartCharging::verify_rate_limit(const ChargingProfile& profile) {
@@ -312,9 +310,8 @@ bool SmartCharging::has_dc_input_phase_control(const int32_t evse_id) const {
         }
 
         return true;
-    } else {
-        return evse_has_dc_input_phase_control(evse_id);
     }
+    return evse_has_dc_input_phase_control(evse_id);
 }
 
 bool SmartCharging::evse_has_dc_input_phase_control(const int32_t evse_id) const {
@@ -831,17 +828,17 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                                                        charging_schedule_period.phaseToUse.has_value())) {
                 if (this->context.ocpp_version == OcppProtocolVersion::v201) {
                     return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
-                } else if (this->context.ocpp_version == OcppProtocolVersion::v21) {
+                }
+                if (this->context.ocpp_version == OcppProtocolVersion::v21) {
                     const int32_t evse_id = evse_opt.has_value() ? evse_opt.value()->get_id() : 0;
                     if (!this->has_dc_input_phase_control(evse_id)) {
                         // If 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
                         // code noPhaseForDC
                         // K01.FR.44
                         return ProfileValidationResultEnum::ChargingSchedulePeriodNoPhaseForDC;
-                    } else {
-                        // K01.FR.54
-                        // TODO(mlitre): How to notify that this should be used for AC grid connection?
                     }
+                    // K01.FR.54
+                    // TODO(mlitre): How to notify that this should be used for AC grid connection?
                 }
             }
 
@@ -912,8 +909,8 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
             !schedule.startSchedule.has_value()) {
             return ProfileValidationResultEnum::ChargingProfileMissingRequiredStartSchedule;
             // K01.FR.41 For Relative chargingProfileKind, a startSchedule shall be absent.
-        } else if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative &&
-                   schedule.startSchedule.has_value()) {
+        }
+        if (profile.chargingProfileKind == ChargingProfileKindEnum::Relative && schedule.startSchedule.has_value()) {
             return ProfileValidationResultEnum::ChargingProfileExtraneousStartSchedule;
         }
     }
@@ -1393,7 +1390,8 @@ CurrentPhaseType SmartCharging::get_current_phase_type(const std::optional<EvseI
         this->context.device_model.get_value<int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
     if (supply_phases == 1 || supply_phases == 3) {
         return CurrentPhaseType::AC;
-    } else if (supply_phases == 0) {
+    }
+    if (supply_phases == 0) {
         return CurrentPhaseType::DC;
     }
 

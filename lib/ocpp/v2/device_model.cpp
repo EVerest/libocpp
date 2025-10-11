@@ -432,11 +432,11 @@ SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& componen
 
 std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Component& component,
                                                                     const Variable& variable) {
-    if (this->device_model_map.count(component) and this->device_model_map.at(component).count(variable)) {
+    if ((this->device_model_map.count(component) != 0) and
+        (this->device_model_map.at(component).count(variable) != 0)) {
         return this->device_model_map.at(component).at(variable);
-    } else {
-        return std::nullopt;
     }
+    return std::nullopt;
 }
 
 std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base) {
@@ -657,10 +657,9 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
                 // Update value in-memory too
                 monitor_meta->reference_value = reference_value;
                 return true;
-            } else {
-                EVLOG_warning << "Could not update in DB trivial delta monitor with ID: " << monitor_id
-                              << ". Reference value not updated!";
             }
+            EVLOG_warning << "Could not update in DB trivial delta monitor with ID: " << monitor_id
+                          << ". Reference value not updated!";
         } catch (const everest::db::Exception& e) {
             EVLOG_error << "Exception while updating trivial delta monitor reference with ID: " << monitor_id;
             throw DeviceModelError(e.what());

@@ -75,9 +75,8 @@ int DeviceModelStorageSqlite::get_component_id(const Component& component_id) {
 
     if (select_stmt->step() == SQLITE_ROW) {
         return select_stmt->column_int(0);
-    } else {
-        return -1;
     }
+    return -1;
 }
 
 int DeviceModelStorageSqlite::get_variable_id(const Component& component_id, const Variable& variable_id) {
@@ -98,9 +97,8 @@ int DeviceModelStorageSqlite::get_variable_id(const Component& component_id, con
     }
     if (select_stmt->step() == SQLITE_ROW) {
         return select_stmt->column_int(0);
-    } else {
-        return -1;
     }
+    return -1;
 }
 
 DeviceModelMap DeviceModelStorageSqlite::get_device_model() {
@@ -188,9 +186,8 @@ std::optional<VariableAttribute> DeviceModelStorageSqlite::get_variable_attribut
     const auto attributes = this->get_variable_attributes(component_id, variable_id, attribute_enum);
     if (!attributes.empty()) {
         return attributes.at(0);
-    } else {
-        return std::nullopt;
     }
+    return std::nullopt;
 }
 
 std::vector<VariableAttribute>
@@ -423,11 +420,10 @@ ClearMonitoringStatusEnum DeviceModelStorageSqlite::clear_variable_monitor(int m
     if (select_stmt->step() != SQLITE_ROW) {
         EVLOG_error << this->db->get_error_message();
         return ClearMonitoringStatusEnum::Rejected;
-    } else {
-        // If we couldn't find a monitor in the DB
-        if (select_stmt->column_int(0) != 1) {
-            return ClearMonitoringStatusEnum::NotFound;
-        }
+    }
+    // If we couldn't find a monitor in the DB
+    if (select_stmt->column_int(0) != 1) {
+        return ClearMonitoringStatusEnum::NotFound;
     }
 
     std::string delete_query;
@@ -467,7 +463,7 @@ int32_t DeviceModelStorageSqlite::clear_custom_variable_monitors() {
     delete_stmt->bind_int(1, static_cast<int>(VariableMonitorType::CustomMonitor));
     if (delete_stmt->step() != SQLITE_DONE) {
         EVLOG_error << this->db->get_error_message();
-        return false;
+        return 0;
     }
 
     transaction->commit();

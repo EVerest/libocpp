@@ -24,17 +24,23 @@ void drop_transaction_data(size_t max_message_size, ocpp::Call<StopTransactionRe
 bool is_critical(const std::string& security_event) {
     if (security_event == ocpp::security_events::FIRMWARE_UPDATED) {
         return true;
-    } else if (security_event == ocpp::security_events::SETTINGSYSTEMTIME) {
+    }
+    if (security_event == ocpp::security_events::SETTINGSYSTEMTIME) {
         return true;
-    } else if (security_event == ocpp::security_events::STARTUP_OF_THE_DEVICE) {
+    }
+    if (security_event == ocpp::security_events::STARTUP_OF_THE_DEVICE) {
         return true;
-    } else if (security_event == ocpp::security_events::RESET_OR_REBOOT) {
+    }
+    if (security_event == ocpp::security_events::RESET_OR_REBOOT) {
         return true;
-    } else if (security_event == ocpp::security_events::SECURITYLOGWASCLEARED) {
+    }
+    if (security_event == ocpp::security_events::SECURITYLOGWASCLEARED) {
         return true;
-    } else if (security_event == ocpp::security_events::MEMORYEXHAUSTION) {
+    }
+    if (security_event == ocpp::security_events::MEMORYEXHAUSTION) {
         return true;
-    } else if (security_event == ocpp::security_events::TAMPERDETECTIONACTIVATED) {
+    }
+    if (security_event == ocpp::security_events::TAMPERDETECTIONACTIVATED) {
         return true;
     }
 

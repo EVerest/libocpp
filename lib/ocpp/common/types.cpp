@@ -624,9 +624,11 @@ namespace conversions {
 RunningCostState string_to_running_cost_state(const std::string& state) {
     if (state == "Charging") {
         return RunningCostState::Charging;
-    } else if (state == "Idle") {
+    }
+    if (state == "Idle") {
         return RunningCostState::Idle;
-    } else if (state == "Finished") {
+    }
+    if (state == "Finished") {
         return RunningCostState::Finished;
     }
 
@@ -780,13 +782,17 @@ std::string ca_certificate_type_to_string(CaCertificateType e) {
 CaCertificateType string_to_ca_certificate_type(const std::string& s) {
     if (s == "V2G") {
         return CaCertificateType::V2G;
-    } else if (s == "MO") {
+    }
+    if (s == "MO") {
         return CaCertificateType::MO;
-    } else if (s == "CSMS") {
+    }
+    if (s == "CSMS") {
         return CaCertificateType::CSMS;
-    } else if (s == "MF") {
+    }
+    if (s == "MF") {
         return CaCertificateType::MF;
-    } else if (s == "OEM") {
+    }
+    if (s == "OEM") {
         return CaCertificateType::OEM;
     }
     throw StringToEnumException{s, "CertificateType"};

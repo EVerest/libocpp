@@ -66,7 +66,8 @@ void Schemas::loader(const json_uri& uri, json& schema) {
     if (location == "http://json-schema.org/draft-07/schema") {
         schema = nlohmann::json_schema::draft7_schema_builtin;
         return;
-    } else if (location.rfind("/", 0) == 0) {
+    }
+    if (location.rfind('/', 0) == 0) {
         // remove leading /
         location.erase(0, 1);
     }

@@ -2176,32 +2176,32 @@ bool ChargePointConfiguration::checkTimeOffset(const std::string& offset) {
                        "\"-05:00\", but is "
                     << offset << ")";
         return false;
-    } else {
-        try {
-            // Check if strings are numbers.
-            const int32_t hours = std::stoi(times.at(0));
-            const int32_t minutes = std::stoi(times.at(1));
+    }
+    try {
+        // Check if strings are numbers.
+        const int32_t hours = std::stoi(times.at(0));
+        const int32_t minutes = std::stoi(times.at(1));
 
-            // And check if numbers are valid.
-            if (hours < -24 or hours > 24) {
-                EVLOG_error << "Could not set display time offset: hours should be between -24 and +24, but is "
-                            << times.at(0);
-                return false;
-            }
-
-            if (minutes < 0 or minutes > 59) {
-                EVLOG_error << "Could not set display time offset: minutes should be between 0 and 59, but is "
-                            << times.at(1);
-                return false;
-            }
-
-        } catch (const std::exception& e) {
-            EVLOG_error << "Could not set display time offset: format not correct (should be something "
-                           "like \"-19:15\", but is "
-                        << offset << "): " << e.what();
+        // And check if numbers are valid.
+        if (hours < -24 or hours > 24) {
+            EVLOG_error << "Could not set display time offset: hours should be between -24 and +24, but is "
+                        << times.at(0);
             return false;
         }
+
+        if (minutes < 0 or minutes > 59) {
+            EVLOG_error << "Could not set display time offset: minutes should be between 0 and 59, but is "
+                        << times.at(1);
+            return false;
+        }
+
+    } catch (const std::exception& e) {
+        EVLOG_error << "Could not set display time offset: format not correct (should be something "
+                       "like \"-19:15\", but is "
+                    << offset << "): " << e.what();
+        return false;
     }
+
     return true;
 }
 
@@ -2341,9 +2341,8 @@ KeyValue ChargePointConfiguration::getDisableSecurityEventNotificationsKeyValue(
 bool ChargePointConfiguration::getLocalAuthListEnabled() {
     if (this->config.contains("LocalAuthListManagement")) {
         return this->config["LocalAuthListManagement"]["LocalAuthListEnabled"];
-    } else {
-        return false;
     }
+    return false;
 }
 
 void ChargePointConfiguration::setLocalAuthListEnabled(bool local_auth_list_enabled) {
@@ -3688,10 +3687,9 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         if (authorization_key.length() >= AUTHORIZATION_KEY_MIN_LENGTH) {
             this->setAuthorizationKey(value.get());
             return ConfigurationStatus::Accepted;
-        } else {
-            EVLOG_warning << "Attempt to change AuthorizationKey to value with < 8 characters";
-            return ConfigurationStatus::Rejected;
         }
+        EVLOG_warning << "Attempt to change AuthorizationKey to value with < 8 characters";
+        return ConfigurationStatus::Rejected;
     }
     if (key == "AuthorizeRemoteTxRequests") {
         this->setAuthorizeRemoteTxRequests(ocpp::conversions::string_to_bool(value.get()));
@@ -3748,42 +3746,39 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     if (key == "CentralContractValidationAllowed") {
         if (this->getCentralContractValidationAllowed() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
-        } else {
-            this->setCentralContractValidationAllowed(ocpp::conversions::string_to_bool(value.get()));
         }
+        this->setCentralContractValidationAllowed(ocpp::conversions::string_to_bool(value.get()));
     }
     if (key == "CertSigningWaitMinimum") {
         if (this->getCertSigningWaitMinimum() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
-        } else {
-            try {
-                auto [valid, cert_signing_wait_minimum] = is_positive_integer(value.get());
-                if (!valid) {
-                    return ConfigurationStatus::Rejected;
-                }
-                this->setCertSigningWaitMinimum(cert_signing_wait_minimum);
-            } catch (const std::invalid_argument& e) {
-                return ConfigurationStatus::Rejected;
-            } catch (const std::out_of_range& e) {
+        }
+        try {
+            auto [valid, cert_signing_wait_minimum] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
+            this->setCertSigningWaitMinimum(cert_signing_wait_minimum);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "CertSigningRepeatTimes") {
         if (this->getCertSigningRepeatTimes() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
-        } else {
-            try {
-                auto [valid, cert_signing_repeat_times] = is_positive_integer(value.get());
-                if (!valid) {
-                    return ConfigurationStatus::Rejected;
-                }
-                this->setCertSigningRepeatTimes(cert_signing_repeat_times);
-            } catch (const std::invalid_argument& e) {
-                return ConfigurationStatus::Rejected;
-            } catch (const std::out_of_range& e) {
+        }
+        try {
+            auto [valid, cert_signing_repeat_times] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
+            this->setCertSigningRepeatTimes(cert_signing_repeat_times);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "ContractValidationOffline") {

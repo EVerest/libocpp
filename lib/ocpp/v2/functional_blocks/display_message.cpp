@@ -62,11 +62,10 @@ void DisplayMessageBlock::handle_get_display_message(const Call<GetDisplayMessag
         const ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
-    } else {
-        response.status = GetDisplayMessagesStatusEnum::Accepted;
-        ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
-        this->context.message_dispatcher.dispatch_call_result(call_result);
     }
+    response.status = GetDisplayMessagesStatusEnum::Accepted;
+    const ocpp::CallResult<GetDisplayMessagesResponse> call_result(response, call.uniqueId);
+    this->context.message_dispatcher.dispatch_call_result(call_result);
 
     // Send display messages. The response is empty, so we don't have to get that back.
     // Sending multiple messages is not supported for now, because there is no need to split them up (yet).

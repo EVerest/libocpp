@@ -685,7 +685,8 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_
         throw InitDeviceModelDbError("Could not set value '" + variable_attribute_value +
                                      "' of variable attribute id " + std::to_string(variable_attribute_id) + ": " +
                                      std::string(this->database->get_error_message()));
-    } else if ((insert_variable_attribute_statement->changes() < 1) && warn_source_not_default) {
+    }
+    if ((insert_variable_attribute_statement->changes() < 1) && warn_source_not_default) {
         EVLOG_debug << "Could not set value '" + variable_attribute_value + "' of variable attribute id " +
                            std::to_string(variable_attribute_id) + ": value has already changed by other source";
     }
@@ -1547,19 +1548,21 @@ static bool has_attribute_actual_value(const VariableAttribute& attribute,
 static std::string get_string_value_from_json(const json& value) {
     if (value.is_string()) {
         return value;
-    } else if (value.is_boolean()) {
+    }
+    if (value.is_boolean()) {
         if (value.get<bool>()) {
             // Convert to lower case if that is not the case currently.
             return "true";
         }
         return "false";
-    } else if (value.is_array() || value.is_object()) {
+    }
+    if (value.is_array() || value.is_object()) {
         EVLOG_warning << "String value " << value.dump()
                       << " from config is an object or array, but config values should be from a primitive type.";
         return value.dump();
-    } else {
-        return value.dump();
     }
+
+    return value.dump();
 }
 
 ///

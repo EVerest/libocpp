@@ -189,12 +189,11 @@ public:
         }
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
-        } else {
-            EVLOG_critical << "Directly requested value for ComponentVariable that doesn't exist in the device model: "
-                           << component_variable;
-            EVLOG_AND_THROW(std::runtime_error(
-                "Directly requested value for ComponentVariable that doesn't exist in the device model."));
         }
+        EVLOG_critical << "Directly requested value for ComponentVariable that doesn't exist in the device model: "
+                       << component_variable;
+        EVLOG_AND_THROW(std::runtime_error(
+            "Directly requested value for ComponentVariable that doesn't exist in the device model."));
     }
 
     /// \brief  Access to std::optional of a VariableAttribute for the given component, variable and attribute_enum.
@@ -214,9 +213,8 @@ public:
         }
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
-        } else {
-            return std::nullopt;
         }
+        return std::nullopt;
     }
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
@@ -235,9 +233,8 @@ public:
 
         if (req_status == GetVariableStatusEnum::Accepted) {
             return {GetVariableStatusEnum::Accepted, to_specific_type<T>(value)};
-        } else {
-            return {req_status};
         }
+        return {req_status};
     }
 
     /// \brief Get the mutability for the given component, variable and attribute_enum

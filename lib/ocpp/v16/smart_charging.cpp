@@ -83,11 +83,14 @@ bool validate_schedule(const ChargingSchedule& schedule, const int charging_sche
     }
 
     for (const auto& period : schedule.chargingSchedulePeriod) {
-        if (period.numberPhases &&
-            (period.numberPhases.value() <= 0 or period.numberPhases.value() > DEFAULT_AND_MAX_NUMBER_PHASES)) {
-            EVLOG_warning << "INVALID SCHEDULE - Invalid number of phases: " << period.numberPhases.value();
-            return false;
-        } else if (period.limit < 0) {
+        if (period.numberPhases.has_value()) {
+            const auto& number_phases = period.numberPhases.value();
+            if (number_phases <= 0 or number_phases > DEFAULT_AND_MAX_NUMBER_PHASES) {
+                EVLOG_warning << "INVALID SCHEDULE - Invalid number of phases: " << number_phases;
+                return false;
+            }
+        }
+        if (period.limit < 0) {
             EVLOG_warning << "INVALID SCHEDULE - Invalid limit: " << period.limit;
             return false;
         }
@@ -348,9 +351,9 @@ bool SmartChargingHandler::validate_profile(
             }
 
             if (profile.chargingSchedule.duration > max_recurrency_duration) {
-                EVLOG_warning
-                    << "Given duration of Recurring profile was > than max_recurrency_duration. Setting duration of "
-                       "schedule to max_currency_duration";
+                EVLOG_warning << "Given duration of Recurring profile was > than max_recurrency_duration. Setting "
+                                 "duration of "
+                                 "schedule to max_currency_duration";
                 profile.chargingSchedule.duration = max_recurrency_duration;
             }
         }
@@ -359,14 +362,14 @@ bool SmartChargingHandler::validate_profile(
     if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
         if (connector_id == 0 and profile.chargingProfileKind != ChargingProfileKindType::Relative) {
             return true;
-        } else {
-            EVLOG_warning
-                << "INVALID PROFILE - connector_id != 0 with purpose ChargePointMaxProfile or kind is Relative";
-            return false;
         }
-    } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
+        EVLOG_warning << "INVALID PROFILE - connector_id != 0 with purpose ChargePointMaxProfile or kind is Relative";
+        return false;
+    }
+    if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
         return true;
-    } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
+    }
+    if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
         if (connector_id == 0) {
             EVLOG_warning << "INVALID PROFILE - connector_id is 0";
             return false;

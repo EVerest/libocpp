@@ -180,14 +180,10 @@ void RemoteTransactionControl::handle_remote_stop_transaction_request(Call<Reque
 
     if (evseid.has_value()) {
         // F03.FR.07: send 'accepted' if there was an ongoing transaction with the given transaction id
-        response.status = RequestStartStopStatusEnum::Accepted;
+        response.status = this->stop_transaction_callback(evseid.value(), ReasonEnum::Remote);
     } else {
         // F03.FR.08: send 'rejected' if there was no ongoing transaction with the given transaction id
         response.status = RequestStartStopStatusEnum::Rejected;
-    }
-
-    if (response.status == RequestStartStopStatusEnum::Accepted) {
-        response.status = this->stop_transaction_callback(evseid.value(), ReasonEnum::Remote);
     }
 
     const ocpp::CallResult<RequestStopTransactionResponse> call_result(response, call.uniqueId);

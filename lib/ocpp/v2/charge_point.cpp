@@ -421,11 +421,9 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             if (this->connectivity_manager == nullptr or !this->connectivity_manager->is_websocket_connected() or
                 this->registration_status != RegistrationStatusEnum::Accepted) {
                 return false;
-            } else {
-                this->availability->status_notification_req(evse_id, connector_id, status,
-                                                            initiated_by_trigger_message);
-                return true;
             }
+            this->availability->status_notification_req(evse_id, connector_id, status, initiated_by_trigger_message);
+            return true;
         });
     if (this->callbacks.cs_effective_operative_status_changed_callback.has_value()) {
         this->component_state_manager->set_cs_effective_availability_changed_callback(

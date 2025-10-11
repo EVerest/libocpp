@@ -1027,9 +1027,8 @@ void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connecto
                 // Metervalue sent, should not be sent again.
                 connector->trigger_metervalue_on_energy_kwh = std::nullopt;
                 return;
-            } else {
-                EVLOG_error << "Send latest meter value because of energy (kWh) trigger failed";
             }
+            EVLOG_error << "Send latest meter value because of energy (kWh) trigger failed";
         }
     }
 
@@ -1179,10 +1178,9 @@ bool ChargePointImpl::restart(const std::map<int, ChargePointStatus>& connector_
         this->message_dispatcher =
             std::make_unique<MessageDispatcher>(*this->message_queue, *this->configuration, this->registration_status);
         return this->start(connector_status_map, bootreason, {});
-    } else {
-        EVLOG_warning << "Attempting to restart Chargepoint while it has not been stopped before";
-        return false;
     }
+    EVLOG_warning << "Attempting to restart Chargepoint while it has not been stopped before";
+    return false;
 }
 
 void ChargePointImpl::reset_state_machine(const std::map<int, ChargePointStatus>& connector_status_map) {
@@ -1279,10 +1277,9 @@ bool ChargePointImpl::stop() {
         this->initialized = false;
         EVLOG_info << "Terminating...";
         return true;
-    } else {
-        EVLOG_warning << "Attempting to stop Chargepoint while it has been stopped before";
-        return false;
     }
+    EVLOG_warning << "Attempting to stop Chargepoint while it has been stopped before";
+    return false;
 
     EVLOG_info << "Terminating...";
 }
@@ -2042,12 +2039,12 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
                 const auto callback = this->data_transfer_pnc_callbacks[messageId];
                 callback(call); // DataTransfer PnC callback is responsible to send DataTransfer.conf
                 return;
-            } else {
-                EVLOG_warning
-                    << "Received DataTransfer.req for ISO15118 PnC while PnC is enabled but no handler found for : "
-                    << messageId;
-                response.status = DataTransferStatus::UnknownMessageId;
             }
+            EVLOG_warning
+                << "Received DataTransfer.req for ISO15118 PnC while PnC is enabled but no handler found for : "
+                << messageId;
+            response.status = DataTransferStatus::UnknownMessageId;
+
         } else if (this->data_transfer_callbacks.count(vendorId) == 0) {
             response.status = DataTransferStatus::UnknownVendorId;
         } else if ((this->data_transfer_callbacks.count(vendorId) != 0) and
@@ -2207,18 +2204,14 @@ bool ChargePointImpl::validate_against_cache_entries(CiString<20> id_tag) {
                         EVLOG_warning << "Could not insert or update authorization cache entry: " << e.what();
                     }
                     return false;
-                } else {
-                    return true;
                 }
-            } else {
                 return true;
             }
-        } else {
-            return false;
+            return true;
         }
-    } else {
         return false;
     }
+    return false;
 }
 
 void ChargePointImpl::handleRemoteStopTransactionRequest(ocpp::Call<RemoteStopTransactionRequest> call) {

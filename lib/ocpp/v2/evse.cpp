@@ -682,9 +682,11 @@ CurrentPhaseType Evse::get_current_phase_type() {
     auto supply_phases = this->device_model.get_optional_value<int32_t>(evse_variable);
     if (supply_phases == std::nullopt) {
         return CurrentPhaseType::Unknown;
-    } else if (*supply_phases == 1 or *supply_phases == 3) {
+    }
+    if (*supply_phases == 1 or *supply_phases == 3) {
         return CurrentPhaseType::AC;
-    } else if (*supply_phases == 0) {
+    }
+    if (*supply_phases == 0) {
         return CurrentPhaseType::DC;
     }
 
