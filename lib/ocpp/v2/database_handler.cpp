@@ -96,7 +96,7 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
             throw QueryExecutionException(this->database->get_error_message());
         }
 
-        insert_stmt->reset();
+        (*insert_stmt).reset();
     }
 
     transaction->commit();
@@ -413,7 +413,7 @@ void DatabaseHandler::transaction_metervalues_insert(const std::string& transact
     }
 
     auto last_row_id = this->database->get_last_inserted_rowid();
-    stmt->reset();
+    (*stmt).reset();
 
     const std::string sql2 =
         "INSERT INTO METER_VALUE_ITEMS (METER_VALUE_ID, VALUE, MEASURAND, PHASE, LOCATION, CUSTOM_DATA, "
@@ -495,7 +495,7 @@ void DatabaseHandler::transaction_metervalues_insert(const std::string& transact
             throw QueryExecutionException(this->database->get_error_message());
         }
 
-        insert_stmt->reset();
+        (*insert_stmt).reset();
     }
 
     transaction->commit();
@@ -583,7 +583,7 @@ std::vector<MeterValue> DatabaseHandler::transaction_metervalues_get_all(const s
 
         result.push_back(std::move(value));
 
-        select_stmt2->reset();
+        (*select_stmt2).reset();
     }
 
     if (status != SQLITE_DONE) {
@@ -611,7 +611,7 @@ void DatabaseHandler::transaction_metervalues_clear(const std::string& transacti
         if (delete_stmt->step() != SQLITE_DONE) {
             throw QueryExecutionException(this->database->get_error_message());
         }
-        delete_stmt->reset();
+        (*delete_stmt).reset();
     }
 
     if (status != SQLITE_DONE) {
