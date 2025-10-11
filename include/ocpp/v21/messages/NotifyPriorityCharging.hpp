@@ -33,7 +33,8 @@ void to_json(json& j, const NotifyPriorityChargingRequest& k);
 void from_json(const json& j, NotifyPriorityChargingRequest& k);
 
 /// \brief Writes the string representation of the given NotifyPriorityChargingRequest \p k to the given output stream
-/// \p os \returns an output stream with the NotifyPriorityChargingRequest written to
+/// \p os
+/// \returns an output stream with the NotifyPriorityChargingRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyPriorityChargingRequest& k);
 
 /// \brief Contains a OCPP NotifyPriorityChargingResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const NotifyPriorityChargingResponse& k);
 void from_json(const json& j, NotifyPriorityChargingResponse& k);
 
 /// \brief Writes the string representation of the given NotifyPriorityChargingResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyPriorityChargingResponse written to
+/// \p os
+/// \returns an output stream with the NotifyPriorityChargingResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyPriorityChargingResponse& k);
 
 } // namespace v21

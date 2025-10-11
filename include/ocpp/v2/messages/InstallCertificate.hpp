@@ -54,7 +54,8 @@ void to_json(json& j, const InstallCertificateResponse& k);
 void from_json(const json& j, InstallCertificateResponse& k);
 
 /// \brief Writes the string representation of the given InstallCertificateResponse \p k to the given output stream \p
-/// os \returns an output stream with the InstallCertificateResponse written to
+/// os
+/// \returns an output stream with the InstallCertificateResponse written to
 std::ostream& operator<<(std::ostream& os, const InstallCertificateResponse& k);
 
 } // namespace v2

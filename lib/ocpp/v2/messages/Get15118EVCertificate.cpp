@@ -63,7 +63,8 @@ void from_json(const json& j, Get15118EVCertificateRequest& k) {
 }
 
 /// \brief Writes the string representation of the given Get15118EVCertificateRequest \p k to the given output stream \p
-/// os \returns an output stream with the Get15118EVCertificateRequest written to
+/// os
+/// \returns an output stream with the Get15118EVCertificateRequest written to
 std::ostream& operator<<(std::ostream& os, const Get15118EVCertificateRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -109,7 +110,8 @@ void from_json(const json& j, Get15118EVCertificateResponse& k) {
 }
 
 /// \brief Writes the string representation of the given Get15118EVCertificateResponse \p k to the given output stream
-/// \p os \returns an output stream with the Get15118EVCertificateResponse written to
+/// \p os
+/// \returns an output stream with the Get15118EVCertificateResponse written to
 std::ostream& operator<<(std::ostream& os, const Get15118EVCertificateResponse& k) {
     os << json(k).dump(4);
     return os;

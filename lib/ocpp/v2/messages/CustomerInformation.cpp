@@ -61,7 +61,8 @@ void from_json(const json& j, CustomerInformationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given CustomerInformationRequest \p k to the given output stream \p
-/// os \returns an output stream with the CustomerInformationRequest written to
+/// os
+/// \returns an output stream with the CustomerInformationRequest written to
 std::ostream& operator<<(std::ostream& os, const CustomerInformationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -99,7 +100,8 @@ void from_json(const json& j, CustomerInformationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given CustomerInformationResponse \p k to the given output stream \p
-/// os \returns an output stream with the CustomerInformationResponse written to
+/// os
+/// \returns an output stream with the CustomerInformationResponse written to
 std::ostream& operator<<(std::ostream& os, const CustomerInformationResponse& k) {
     os << json(k).dump(4);
     return os;

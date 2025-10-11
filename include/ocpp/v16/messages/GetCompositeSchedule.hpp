@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #ifndef OCPP_V16_GETCOMPOSITESCHEDULE_HPP
@@ -32,7 +32,8 @@ void to_json(json& j, const GetCompositeScheduleRequest& k);
 void from_json(const json& j, GetCompositeScheduleRequest& k);
 
 /// \brief Writes the string representation of the given GetCompositeScheduleRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetCompositeScheduleRequest written to
+/// os
+/// \returns an output stream with the GetCompositeScheduleRequest written to
 std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleRequest& k);
 
 /// \brief Contains a OCPP GetCompositeScheduleResponse message
@@ -54,7 +55,8 @@ void to_json(json& j, const GetCompositeScheduleResponse& k);
 void from_json(const json& j, GetCompositeScheduleResponse& k);
 
 /// \brief Writes the string representation of the given GetCompositeScheduleResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetCompositeScheduleResponse written to
+/// os
+/// \returns an output stream with the GetCompositeScheduleResponse written to
 std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleResponse& k);
 
 } // namespace v16

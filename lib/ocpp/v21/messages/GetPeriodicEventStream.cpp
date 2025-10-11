@@ -36,7 +36,8 @@ void from_json(const json& j, GetPeriodicEventStreamRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetPeriodicEventStreamRequest \p k to the given output stream
-/// \p os \returns an output stream with the GetPeriodicEventStreamRequest written to
+/// \p os
+/// \returns an output stream with the GetPeriodicEventStreamRequest written to
 std::ostream& operator<<(std::ostream& os, const GetPeriodicEventStreamRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -83,7 +84,8 @@ void from_json(const json& j, GetPeriodicEventStreamResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetPeriodicEventStreamResponse \p k to the given output stream
-/// \p os \returns an output stream with the GetPeriodicEventStreamResponse written to
+/// \p os
+/// \returns an output stream with the GetPeriodicEventStreamResponse written to
 std::ostream& operator<<(std::ostream& os, const GetPeriodicEventStreamResponse& k) {
     os << json(k).dump(4);
     return os;

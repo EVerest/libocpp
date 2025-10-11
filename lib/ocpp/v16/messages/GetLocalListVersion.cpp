@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #include <ocpp/v16/messages/GetLocalListVersion.hpp>
@@ -33,7 +33,8 @@ void from_json(const json& j, GetLocalListVersionRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetLocalListVersionRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetLocalListVersionRequest written to
+/// os
+/// \returns an output stream with the GetLocalListVersionRequest written to
 std::ostream& operator<<(std::ostream& os, const GetLocalListVersionRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -59,7 +60,8 @@ void from_json(const json& j, GetLocalListVersionResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetLocalListVersionResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetLocalListVersionResponse written to
+/// os
+/// \returns an output stream with the GetLocalListVersionResponse written to
 std::ostream& operator<<(std::ostream& os, const GetLocalListVersionResponse& k) {
     os << json(k).dump(4);
     return os;

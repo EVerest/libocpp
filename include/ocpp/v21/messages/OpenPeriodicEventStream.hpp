@@ -33,7 +33,8 @@ void to_json(json& j, const OpenPeriodicEventStreamRequest& k);
 void from_json(const json& j, OpenPeriodicEventStreamRequest& k);
 
 /// \brief Writes the string representation of the given OpenPeriodicEventStreamRequest \p k to the given output stream
-/// \p os \returns an output stream with the OpenPeriodicEventStreamRequest written to
+/// \p os
+/// \returns an output stream with the OpenPeriodicEventStreamRequest written to
 std::ostream& operator<<(std::ostream& os, const OpenPeriodicEventStreamRequest& k);
 
 /// \brief Contains a OCPP OpenPeriodicEventStreamResponse message
@@ -54,7 +55,8 @@ void to_json(json& j, const OpenPeriodicEventStreamResponse& k);
 void from_json(const json& j, OpenPeriodicEventStreamResponse& k);
 
 /// \brief Writes the string representation of the given OpenPeriodicEventStreamResponse \p k to the given output stream
-/// \p os \returns an output stream with the OpenPeriodicEventStreamResponse written to
+/// \p os
+/// \returns an output stream with the OpenPeriodicEventStreamResponse written to
 std::ostream& operator<<(std::ostream& os, const OpenPeriodicEventStreamResponse& k);
 
 } // namespace v21

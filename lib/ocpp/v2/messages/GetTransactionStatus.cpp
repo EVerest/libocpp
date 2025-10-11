@@ -42,7 +42,8 @@ void from_json(const json& j, GetTransactionStatusRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetTransactionStatusRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetTransactionStatusRequest written to
+/// os
+/// \returns an output stream with the GetTransactionStatusRequest written to
 std::ostream& operator<<(std::ostream& os, const GetTransactionStatusRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -80,7 +81,8 @@ void from_json(const json& j, GetTransactionStatusResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetTransactionStatusResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetTransactionStatusResponse written to
+/// os
+/// \returns an output stream with the GetTransactionStatusResponse written to
 std::ostream& operator<<(std::ostream& os, const GetTransactionStatusResponse& k) {
     os << json(k).dump(4);
     return os;

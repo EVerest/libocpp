@@ -45,7 +45,8 @@ void from_json(const json& j, VatNumberValidationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given VatNumberValidationRequest \p k to the given output stream \p
-/// os \returns an output stream with the VatNumberValidationRequest written to
+/// os
+/// \returns an output stream with the VatNumberValidationRequest written to
 std::ostream& operator<<(std::ostream& os, const VatNumberValidationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -97,7 +98,8 @@ void from_json(const json& j, VatNumberValidationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given VatNumberValidationResponse \p k to the given output stream \p
-/// os \returns an output stream with the VatNumberValidationResponse written to
+/// os
+/// \returns an output stream with the VatNumberValidationResponse written to
 std::ostream& operator<<(std::ostream& os, const VatNumberValidationResponse& k) {
     os << json(k).dump(4);
     return os;

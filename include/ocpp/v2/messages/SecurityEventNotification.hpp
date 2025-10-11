@@ -33,7 +33,8 @@ void to_json(json& j, const SecurityEventNotificationRequest& k);
 void from_json(const json& j, SecurityEventNotificationRequest& k);
 
 /// \brief Writes the string representation of the given SecurityEventNotificationRequest \p k to the given output
-/// stream \p os \returns an output stream with the SecurityEventNotificationRequest written to
+/// stream \p os
+/// \returns an output stream with the SecurityEventNotificationRequest written to
 std::ostream& operator<<(std::ostream& os, const SecurityEventNotificationRequest& k);
 
 /// \brief Contains a OCPP SecurityEventNotificationResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const SecurityEventNotificationResponse& k);
 void from_json(const json& j, SecurityEventNotificationResponse& k);
 
 /// \brief Writes the string representation of the given SecurityEventNotificationResponse \p k to the given output
-/// stream \p os \returns an output stream with the SecurityEventNotificationResponse written to
+/// stream \p os
+/// \returns an output stream with the SecurityEventNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const SecurityEventNotificationResponse& k);
 
 } // namespace v2

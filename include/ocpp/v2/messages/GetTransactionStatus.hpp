@@ -31,7 +31,8 @@ void to_json(json& j, const GetTransactionStatusRequest& k);
 void from_json(const json& j, GetTransactionStatusRequest& k);
 
 /// \brief Writes the string representation of the given GetTransactionStatusRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetTransactionStatusRequest written to
+/// os
+/// \returns an output stream with the GetTransactionStatusRequest written to
 std::ostream& operator<<(std::ostream& os, const GetTransactionStatusRequest& k);
 
 /// \brief Contains a OCPP GetTransactionStatusResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const GetTransactionStatusResponse& k);
 void from_json(const json& j, GetTransactionStatusResponse& k);
 
 /// \brief Writes the string representation of the given GetTransactionStatusResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetTransactionStatusResponse written to
+/// os
+/// \returns an output stream with the GetTransactionStatusResponse written to
 std::ostream& operator<<(std::ostream& os, const GetTransactionStatusResponse& k);
 
 } // namespace v2

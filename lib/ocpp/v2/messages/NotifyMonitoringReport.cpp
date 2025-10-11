@@ -63,7 +63,8 @@ void from_json(const json& j, NotifyMonitoringReportRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyMonitoringReportRequest \p k to the given output stream
-/// \p os \returns an output stream with the NotifyMonitoringReportRequest written to
+/// \p os
+/// \returns an output stream with the NotifyMonitoringReportRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyMonitoringReportRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -92,7 +93,8 @@ void from_json(const json& j, NotifyMonitoringReportResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyMonitoringReportResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyMonitoringReportResponse written to
+/// \p os
+/// \returns an output stream with the NotifyMonitoringReportResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyMonitoringReportResponse& k) {
     os << json(k).dump(4);
     return os;

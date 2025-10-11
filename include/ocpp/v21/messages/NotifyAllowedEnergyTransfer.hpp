@@ -34,7 +34,8 @@ void to_json(json& j, const NotifyAllowedEnergyTransferRequest& k);
 void from_json(const json& j, NotifyAllowedEnergyTransferRequest& k);
 
 /// \brief Writes the string representation of the given NotifyAllowedEnergyTransferRequest \p k to the given output
-/// stream \p os \returns an output stream with the NotifyAllowedEnergyTransferRequest written to
+/// stream \p os
+/// \returns an output stream with the NotifyAllowedEnergyTransferRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyAllowedEnergyTransferRequest& k);
 
 /// \brief Contains a OCPP NotifyAllowedEnergyTransferResponse message
@@ -55,7 +56,8 @@ void to_json(json& j, const NotifyAllowedEnergyTransferResponse& k);
 void from_json(const json& j, NotifyAllowedEnergyTransferResponse& k);
 
 /// \brief Writes the string representation of the given NotifyAllowedEnergyTransferResponse \p k to the given output
-/// stream \p os \returns an output stream with the NotifyAllowedEnergyTransferResponse written to
+/// stream \p os
+/// \returns an output stream with the NotifyAllowedEnergyTransferResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyAllowedEnergyTransferResponse& k);
 
 } // namespace v21

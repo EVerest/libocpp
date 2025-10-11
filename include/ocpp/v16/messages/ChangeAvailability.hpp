@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #ifndef OCPP_V16_CHANGEAVAILABILITY_HPP
@@ -49,7 +49,8 @@ void to_json(json& j, const ChangeAvailabilityResponse& k);
 void from_json(const json& j, ChangeAvailabilityResponse& k);
 
 /// \brief Writes the string representation of the given ChangeAvailabilityResponse \p k to the given output stream \p
-/// os \returns an output stream with the ChangeAvailabilityResponse written to
+/// os
+/// \returns an output stream with the ChangeAvailabilityResponse written to
 std::ostream& operator<<(std::ostream& os, const ChangeAvailabilityResponse& k);
 
 } // namespace v16

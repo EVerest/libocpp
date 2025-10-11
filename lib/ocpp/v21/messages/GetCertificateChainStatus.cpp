@@ -41,7 +41,8 @@ void from_json(const json& j, GetCertificateChainStatusRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetCertificateChainStatusRequest \p k to the given output
-/// stream \p os \returns an output stream with the GetCertificateChainStatusRequest written to
+/// stream \p os
+/// \returns an output stream with the GetCertificateChainStatusRequest written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateChainStatusRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -75,7 +76,8 @@ void from_json(const json& j, GetCertificateChainStatusResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetCertificateChainStatusResponse \p k to the given output
-/// stream \p os \returns an output stream with the GetCertificateChainStatusResponse written to
+/// stream \p os
+/// \returns an output stream with the GetCertificateChainStatusResponse written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateChainStatusResponse& k) {
     os << json(k).dump(4);
     return os;

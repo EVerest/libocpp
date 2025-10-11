@@ -41,7 +41,8 @@ void from_json(const json& j, UsePriorityChargingRequest& k) {
 }
 
 /// \brief Writes the string representation of the given UsePriorityChargingRequest \p k to the given output stream \p
-/// os \returns an output stream with the UsePriorityChargingRequest written to
+/// os
+/// \returns an output stream with the UsePriorityChargingRequest written to
 std::ostream& operator<<(std::ostream& os, const UsePriorityChargingRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -79,7 +80,8 @@ void from_json(const json& j, UsePriorityChargingResponse& k) {
 }
 
 /// \brief Writes the string representation of the given UsePriorityChargingResponse \p k to the given output stream \p
-/// os \returns an output stream with the UsePriorityChargingResponse written to
+/// os
+/// \returns an output stream with the UsePriorityChargingResponse written to
 std::ostream& operator<<(std::ostream& os, const UsePriorityChargingResponse& k) {
     os << json(k).dump(4);
     return os;

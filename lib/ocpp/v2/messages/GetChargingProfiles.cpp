@@ -47,7 +47,8 @@ void from_json(const json& j, GetChargingProfilesRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetChargingProfilesRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetChargingProfilesRequest written to
+/// os
+/// \returns an output stream with the GetChargingProfilesRequest written to
 std::ostream& operator<<(std::ostream& os, const GetChargingProfilesRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -85,7 +86,8 @@ void from_json(const json& j, GetChargingProfilesResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetChargingProfilesResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetChargingProfilesResponse written to
+/// os
+/// \returns an output stream with the GetChargingProfilesResponse written to
 std::ostream& operator<<(std::ostream& os, const GetChargingProfilesResponse& k) {
     os << json(k).dump(4);
     return os;

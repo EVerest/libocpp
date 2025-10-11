@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #ifndef OCPP_V16_EXTENDEDTRIGGERMESSAGE_HPP
@@ -31,7 +31,8 @@ void to_json(json& j, const ExtendedTriggerMessageRequest& k);
 void from_json(const json& j, ExtendedTriggerMessageRequest& k);
 
 /// \brief Writes the string representation of the given ExtendedTriggerMessageRequest \p k to the given output stream
-/// \p os \returns an output stream with the ExtendedTriggerMessageRequest written to
+/// \p os
+/// \returns an output stream with the ExtendedTriggerMessageRequest written to
 std::ostream& operator<<(std::ostream& os, const ExtendedTriggerMessageRequest& k);
 
 /// \brief Contains a OCPP ExtendedTriggerMessageResponse message
@@ -50,7 +51,8 @@ void to_json(json& j, const ExtendedTriggerMessageResponse& k);
 void from_json(const json& j, ExtendedTriggerMessageResponse& k);
 
 /// \brief Writes the string representation of the given ExtendedTriggerMessageResponse \p k to the given output stream
-/// \p os \returns an output stream with the ExtendedTriggerMessageResponse written to
+/// \p os
+/// \returns an output stream with the ExtendedTriggerMessageResponse written to
 std::ostream& operator<<(std::ostream& os, const ExtendedTriggerMessageResponse& k);
 
 } // namespace v16

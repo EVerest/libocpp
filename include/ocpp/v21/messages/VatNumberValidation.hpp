@@ -34,7 +34,8 @@ void to_json(json& j, const VatNumberValidationRequest& k);
 void from_json(const json& j, VatNumberValidationRequest& k);
 
 /// \brief Writes the string representation of the given VatNumberValidationRequest \p k to the given output stream \p
-/// os \returns an output stream with the VatNumberValidationRequest written to
+/// os
+/// \returns an output stream with the VatNumberValidationRequest written to
 std::ostream& operator<<(std::ostream& os, const VatNumberValidationRequest& k);
 
 /// \brief Contains a OCPP VatNumberValidationResponse message
@@ -58,7 +59,8 @@ void to_json(json& j, const VatNumberValidationResponse& k);
 void from_json(const json& j, VatNumberValidationResponse& k);
 
 /// \brief Writes the string representation of the given VatNumberValidationResponse \p k to the given output stream \p
-/// os \returns an output stream with the VatNumberValidationResponse written to
+/// os
+/// \returns an output stream with the VatNumberValidationResponse written to
 std::ostream& operator<<(std::ostream& os, const VatNumberValidationResponse& k);
 
 } // namespace v21

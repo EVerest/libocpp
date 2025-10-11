@@ -33,7 +33,8 @@ void to_json(json& j, const PullDynamicScheduleUpdateRequest& k);
 void from_json(const json& j, PullDynamicScheduleUpdateRequest& k);
 
 /// \brief Writes the string representation of the given PullDynamicScheduleUpdateRequest \p k to the given output
-/// stream \p os \returns an output stream with the PullDynamicScheduleUpdateRequest written to
+/// stream \p os
+/// \returns an output stream with the PullDynamicScheduleUpdateRequest written to
 std::ostream& operator<<(std::ostream& os, const PullDynamicScheduleUpdateRequest& k);
 
 /// \brief Contains a OCPP PullDynamicScheduleUpdateResponse message
@@ -55,7 +56,8 @@ void to_json(json& j, const PullDynamicScheduleUpdateResponse& k);
 void from_json(const json& j, PullDynamicScheduleUpdateResponse& k);
 
 /// \brief Writes the string representation of the given PullDynamicScheduleUpdateResponse \p k to the given output
-/// stream \p os \returns an output stream with the PullDynamicScheduleUpdateResponse written to
+/// stream \p os
+/// \returns an output stream with the PullDynamicScheduleUpdateResponse written to
 std::ostream& operator<<(std::ostream& os, const PullDynamicScheduleUpdateResponse& k);
 
 } // namespace v21

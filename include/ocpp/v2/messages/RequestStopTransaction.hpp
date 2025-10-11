@@ -32,7 +32,8 @@ void to_json(json& j, const RequestStopTransactionRequest& k);
 void from_json(const json& j, RequestStopTransactionRequest& k);
 
 /// \brief Writes the string representation of the given RequestStopTransactionRequest \p k to the given output stream
-/// \p os \returns an output stream with the RequestStopTransactionRequest written to
+/// \p os
+/// \returns an output stream with the RequestStopTransactionRequest written to
 std::ostream& operator<<(std::ostream& os, const RequestStopTransactionRequest& k);
 
 /// \brief Contains a OCPP StopTransactionResponse message
@@ -53,7 +54,8 @@ void to_json(json& j, const RequestStopTransactionResponse& k);
 void from_json(const json& j, RequestStopTransactionResponse& k);
 
 /// \brief Writes the string representation of the given RequestStopTransactionResponse \p k to the given output stream
-/// \p os \returns an output stream with the RequestStopTransactionResponse written to
+/// \p os
+/// \returns an output stream with the RequestStopTransactionResponse written to
 std::ostream& operator<<(std::ostream& os, const RequestStopTransactionResponse& k);
 
 } // namespace v2

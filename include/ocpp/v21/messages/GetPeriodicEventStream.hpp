@@ -31,7 +31,8 @@ void to_json(json& j, const GetPeriodicEventStreamRequest& k);
 void from_json(const json& j, GetPeriodicEventStreamRequest& k);
 
 /// \brief Writes the string representation of the given GetPeriodicEventStreamRequest \p k to the given output stream
-/// \p os \returns an output stream with the GetPeriodicEventStreamRequest written to
+/// \p os
+/// \returns an output stream with the GetPeriodicEventStreamRequest written to
 std::ostream& operator<<(std::ostream& os, const GetPeriodicEventStreamRequest& k);
 
 /// \brief Contains a OCPP GetPeriodicEventStreamResponse message
@@ -51,7 +52,8 @@ void to_json(json& j, const GetPeriodicEventStreamResponse& k);
 void from_json(const json& j, GetPeriodicEventStreamResponse& k);
 
 /// \brief Writes the string representation of the given GetPeriodicEventStreamResponse \p k to the given output stream
-/// \p os \returns an output stream with the GetPeriodicEventStreamResponse written to
+/// \p os
+/// \returns an output stream with the GetPeriodicEventStreamResponse written to
 std::ostream& operator<<(std::ostream& os, const GetPeriodicEventStreamResponse& k);
 
 } // namespace v21

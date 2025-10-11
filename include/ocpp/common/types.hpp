@@ -598,9 +598,9 @@ std::string certificate_type_to_string(CertificateType e);
 CertificateType string_to_certificate_type(const std::string& s);
 } // namespace conversions
 
-/// \brief Writes the string representation of the given CertificateType \p ceritficate_type to
+/// \brief Writes the string representation of the given CertificateType \p certificate_type to
 /// the given output stream \p os \returns an output stream with the CertificateType written to
-std::ostream& operator<<(std::ostream& os, const CertificateType& ceritficate_type);
+std::ostream& operator<<(std::ostream& os, const CertificateType& certificate_type);
 
 struct CertificateHashDataChain {
     CertificateHashDataType certificateHashData;

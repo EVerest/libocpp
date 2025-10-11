@@ -53,7 +53,8 @@ void from_json(const json& j, NotifyEVChargingNeedsRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyEVChargingNeedsRequest \p k to the given output stream \p
-/// os \returns an output stream with the NotifyEVChargingNeedsRequest written to
+/// os
+/// \returns an output stream with the NotifyEVChargingNeedsRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyEVChargingNeedsRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -91,7 +92,8 @@ void from_json(const json& j, NotifyEVChargingNeedsResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyEVChargingNeedsResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyEVChargingNeedsResponse written to
+/// \p os
+/// \returns an output stream with the NotifyEVChargingNeedsResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyEVChargingNeedsResponse& k) {
     os << json(k).dump(4);
     return os;

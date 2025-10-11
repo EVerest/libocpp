@@ -34,7 +34,8 @@ void to_json(json& j, const GetChargingProfilesRequest& k);
 void from_json(const json& j, GetChargingProfilesRequest& k);
 
 /// \brief Writes the string representation of the given GetChargingProfilesRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetChargingProfilesRequest written to
+/// os
+/// \returns an output stream with the GetChargingProfilesRequest written to
 std::ostream& operator<<(std::ostream& os, const GetChargingProfilesRequest& k);
 
 /// \brief Contains a OCPP GetChargingProfilesResponse message
@@ -55,7 +56,8 @@ void to_json(json& j, const GetChargingProfilesResponse& k);
 void from_json(const json& j, GetChargingProfilesResponse& k);
 
 /// \brief Writes the string representation of the given GetChargingProfilesResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetChargingProfilesResponse written to
+/// os
+/// \returns an output stream with the GetChargingProfilesResponse written to
 std::ostream& operator<<(std::ostream& os, const GetChargingProfilesResponse& k);
 
 } // namespace v2

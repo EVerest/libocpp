@@ -65,7 +65,8 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given PublishFirmwareStatusNotificationRequest \p k to the given
-/// output stream \p os \returns an output stream with the PublishFirmwareStatusNotificationRequest written to
+/// output stream \p os
+/// \returns an output stream with the PublishFirmwareStatusNotificationRequest written to
 std::ostream& operator<<(std::ostream& os, const PublishFirmwareStatusNotificationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -94,7 +95,8 @@ void from_json(const json& j, PublishFirmwareStatusNotificationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given PublishFirmwareStatusNotificationResponse \p k to the given
-/// output stream \p os \returns an output stream with the PublishFirmwareStatusNotificationResponse written to
+/// output stream \p os
+/// \returns an output stream with the PublishFirmwareStatusNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const PublishFirmwareStatusNotificationResponse& k) {
     os << json(k).dump(4);
     return os;

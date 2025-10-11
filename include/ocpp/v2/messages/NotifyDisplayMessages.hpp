@@ -34,7 +34,8 @@ void to_json(json& j, const NotifyDisplayMessagesRequest& k);
 void from_json(const json& j, NotifyDisplayMessagesRequest& k);
 
 /// \brief Writes the string representation of the given NotifyDisplayMessagesRequest \p k to the given output stream \p
-/// os \returns an output stream with the NotifyDisplayMessagesRequest written to
+/// os
+/// \returns an output stream with the NotifyDisplayMessagesRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyDisplayMessagesRequest& k);
 
 /// \brief Contains a OCPP NotifyDisplayMessagesResponse message
@@ -53,7 +54,8 @@ void to_json(json& j, const NotifyDisplayMessagesResponse& k);
 void from_json(const json& j, NotifyDisplayMessagesResponse& k);
 
 /// \brief Writes the string representation of the given NotifyDisplayMessagesResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyDisplayMessagesResponse written to
+/// \p os
+/// \returns an output stream with the NotifyDisplayMessagesResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyDisplayMessagesResponse& k);
 
 } // namespace v2

@@ -33,7 +33,8 @@ void to_json(json& j, const ReservationStatusUpdateRequest& k);
 void from_json(const json& j, ReservationStatusUpdateRequest& k);
 
 /// \brief Writes the string representation of the given ReservationStatusUpdateRequest \p k to the given output stream
-/// \p os \returns an output stream with the ReservationStatusUpdateRequest written to
+/// \p os
+/// \returns an output stream with the ReservationStatusUpdateRequest written to
 std::ostream& operator<<(std::ostream& os, const ReservationStatusUpdateRequest& k);
 
 /// \brief Contains a OCPP ReservationStatusUpdateResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const ReservationStatusUpdateResponse& k);
 void from_json(const json& j, ReservationStatusUpdateResponse& k);
 
 /// \brief Writes the string representation of the given ReservationStatusUpdateResponse \p k to the given output stream
-/// \p os \returns an output stream with the ReservationStatusUpdateResponse written to
+/// \p os
+/// \returns an output stream with the ReservationStatusUpdateResponse written to
 std::ostream& operator<<(std::ostream& os, const ReservationStatusUpdateResponse& k);
 
 } // namespace v2

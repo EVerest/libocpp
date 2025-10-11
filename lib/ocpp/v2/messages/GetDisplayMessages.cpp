@@ -103,7 +103,8 @@ void from_json(const json& j, GetDisplayMessagesResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetDisplayMessagesResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetDisplayMessagesResponse written to
+/// os
+/// \returns an output stream with the GetDisplayMessagesResponse written to
 std::ostream& operator<<(std::ostream& os, const GetDisplayMessagesResponse& k) {
     os << json(k).dump(4);
     return os;

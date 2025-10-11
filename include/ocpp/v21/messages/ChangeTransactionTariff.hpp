@@ -34,7 +34,8 @@ void to_json(json& j, const ChangeTransactionTariffRequest& k);
 void from_json(const json& j, ChangeTransactionTariffRequest& k);
 
 /// \brief Writes the string representation of the given ChangeTransactionTariffRequest \p k to the given output stream
-/// \p os \returns an output stream with the ChangeTransactionTariffRequest written to
+/// \p os
+/// \returns an output stream with the ChangeTransactionTariffRequest written to
 std::ostream& operator<<(std::ostream& os, const ChangeTransactionTariffRequest& k);
 
 /// \brief Contains a OCPP ChangeTransactionTariffResponse message
@@ -55,7 +56,8 @@ void to_json(json& j, const ChangeTransactionTariffResponse& k);
 void from_json(const json& j, ChangeTransactionTariffResponse& k);
 
 /// \brief Writes the string representation of the given ChangeTransactionTariffResponse \p k to the given output stream
-/// \p os \returns an output stream with the ChangeTransactionTariffResponse written to
+/// \p os
+/// \returns an output stream with the ChangeTransactionTariffResponse written to
 std::ostream& operator<<(std::ostream& os, const ChangeTransactionTariffResponse& k);
 
 } // namespace v21

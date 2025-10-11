@@ -59,7 +59,8 @@ void from_json(const json& j, NotifyChargingLimitRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyChargingLimitRequest \p k to the given output stream \p
-/// os \returns an output stream with the NotifyChargingLimitRequest written to
+/// os
+/// \returns an output stream with the NotifyChargingLimitRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyChargingLimitRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -88,7 +89,8 @@ void from_json(const json& j, NotifyChargingLimitResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyChargingLimitResponse \p k to the given output stream \p
-/// os \returns an output stream with the NotifyChargingLimitResponse written to
+/// os
+/// \returns an output stream with the NotifyChargingLimitResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyChargingLimitResponse& k) {
     os << json(k).dump(4);
     return os;
