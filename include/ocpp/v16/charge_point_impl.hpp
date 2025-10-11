@@ -417,8 +417,7 @@ public:
                              const fs::path& message_log_path, const std::shared_ptr<EvseSecurity> evse_security,
                              const std::optional<SecurityConfiguration> security_configuration);
 
-    ~ChargePointImpl() {
-    }
+    ~ChargePointImpl() override = default;
 
     /// \brief Allow to update the ChargePoint core information which will be sent in BootNotification.req
     void update_chargepoint_information(const std::string& vendor, const std::string& model,

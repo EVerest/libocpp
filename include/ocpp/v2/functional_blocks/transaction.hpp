@@ -25,7 +25,7 @@ typedef std::function<void(const int32_t evse_id)> PauseChargingCallback;
 
 class TransactionInterface : public MessageHandlerInterface {
 public:
-    virtual ~TransactionInterface() = default;
+    ~TransactionInterface() override = default;
 
     /// \brief Event handler that should be called when a transaction has started
     /// \param evse_id

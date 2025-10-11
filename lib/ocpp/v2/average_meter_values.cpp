@@ -7,8 +7,10 @@
 
 namespace ocpp {
 namespace v2 {
-AverageMeterValues::AverageMeterValues() {
+namespace {
+bool is_avg_meas(const SampledValue& sample);
 }
+
 void AverageMeterValues::clear_values() {
     const std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
     this->aligned_meter_values.clear();

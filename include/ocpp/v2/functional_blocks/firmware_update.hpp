@@ -20,7 +20,7 @@ typedef std::function<void()> AllConnectorsUnavailableCallback;
 
 class FirmwareUpdateInterface : public MessageHandlerInterface {
 public:
-    virtual ~FirmwareUpdateInterface() = default;
+    ~FirmwareUpdateInterface() override = default;
 
     virtual void on_firmware_update_status_notification(int32_t request_id,
                                                         const FirmwareStatusEnum& firmware_update_status) = 0;

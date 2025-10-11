@@ -50,7 +50,7 @@ public:
     /// \param db_path Path to database
     DeviceModelStorageSqlite(const fs::path& db_path);
 
-    ~DeviceModelStorageSqlite() = default;
+    ~DeviceModelStorageSqlite() override = default;
 
     std::map<Component, std::map<Variable, VariableMetaData>> get_device_model() final;
 

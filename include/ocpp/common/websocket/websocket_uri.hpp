@@ -13,7 +13,7 @@ namespace ocpp {
 typedef ocpp::uri ev_uri;
 class Uri {
 public:
-    Uri(){};
+    Uri() = default;
 
     // clang-format off
     /// \brief parse_and_validate parses the \p uri and checks

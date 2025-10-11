@@ -209,7 +209,7 @@ private:
     ///
     /// Resets timer, set all pricing trigger related members to std::nullopt and / or nullptr.
     ///
-    void reset_pricing_triggers(void);
+    void reset_pricing_triggers();
 
     AverageMeterValues aligned_data_updated;
     AverageMeterValues aligned_data_tx_end;
@@ -247,7 +247,7 @@ public:
              transaction_meter_value_req,
          const std::function<void(int32_t evse_id)>& pause_charging_callback);
 
-    virtual ~Evse();
+    ~Evse() override;
 
     int32_t get_id() const override;
 

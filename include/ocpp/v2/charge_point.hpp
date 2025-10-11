@@ -514,14 +514,14 @@ public:
 
     /// @}  // End chargepoint 2.0.1 topic
 
-    ~ChargePoint();
+    ~ChargePoint() override;
 
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool start_connecting = true) override;
 
     void stop() override;
 
     void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) override;
-    virtual void disconnect_websocket() override;
+    void disconnect_websocket() override;
 
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
 

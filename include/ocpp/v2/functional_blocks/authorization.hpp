@@ -17,8 +17,7 @@ class DatabaseHandlerInterface;
 
 class AuthorizationInterface : public MessageHandlerInterface {
 public:
-    virtual ~AuthorizationInterface() {
-    }
+    ~AuthorizationInterface() override = default;
 
     virtual void start_auth_cache_cleanup_thread() = 0;
     virtual AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
@@ -55,7 +54,7 @@ private: // Members
 
 public:
     explicit Authorization(const FunctionalBlockContext& context);
-    ~Authorization();
+    ~Authorization() override;
     void start_auth_cache_cleanup_thread() override;
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     AuthorizeResponse authorize_req(const IdToken id_token, const std::optional<ocpp::CiString<10000>>& certificate,

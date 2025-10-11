@@ -114,8 +114,7 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
                 ocpp_main_path, core_database_path, sql_init_path, message_log_path, evse_security, callbacks) {
 }
 
-ChargePoint::~ChargePoint() {
-}
+ChargePoint::~ChargePoint() = default;
 
 void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
     this->message_queue->start();

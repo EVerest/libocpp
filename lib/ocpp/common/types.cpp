@@ -53,10 +53,7 @@ std::chrono::time_point<date::utc_clock> DateTimeImpl::to_time_point() const {
     return this->timepoint;
 }
 
-DateTimeImpl& DateTimeImpl::operator=(const DateTimeImpl& dt) {
-    this->timepoint = dt.timepoint;
-    return *this;
-}
+DateTimeImpl& DateTimeImpl::operator=(const DateTimeImpl& dt) = default;
 
 std::ostream& operator<<(std::ostream& os, const DateTimeImpl& dt) {
     os << dt.to_rfc3339();
@@ -83,8 +80,7 @@ bool operator==(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
     return lhs.timepoint == rhs.timepoint;
 }
 
-CallError::CallError() {
-}
+CallError::CallError() = default;
 
 CallError::CallError(const MessageId& uniqueId, const std::string& errorCode, const std::string& errorDescription,
                      const json& errorDetails) {

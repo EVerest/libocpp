@@ -20,7 +20,7 @@ typedef std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const 
 
 class ReservationInterface : public MessageHandlerInterface {
 public:
-    virtual ~ReservationInterface() = default;
+    ~ReservationInterface() override = default;
     virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
     virtual ocpp::ReservationCheckStatus
     is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,
@@ -43,23 +43,23 @@ private: // Members
     ///
     IsReservationForTokenCallback is_reservation_for_token_callback;
 
+    // Functions
+    void handle_reserve_now_request(Call<ReserveNowRequest> call);
+    void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
+    void send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info);
+
 public:
     Reservation(const FunctionalBlockContext& functional_block_context, ReserveNowCallback reserve_now_callback,
                 CancelReservationCallback cancel_reservation_callback,
                 const IsReservationForTokenCallback is_reservation_for_token_callback);
-    virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
+    void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
-    virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
-    virtual ocpp::ReservationCheckStatus
+    void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
+    ocpp::ReservationCheckStatus
     is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,
                                const std::optional<IdToken>& group_id_token) const override;
-    virtual void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
-    virtual void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
-
-private: // Functions
-    void handle_reserve_now_request(Call<ReserveNowRequest> call);
-    void handle_cancel_reservation_callback(Call<CancelReservationRequest> call);
-    void send_reserve_now_rejected_response(const MessageId& unique_id, const std::string& status_info);
+    void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
+    void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
 };
 
 } // namespace ocpp::v2

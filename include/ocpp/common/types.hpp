@@ -31,6 +31,7 @@ struct Message {
     /// \brief Provides the type of the message
     /// \returns the message type as a string
     virtual std::string get_type() const = 0;
+    virtual ~Message() = default;
 };
 
 /// \brief Exception used when DateTime class is initialized by invalid timepoint string.

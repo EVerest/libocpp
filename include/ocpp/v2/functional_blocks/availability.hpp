@@ -20,10 +20,9 @@ struct AvailabilityChange {
 
 class AvailabilityInterface : public MessageHandlerInterface {
 public:
-    virtual ~AvailabilityInterface() {
-    }
+    ~AvailabilityInterface() override = default;
 
-    virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) = 0;
+    void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override = 0;
 
     // Functional Block G: Availability OCPP requests.
     ///
@@ -89,7 +88,7 @@ public:
     Availability(const FunctionalBlockContext& functional_block_context,
                  std::optional<TimeSyncCallback> time_sync_callback,
                  std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback);
-    ~Availability();
+    ~Availability() override;
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
     // Functional Block G: Availability

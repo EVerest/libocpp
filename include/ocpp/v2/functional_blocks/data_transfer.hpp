@@ -14,7 +14,7 @@ struct DataTransferResponse;
 class DataTransferInterface : public MessageHandlerInterface {
 
 public:
-    virtual ~DataTransferInterface() = default;
+    ~DataTransferInterface() override = default;
 
     /// \brief Sends a DataTransfer.req message to the CSMS using the given parameters
     /// \param vendorId

@@ -150,7 +150,7 @@ public:
     ///
     /// \brief Destructor
     ///
-    virtual ~InitDeviceModelDb();
+    ~InitDeviceModelDb() override;
 
     ///
     /// \brief Initialize the database schema and component config.
@@ -431,6 +431,6 @@ protected: // Functions
     ///
     /// \throw InitDeviceModelDbError When foreign key pragma could not be set to 'ON'.
     ///
-    virtual void init_sql() override;
+    void init_sql() override;
 };
 } // namespace ocpp::v2

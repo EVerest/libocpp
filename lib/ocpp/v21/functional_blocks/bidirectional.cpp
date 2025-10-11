@@ -22,8 +22,7 @@ ocpp::v2::Bidirectional::Bidirectional(
     context(context), notify_allowed_energy_transfer_callback(notify_allowed_energy_transfer_callback) {
 }
 
-ocpp::v2::Bidirectional::~Bidirectional() {
-}
+ocpp::v2::Bidirectional::~Bidirectional() = default;
 
 void ocpp::v2::Bidirectional::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
     const auto& json_message = message.message;

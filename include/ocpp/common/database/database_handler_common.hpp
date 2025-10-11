@@ -40,7 +40,7 @@ public:
     explicit DatabaseHandlerCommon(std::unique_ptr<everest::db::sqlite::ConnectionInterface> database,
                                    const fs::path& sql_migration_files_path, uint32_t target_schema_version) noexcept;
 
-    ~DatabaseHandlerCommon() = default;
+    virtual ~DatabaseHandlerCommon() = default;
 
     /// \brief Opens connection to database file and performs the initialization by calling init_sql()
     void open_connection();

@@ -34,7 +34,7 @@ typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const Re
 
 class RemoteTransactionControlInterface : public MessageHandlerInterface {
 public:
-    virtual ~RemoteTransactionControlInterface() = default;
+    ~RemoteTransactionControlInterface() override = default;
 };
 
 class RemoteTransactionControl : public RemoteTransactionControlInterface {

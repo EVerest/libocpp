@@ -292,42 +292,43 @@ public:
             send_connector_status_notification_callback);
 
     void set_cs_effective_availability_changed_callback(
-        const std::function<void(const OperationalStatusEnum new_status)>& callback);
+        const std::function<void(const OperationalStatusEnum new_status)>& callback) override;
 
     void set_evse_effective_availability_changed_callback(
-        const std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>& callback);
+        const std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>& callback) override;
 
     void set_connector_effective_availability_changed_callback(
         const std::function<void(const int32_t evse_id, const int32_t connector_id,
-                                 const OperationalStatusEnum new_status)>& callback);
+                                 const OperationalStatusEnum new_status)>& callback) override;
 
-    OperationalStatusEnum get_cs_individual_operational_status();
-    OperationalStatusEnum get_evse_individual_operational_status(int32_t evse_id);
-    OperationalStatusEnum get_connector_individual_operational_status(int32_t evse_id, int32_t connector_id);
+    OperationalStatusEnum get_cs_individual_operational_status() override;
+    OperationalStatusEnum get_evse_individual_operational_status(int32_t evse_id) override;
+    OperationalStatusEnum get_connector_individual_operational_status(int32_t evse_id, int32_t connector_id) override;
 
-    OperationalStatusEnum get_cs_persisted_operational_status();
-    OperationalStatusEnum get_evse_persisted_operational_status(int32_t evse_id);
-    OperationalStatusEnum get_connector_persisted_operational_status(int32_t evse_id, int32_t connector_id);
+    OperationalStatusEnum get_cs_persisted_operational_status() override;
+    OperationalStatusEnum get_evse_persisted_operational_status(int32_t evse_id) override;
+    OperationalStatusEnum get_connector_persisted_operational_status(int32_t evse_id, int32_t connector_id) override;
 
-    void set_cs_individual_operational_status(OperationalStatusEnum new_status, bool persist);
-    void set_evse_individual_operational_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist);
+    void set_cs_individual_operational_status(OperationalStatusEnum new_status, bool persist) override;
+    void set_evse_individual_operational_status(int32_t evse_id, OperationalStatusEnum new_status,
+                                                bool persist) override;
     void set_connector_individual_operational_status(int32_t evse_id, int32_t connector_id,
-                                                     OperationalStatusEnum new_status, bool persist);
+                                                     OperationalStatusEnum new_status, bool persist) override;
 
-    OperationalStatusEnum get_evse_effective_operational_status(int32_t evse_id);
-    OperationalStatusEnum get_connector_effective_operational_status(int32_t evse_id, int32_t connector_id);
-    ConnectorStatusEnum get_connector_effective_status(int32_t evse_id, int32_t connector_id);
+    OperationalStatusEnum get_evse_effective_operational_status(int32_t evse_id) override;
+    OperationalStatusEnum get_connector_effective_operational_status(int32_t evse_id, int32_t connector_id) override;
+    ConnectorStatusEnum get_connector_effective_status(int32_t evse_id, int32_t connector_id) override;
 
-    void set_connector_occupied(int32_t evse_id, int32_t connector_id, bool is_occupied);
-    void set_connector_reserved(int32_t evse_id, int32_t connector_id, bool is_reserved);
-    void set_connector_faulted(int32_t evse_id, int32_t connector_id, bool is_faulted);
-    void set_connector_unavailable(int32_t evse_id, int32_t connector_id, bool is_unavailable);
+    void set_connector_occupied(int32_t evse_id, int32_t connector_id, bool is_occupied) override;
+    void set_connector_reserved(int32_t evse_id, int32_t connector_id, bool is_reserved) override;
+    void set_connector_faulted(int32_t evse_id, int32_t connector_id, bool is_faulted) override;
+    void set_connector_unavailable(int32_t evse_id, int32_t connector_id, bool is_unavailable) override;
 
-    void trigger_all_effective_availability_changed_callbacks();
+    void trigger_all_effective_availability_changed_callbacks() override;
 
-    void send_status_notification_all_connectors();
-    void send_status_notification_changed_connectors();
-    void send_status_notification_single_connector(int32_t evse_id, int32_t connector_id);
+    void send_status_notification_all_connectors() override;
+    void send_status_notification_changed_connectors() override;
+    void send_status_notification_single_connector(int32_t evse_id, int32_t connector_id) override;
 };
 
 } // namespace ocpp::v2

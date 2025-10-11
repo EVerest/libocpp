@@ -31,7 +31,7 @@ typedef std::function<void(const std::optional<CertificateHashDataType> customer
 
 class DiagnosticsInterface : public MessageHandlerInterface {
 public:
-    virtual ~DiagnosticsInterface() = default;
+    ~DiagnosticsInterface() override = default;
 
     /* OCPP message requests */
     virtual void notify_event_req(const std::vector<EventData>& events) = 0;

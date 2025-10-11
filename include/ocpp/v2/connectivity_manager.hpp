@@ -30,8 +30,7 @@ using ConfigureNetworkConnectionProfileCallback = std::function<std::future<Conf
 
 class ConnectivityManagerInterface {
 public:
-    virtual ~ConnectivityManagerInterface() {
-    }
+    virtual ~ConnectivityManagerInterface() = default;
     /// \brief Set the websocket \p authorization_key
     ///
     virtual void set_websocket_authorization_key(const std::string& authorization_key) = 0;

@@ -16,7 +16,7 @@ namespace v2 {
 class AverageMeterValues {
 
 public:
-    AverageMeterValues();
+    AverageMeterValues() = default;
     /// @brief Set the meter values into the local object for processing
     /// @param meter_value MeterValue
     void set_values(const MeterValue& meter_value);

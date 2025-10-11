@@ -41,7 +41,7 @@ typedef std::function<ClearDisplayMessageResponse(const ClearDisplayMessageReque
 
 class DisplayMessageInterface : public MessageHandlerInterface {
 public:
-    virtual ~DisplayMessageInterface() = default;
+    ~DisplayMessageInterface() override = default;
 };
 
 class DisplayMessageBlock : public DisplayMessageInterface {
@@ -51,7 +51,7 @@ public:
                         GetDisplayMessageCallback get_display_message_callback,
                         SetDisplayMessageCallback set_display_message_callback,
                         ClearDisplayMessageCallback clear_display_message_callback);
-    virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
+    void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private:
     const FunctionalBlockContext& context;

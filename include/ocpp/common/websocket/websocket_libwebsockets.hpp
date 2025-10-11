@@ -25,7 +25,7 @@ public:
     explicit WebsocketLibwebsockets(const WebsocketConnectionOptions& connection_options,
                                     std::shared_ptr<EvseSecurity> evse_security);
 
-    ~WebsocketLibwebsockets();
+    ~WebsocketLibwebsockets() override;
 
     void set_connection_options(const WebsocketConnectionOptions& connection_options) override;
 

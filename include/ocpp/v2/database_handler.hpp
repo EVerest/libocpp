@@ -232,14 +232,13 @@ public:
     size_t authorization_cache_get_binary_size() override;
 
     // Availability
-    virtual void insert_cs_availability(OperationalStatusEnum operational_status, bool replace) override;
-    virtual OperationalStatusEnum get_cs_availability() override;
-    virtual void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status,
-                                          bool replace) override;
-    virtual OperationalStatusEnum get_evse_availability(int32_t evse_id) override;
-    virtual void insert_connector_availability(int32_t evse_id, int32_t connector_id,
-                                               OperationalStatusEnum operational_status, bool replace) override;
-    virtual OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id) override;
+    void insert_cs_availability(OperationalStatusEnum operational_status, bool replace) override;
+    OperationalStatusEnum get_cs_availability() override;
+    void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status, bool replace) override;
+    OperationalStatusEnum get_evse_availability(int32_t evse_id) override;
+    void insert_connector_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
+                                       bool replace) override;
+    OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id) override;
 
     // Local authorization list management
     void insert_or_update_local_authorization_list_version(int32_t version) override;
@@ -281,7 +280,7 @@ public:
                                             const ChargingProfileCriterion& criteria) override;
     std::vector<v2::ChargingProfile> get_charging_profiles_for_evse(const int evse_id) override;
     std::vector<v2::ChargingProfile> get_all_charging_profiles() override;
-    virtual std::map<int32_t, std::vector<v2::ChargingProfile>> get_all_charging_profiles_group_by_evse() override;
+    std::map<int32_t, std::vector<v2::ChargingProfile>> get_all_charging_profiles_group_by_evse() override;
     CiString<20> get_charging_limit_source_for_profile(const int profile_id) override;
 
     std::unique_ptr<everest::db::sqlite::StatementInterface> new_statement(const std::string& sql) override;

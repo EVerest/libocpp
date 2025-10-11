@@ -43,8 +43,7 @@ class UnexpectedMessageTypeFromCSMS;
 
 class OcspUpdaterInterface {
 public:
-    virtual ~OcspUpdaterInterface() {
-    }
+    virtual ~OcspUpdaterInterface() = default;
     virtual void start() = 0;
     virtual void stop() = 0;
     // Wake up the updater thread and tell it to update
@@ -58,8 +57,7 @@ public:
     OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_status_func get_cert_status_from_csms,
                 std::chrono::seconds ocsp_cache_update_interval = std::chrono::hours(167),
                 std::chrono::seconds ocsp_cache_update_retry_interval = std::chrono::hours(24));
-    virtual ~OcspUpdater() {
-    }
+    ~OcspUpdater() override = default;
 
     void start() override;
     void stop() override;

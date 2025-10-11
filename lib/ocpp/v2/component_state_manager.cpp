@@ -6,8 +6,7 @@
 
 namespace ocpp::v2 {
 
-ComponentStateManagerInterface::~ComponentStateManagerInterface() {
-}
+ComponentStateManagerInterface::~ComponentStateManagerInterface() = default;
 
 void ComponentStateManager::read_all_states_from_database_or_set_defaults(
     const std::map<int32_t, int32_t>& evse_connector_structure) {
