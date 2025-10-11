@@ -22,12 +22,12 @@ bool is_integer(const std::string& value) {
     }
 
     // Check for + or - in the beginning
-    size_t start_pos = 0;
+    auto value_it = value.begin();
     if (value[0] == '+' or value[0] == '-') {
-        start_pos = 1;
+        value_it += 1;
     }
 
-    return std::all_of(value.begin() + start_pos, value.end(), ::isdigit);
+    return std::all_of(value_it, value.end(), ::isdigit);
 }
 
 std::tuple<bool, int> is_positive_integer(const std::string& value) {
