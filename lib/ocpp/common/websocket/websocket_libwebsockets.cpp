@@ -1206,11 +1206,13 @@ void WebsocketLibwebsockets::ping() {
 int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len) {
     const auto reason = static_cast<lws_callback_reasons>(callback_reason);
 
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
     lws* wsi = reinterpret_cast<lws*>(wsi_ptr);
 
     // The ConnectionData is thread bound, so that if we clear it in the 'WebsocketLibwebsockets'
     // we still have a chance to close the connection here
-    ConnectionData* data = reinterpret_cast<ConnectionData*>(lws_wsi_user(wsi));
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+    auto* data = reinterpret_cast<ConnectionData*>(lws_wsi_user(wsi));
 
     // If we are in the process of deletion, just close socket and return
     if (nullptr == data) {
@@ -1226,9 +1228,10 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
             // 'user' is X509_STORE and 'len' is preverify_ok (1) in case the pre-verification was successful
             EVLOG_debug << "Verifying server certs!";
 
-            if (!verify_csms_cn(this->connection_options.csms_uri.get_hostname(), (len == 1),
-                                reinterpret_cast<X509_STORE_CTX*>(user),
-                                this->connection_options.verify_csms_allow_wildcards)) {
+            if (!verify_csms_cn(
+                    this->connection_options.csms_uri.get_hostname(), (len == 1),
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+                    reinterpret_cast<X509_STORE_CTX*>(user), this->connection_options.verify_csms_allow_wildcards)) {
                 this->push_deferred_callback([this]() {
                     if (this->connection_failed_callback) {
                         this->connection_failed_callback(ConnectionFailedReason::InvalidCSMSCertificate);
@@ -1248,15 +1251,21 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
     case LWS_CALLBACK_CLIENT_APPEND_HANDSHAKE_HEADER: {
         EVLOG_debug << "Handshake with security profile: " << this->connection_options.security_profile;
 
-        unsigned char **ptr = reinterpret_cast<unsigned char**>(in), *end_header = (*ptr) + len;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+        auto ptr = reinterpret_cast<unsigned char**>(in);
+        unsigned char* end_header = (*ptr) + len;
 
         if (this->connection_options.hostName.has_value()) {
             auto& str = this->connection_options.hostName.value();
             EVLOG_info << "User-Host is set to " << str;
 
-            if (0 != lws_add_http_header_by_name(wsi, reinterpret_cast<const unsigned char*>("User-Host"),
-                                                 reinterpret_cast<const unsigned char*>(str.c_str()), str.length(), ptr,
-                                                 end_header)) {
+            if (0 != lws_add_http_header_by_name(
+                         wsi,
+                         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+                         reinterpret_cast<const unsigned char*>("User-Host"),
+                         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+                         reinterpret_cast<const unsigned char*>(str.c_str()), clamp_to<int>(str.length()), ptr,
+                         end_header)) {
                 EVLOG_AND_THROW(std::runtime_error("Could not append User-Host header."));
             }
         }
@@ -1267,9 +1276,11 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
             if (authorization_header != std::nullopt) {
                 auto& str = authorization_header.value();
 
-                if (0 != lws_add_http_header_by_token(wsi, lws_token_indexes::WSI_TOKEN_HTTP_AUTHORIZATION,
-                                                      reinterpret_cast<const unsigned char*>(str.c_str()), str.length(),
-                                                      ptr, end_header)) {
+                if (0 != lws_add_http_header_by_token(
+                             wsi, lws_token_indexes::WSI_TOKEN_HTTP_AUTHORIZATION,
+                             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+                             reinterpret_cast<const unsigned char*>(str.c_str()), clamp_to<int>(str.length()), ptr,
+                             end_header)) {
                     EVLOG_AND_THROW(std::runtime_error("Could not append authorization header."));
                 }
 
@@ -1291,7 +1302,8 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
     } break;
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR: {
-        std::string error_message = (in ? reinterpret_cast<char*>(in) : "(null)");
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
+        std::string error_message = ((in != nullptr) ? reinterpret_cast<char*>(in) : "(null)");
         EVLOG_error << "CLIENT_CONNECTION_ERROR: [" << error_message << "]. Attempting reconnect";
         ERR_print_errors_fp(stderr);
 
@@ -1335,7 +1347,9 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
         break;
 
     case LWS_CALLBACK_WS_PEER_INITIATED_CLOSE: {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
         std::string close_reason(reinterpret_cast<char*>(in), len);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
         const unsigned char* pp = reinterpret_cast<unsigned char*>(in);
         const auto close_code = (unsigned short)((pp[0] << 8) | pp[1]);
 
@@ -1386,6 +1400,7 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
     } break;
 
     case LWS_CALLBACK_CLIENT_RECEIVE:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): needed for appropriate type
         recv_buffered_message.append(reinterpret_cast<char*>(in), reinterpret_cast<char*>(in) + len);
 
         // Message is complete
