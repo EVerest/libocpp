@@ -35,7 +35,8 @@ public:
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private: // Functions
-    void handle_notify_allowed_energy_transfer(Call<v21::NotifyAllowedEnergyTransferRequest> msg);
+    void
+    handle_notify_allowed_energy_transfer(Call<v21::NotifyAllowedEnergyTransferRequest> notify_allowed_energy_transfer);
 };
 
 } // namespace ocpp::v2

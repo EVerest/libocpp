@@ -131,7 +131,7 @@ private:
     void on_variable_changed(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
                              const Component& component, const Variable& variable,
                              const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
-                             const std::string& value_old, const std::string& value_current);
+                             const std::string& value_previous, const std::string& value_current);
 
     /// \brief Callback that is registered to the 'device_model' that determines if any of
     /// the already existing monitors were updated. It is required for some spec requirements

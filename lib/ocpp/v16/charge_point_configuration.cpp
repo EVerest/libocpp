@@ -2289,9 +2289,9 @@ std::optional<std::string> ChargePointConfiguration::getCpoName() {
     return cpo_name;
 }
 
-void ChargePointConfiguration::setCpoName(std::string cpoName) {
-    this->config["Security"]["CpoName"] = cpoName;
-    this->setInUserConfig("Security", "CpoName", cpoName);
+void ChargePointConfiguration::setCpoName(std::string cpo_name) {
+    this->config["Security"]["CpoName"] = cpo_name;
+    this->setInUserConfig("Security", "CpoName", cpo_name);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getCpoNameKeyValue() {
@@ -3240,10 +3240,10 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
     return ConfigurationStatus::Accepted;
 }
 
-void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri) {
-    EVLOG_warning << "CentralSystemURI changed to: " << centralSystemUri;
-    this->config["Internal"]["CentralSystemURI"] = centralSystemUri;
-    this->setInUserConfig("Internal", "CentralSystemURI", centralSystemUri);
+void ChargePointConfiguration::setCentralSystemURI(std::string ocpp_uri) {
+    EVLOG_warning << "CentralSystemURI changed to: " << ocpp_uri;
+    this->config["Internal"]["CentralSystemURI"] = ocpp_uri;
+    this->setInUserConfig("Internal", "CentralSystemURI", ocpp_uri);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {

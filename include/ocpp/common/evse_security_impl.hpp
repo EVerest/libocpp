@@ -33,7 +33,7 @@ private:
     std::unique_ptr<evse_security::EvseSecurity> evse_security;
 
 public:
-    explicit EvseSecurityImpl(const SecurityConfiguration& file_paths);
+    explicit EvseSecurityImpl(const SecurityConfiguration& security_configuration);
     InstallCertificateResult install_ca_certificate(const std::string& certificate,
                                                     const CaCertificateType& certificate_type) override;
     DeleteCertificateResult delete_certificate(const CertificateHashDataType& certificate_hash_data) override;

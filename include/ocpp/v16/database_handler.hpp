@@ -80,7 +80,7 @@ public:
     /// \brief Updates the METER_LAST and METER_LAST_TIME column for the transaction with the given \p session_id in the
     /// TRANSACTIONS table
     void update_transaction_meter_value(const std::string& session_id, const int32_t value,
-                                        const std::string& timestamp);
+                                        const std::string& last_meter_time);
 
     /// \brief Returns a list of all transactions in the database. If \p filter_complete is true, only incomplete
     /// transactions will be return. If \p filter_complete is false, all transactions will be returned

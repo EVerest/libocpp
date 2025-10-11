@@ -599,7 +599,7 @@ void WebsocketLibwebsockets::thread_websocket_message_recv_loop(std::shared_ptr<
     EVLOG_debug << "Exit recv loop with ID: " << std::hex << std::this_thread::get_id();
 }
 
-bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<ConnectionData>& local_data) {
+bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<ConnectionData>& new_connection_data) {
     // lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG | LLL_PARSER | LLL_HEADER | LLL_EXT |
     //                          LLL_CLIENT | LLL_LATENCY | LLL_THREAD | LLL_USER, nullptr);
     lws_set_log_level(LLL_ERR, nullptr);
@@ -619,7 +619,7 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
     }
 
     // Set reference to ConnectionData since 'data' can go away in the websocket
-    info.user = local_data.get();
+    info.user = new_connection_data.get();
 
     info.fd_limit_per_thread = 1 + 1 + 1;
 
@@ -703,7 +703,7 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
     }
 
     // Conn acquire the lws context and security context
-    local_data->init_connection_context(lws_ctx, ssl_ctx);
+    new_connection_data->init_connection_context(lws_ctx, ssl_ctx);
     return true;
 }
 

@@ -3422,7 +3422,7 @@ void ChargePointImpl::status_notification(const int32_t connector, const ChargeP
 
 // public API for Core profile
 
-EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const bool authorize_only_locally) {
+EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> id_token, const bool authorize_only_locally) {
     EnhancedIdTagInfo enhanced_id_tag_info;
 
     // only do authorize req when authorization locally not enabled or fails
@@ -3448,9 +3448,9 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
 
         if (this->configuration->getLocalAuthListEnabled()) {
             try {
-                const auto auth_list_entry_opt = this->database_handler->get_local_authorization_list_entry(idTag);
+                const auto auth_list_entry_opt = this->database_handler->get_local_authorization_list_entry(id_token);
                 if (auth_list_entry_opt.has_value()) {
-                    EVLOG_info << "Found id_tag " << idTag.get() << " in AuthorizationList";
+                    EVLOG_info << "Found id_tag " << id_token.get() << " in AuthorizationList";
                     enhanced_id_tag_info.id_tag_info = auth_list_entry_opt.value();
 
                     update_tariff_message_if_eligible(enhanced_id_tag_info);
@@ -3464,11 +3464,14 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
         }
 
         if (this->configuration->getAuthorizationCacheEnabled()) {
-            if (this->validate_against_cache_entries(idTag)) {
-                EVLOG_info << "Found valid id_tag " << idTag.get() << " in AuthorizationCache";
-                enhanced_id_tag_info.id_tag_info = this->database_handler->get_authorization_cache_entry(idTag).value();
-                update_tariff_message_if_eligible(enhanced_id_tag_info);
-                return enhanced_id_tag_info;
+            if (this->validate_against_cache_entries(id_token)) {
+                const auto auth_cache_entry = this->database_handler->get_authorization_cache_entry(id_token);
+                if (auth_cache_entry.has_value()) {
+                    EVLOG_info << "Found valid id_tag " << id_token.get() << " in AuthorizationCache";
+                    enhanced_id_tag_info.id_tag_info = auth_cache_entry.value();
+                    update_tariff_message_if_eligible(enhanced_id_tag_info);
+                    return enhanced_id_tag_info;
+                }
             }
         }
     }
@@ -3479,11 +3482,11 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
     }
 
     std::unique_lock<std::mutex> lock(this->user_price_map_mutex);
-    this->tariff_messages_by_id_token.erase(idTag.get()); // reset any prior data
+    this->tariff_messages_by_id_token.erase(id_token.get()); // reset any prior data
 
     AuthorizeRequest req;
-    req.idTag = idTag;
-    ocpp::Call<AuthorizeRequest> call(req);
+    req.idTag = id_token;
+    const ocpp::Call<AuthorizeRequest> call(req);
 
     auto authorize_future = this->message_dispatcher->dispatch_call_async(call);
 
@@ -3498,32 +3501,32 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
     if (enhanced_message.messageType == MessageType::AuthorizeResponse) {
         try {
             const ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
-            this->database_handler->insert_or_update_authorization_cache_entry(idTag, call_result.msg.idTagInfo);
+            this->database_handler->insert_or_update_authorization_cache_entry(id_token, call_result.msg.idTagInfo);
             enhanced_id_tag_info.id_tag_info = call_result.msg.idTagInfo;
 
             if (this->configuration->getCustomDisplayCostAndPriceEnabled() &&
                 call_result.msg.idTagInfo.status == AuthorizationStatus::Accepted) {
                 EVLOG_info << "California pricing is active, waiting for set user price.";
 
-                this->user_price_cvs[idTag.get()].wait_for(
+                this->user_price_cvs[id_token.get()].wait_for(
                     lock,
                     std::chrono::milliseconds(this->configuration->getWaitForSetUserPriceTimeout().value_or(
                         DEFAULT_WAIT_FOR_SET_USER_PRICE_TIMEOUT_MS)),
                     [&] {
-                        return this->tariff_messages_by_id_token.find(idTag.get()) !=
+                        return this->tariff_messages_by_id_token.find(id_token.get()) !=
                                this->tariff_messages_by_id_token.end();
                     });
 
-                auto tariff_it = this->tariff_messages_by_id_token.find(idTag.get());
+                auto tariff_it = this->tariff_messages_by_id_token.find(id_token.get());
                 if (tariff_it != this->tariff_messages_by_id_token.end()) {
-                    EVLOG_info << "Tariff message received for idToken " << idTag.get();
+                    EVLOG_info << "Tariff message received for idToken " << id_token.get();
                     enhanced_id_tag_info.tariff_message = tariff_it->second;
                     this->tariff_messages_by_id_token.erase(tariff_it);
                 } else {
-                    EVLOG_warning << "Tariff message was not received within timeout for idToken " << idTag.get();
+                    EVLOG_warning << "Tariff message was not received within timeout for idToken " << id_token.get();
                     enhanced_id_tag_info.tariff_message = this->configuration->getDefaultTariffMessage(false);
                 }
-                this->user_price_cvs.erase(idTag.get());
+                this->user_price_cvs.erase(id_token.get());
             }
             return enhanced_id_tag_info;
         } catch (const std::exception& e) {
@@ -3763,15 +3766,14 @@ ocpp::v2::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
     // For eMAID, we will respond here, unless the local auth list or auth cache is tried
     if (!try_local_auth_list_or_cache) {
         return authorize_response;
-    } else {
-        const auto local_authorize_result = this->authorize_id_token(emaid, true);
-        if (local_authorize_result.id_tag_info.status == AuthorizationStatus::Accepted) {
-            authorize_response.idTokenInfo.status = ocpp::v2::AuthorizationStatusEnum::Accepted;
-        } else {
-            authorize_response.idTokenInfo.status = ocpp::v2::AuthorizationStatusEnum::Invalid;
-        }
-        return authorize_response;
     }
+    const auto local_authorize_result = this->authorize_id_token(emaid, true);
+    if (local_authorize_result.id_tag_info.status == AuthorizationStatus::Accepted) {
+        authorize_response.idTokenInfo.status = ocpp::v2::AuthorizationStatusEnum::Accepted;
+    } else {
+        authorize_response.idTokenInfo.status = ocpp::v2::AuthorizationStatusEnum::Invalid;
+    }
+    return authorize_response;
 }
 
 void ChargePointImpl::data_transfer_pnc_sign_certificate() {

@@ -118,13 +118,13 @@ bool ConnectivityManager::is_websocket_connected() {
     return this->websocket != nullptr && this->websocket->is_connected();
 }
 
-void ConnectivityManager::connect(std::optional<int32_t> configuration_slot_opt) {
+void ConnectivityManager::connect(std::optional<int32_t> network_profile_slot) {
     if (this->network_connection_slots.empty()) {
         EVLOG_warning << "No network connection profiles configured, aborting websocket connection.";
         return;
     }
 
-    const int32_t configuration_slot = configuration_slot_opt.value_or(this->get_active_network_configuration_slot());
+    const int32_t configuration_slot = network_profile_slot.value_or(this->get_active_network_configuration_slot());
     if (!this->get_network_connection_profile(configuration_slot).has_value()) {
         EVLOG_warning << "Could not find network connection profile belonging to configuration slot "
                       << configuration_slot;
