@@ -253,7 +253,7 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
 /// \return the list of start times
 std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, const DateTime& in_end,
                                                     const std::optional<DateTime>& in_session_start,
-                                                    const ChargingProfile& in_profile, std::uint8_t in_period_index) {
+                                                    const ChargingProfile& in_profile, std::size_t in_period_index) {
     std::vector<period_entry_t> entries;
 
     if (in_period_index >= in_profile.chargingSchedule.chargingSchedulePeriod.size()) {
@@ -280,7 +280,7 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
             // the start time of this period is calculated in period_entry_t::init()
             const auto schedule_start = calculate_start(in_now, in_end, in_session_start, in_profile);
 
-            for (std::uint8_t i = 0; i < schedule_start.size(); i++) {
+            for (std::size_t i = 0; i < schedule_start.size(); i++) {
                 const bool has_next_occurrance = (i + 1) < schedule_start.size();
                 const auto& entry_start = schedule_start[i];
 
@@ -346,7 +346,7 @@ std::vector<period_entry_t> calculate_profile_unsorted(const DateTime& now, cons
     std::vector<period_entry_t> entries;
 
     const auto nr_of_entries = profile.chargingSchedule.chargingSchedulePeriod.size();
-    for (uint8_t i = 0; i < nr_of_entries; i++) {
+    for (std::size_t i = 0; i < nr_of_entries; i++) {
         const auto results = calculate_profile_entry(now, end, session_start, profile, i);
         for (const auto& entry : results) {
             if (entry.start <= end) {

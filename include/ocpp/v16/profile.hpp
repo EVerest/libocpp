@@ -55,7 +55,7 @@ std::vector<DateTime> calculate_start(const DateTime& now, const DateTime& end,
                                       const std::optional<DateTime>& session_start, const ChargingProfile& profile);
 std::vector<period_entry_t> calculate_profile_entry(const DateTime& now, const DateTime& end,
                                                     const std::optional<DateTime>& session_start,
-                                                    const ChargingProfile& profile, std::uint8_t period_index);
+                                                    const ChargingProfile& profile, std::size_t period_index);
 std::vector<period_entry_t> calculate_profile(const DateTime& now, const DateTime& end,
                                               const std::optional<DateTime>& session_start,
                                               const ChargingProfile& profile);
