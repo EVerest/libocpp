@@ -7,6 +7,7 @@
 
 namespace ocpp {
 
+// NOLINTNEXTLINE(readability-redundant-member-init): explicitly call base class ctor here for readability
 DateTime::DateTime() : DateTimeImpl() {
 }
 

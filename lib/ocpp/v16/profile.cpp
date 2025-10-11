@@ -601,7 +601,7 @@ IntermediateProfile merge_profiles_by_lowest_limit(const std::vector<Intermediat
             }
 
             // Copy number of phases if lower
-            if (!period.numberPhases.has_value()) {
+            if (!period.numberPhases.has_value()) { // NOLINT(bugprone-branch-clone): readability
                 // Don't care if this copies a nullopt, thats what it was already
                 period.numberPhases = it->numberPhases;
             } else if (it->numberPhases.has_value() && it->numberPhases.value() < period.numberPhases.value()) {
@@ -635,7 +635,7 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
             period.stack_level_power = 0;   // Stack level cant be determined when summing intermediate profiles
 
             // Copy number of phases if higher
-            if (!period.numberPhases.has_value()) {
+            if (!period.numberPhases.has_value()) { // NOLINT(bugprone-branch-clone): readability
                 // Don't care if this copies a nullopt, thats what it was already
                 period.numberPhases = it->numberPhases;
             } else if (it->numberPhases.has_value() && it->numberPhases.value() > period.numberPhases.value()) {

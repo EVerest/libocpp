@@ -671,6 +671,7 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
             }
             EVLOG_warning << "Could not update in DB trivial delta monitor with ID: " << monitor_id
                           << ". Reference value not updated!";
+
         } catch (const everest::db::Exception& e) {
             EVLOG_error << "Exception while updating trivial delta monitor reference with ID: " << monitor_id;
             throw DeviceModelError(e.what());
@@ -773,8 +774,9 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             if (request.type == MonitorEnum::Delta && std::signbit(request.value)) {
                 // N04.FR.14
                 valid_value = false;
-            } else if (request.type == MonitorEnum::Delta && (characteristics.dataType != DataEnum::decimal &&
-                                                              characteristics.dataType != DataEnum::integer)) {
+            } else if (request.type == MonitorEnum::Delta &&
+                       (characteristics.dataType != DataEnum::decimal &&
+                        characteristics.dataType != DataEnum::integer)) { // NOLINT(bugprone-branch-clone): readability
                 valid_value = true;
             } else if (request.type == MonitorEnum::Periodic || request.type == MonitorEnum::PeriodicClockAligned) {
                 valid_value = true;

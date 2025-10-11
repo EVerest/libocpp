@@ -58,19 +58,20 @@ ocpp::v2::HashAlgorithmEnum to_ocpp_v2(ocpp::HashAlgorithmEnumType other) {
 
 ocpp::v2::InstallCertificateStatusEnum to_ocpp_v2(ocpp::InstallCertificateResult other) {
     switch (other) {
-    case ocpp::InstallCertificateResult::InvalidSignature:
+    case ocpp::InstallCertificateResult::InvalidSignature: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::InvalidCertificateChain:
+    case ocpp::InstallCertificateResult::InvalidCertificateChain: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::InvalidFormat:
+    case ocpp::InstallCertificateResult::InvalidFormat: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::InvalidCommonName:
+    case ocpp::InstallCertificateResult::InvalidCommonName: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::NoRootCertificateInstalled:
+    case ocpp::InstallCertificateResult::NoRootCertificateInstalled: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::Expired:
+    case ocpp::InstallCertificateResult::Expired: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::CertificateStoreMaxLengthExceeded:
+    case ocpp::InstallCertificateResult::CertificateStoreMaxLengthExceeded: // NOLINT(bugprone-branch-clone):
+                                                                            // readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
     case ocpp::InstallCertificateResult::WriteError:
         return ocpp::v2::InstallCertificateStatusEnum::Failed;

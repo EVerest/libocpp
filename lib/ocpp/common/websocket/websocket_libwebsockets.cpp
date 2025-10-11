@@ -339,7 +339,7 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_ST
 
 WebsocketLibwebsockets::WebsocketLibwebsockets(const WebsocketConnectionOptions& connection_options,
                                                std::shared_ptr<EvseSecurity> evse_security) :
-    WebsocketBase(),
+    WebsocketBase(), // NOLINT(readability-redundant-member-init): explicitly call base class ctor here for readability
     evse_security(evse_security),
     stop_deferred_handler(false),
     connected_ocpp_version{OcppProtocolVersion::Unknown} {

@@ -2033,6 +2033,7 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
     // first try the callbacks that are explicitly registered for a vendorId or messageId
     {
         const std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
+        // NOLINTNEXTLINE(bugprone-branch-clone): readability
         if (vendorId == ISO15118_PNC_VENDOR_ID and !this->is_iso15118_certificate_management_enabled()) {
             response.status = DataTransferStatus::UnknownVendorId;
         } else if (vendorId == ISO15118_PNC_VENDOR_ID and this->is_iso15118_certificate_management_enabled()) {
@@ -2515,7 +2516,8 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
         response.status = ClearChargingProfileStatus::Accepted;
     } else if (call.msg.id &&
                this->smart_charging_handler->clear_all_profiles_with_filter(
-                   call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose, true)) {
+                   call.msg.id, call.msg.connectorId, call.msg.stackLevel, call.msg.chargingProfilePurpose,
+                   true)) { // NOLINT(bugprone-branch-clone): readability
         response.status = ClearChargingProfileStatus::Accepted;
     } else if (!call.msg.id and
                this->smart_charging_handler->clear_all_profiles_with_filter(
@@ -2538,22 +2540,22 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
     TriggerMessageResponse response;
     response.status = TriggerMessageStatus::Rejected;
     switch (call.msg.requestedMessage) {
-    case MessageTrigger::BootNotification:
+    case MessageTrigger::BootNotification: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatus::Accepted;
         break;
-    case MessageTrigger::DiagnosticsStatusNotification:
+    case MessageTrigger::DiagnosticsStatusNotification: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatus::Accepted;
         break;
-    case MessageTrigger::FirmwareStatusNotification:
+    case MessageTrigger::FirmwareStatusNotification: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatus::Accepted;
         break;
-    case MessageTrigger::Heartbeat:
+    case MessageTrigger::Heartbeat: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatus::Accepted;
         break;
-    case MessageTrigger::MeterValues:
+    case MessageTrigger::MeterValues: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatus::Accepted;
         break;
-    case MessageTrigger::StatusNotification:
+    case MessageTrigger::StatusNotification: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatus::Accepted;
         break;
     }
@@ -2669,19 +2671,19 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
     ExtendedTriggerMessageResponse response;
     response.status = TriggerMessageStatusEnumType::Rejected;
     switch (call.msg.requestedMessage) {
-    case MessageTriggerEnumType::BootNotification:
+    case MessageTriggerEnumType::BootNotification: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatusEnumType::Accepted;
         break;
-    case MessageTriggerEnumType::FirmwareStatusNotification:
+    case MessageTriggerEnumType::FirmwareStatusNotification: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatusEnumType::Accepted;
         break;
-    case MessageTriggerEnumType::Heartbeat:
+    case MessageTriggerEnumType::Heartbeat: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatusEnumType::Accepted;
         break;
-    case MessageTriggerEnumType::LogStatusNotification:
+    case MessageTriggerEnumType::LogStatusNotification: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatusEnumType::Accepted;
         break;
-    case MessageTriggerEnumType::MeterValues:
+    case MessageTriggerEnumType::MeterValues: // NOLINT(bugprone-branch-clone): readability
         response.status = TriggerMessageStatusEnumType::Accepted;
         break;
     case MessageTriggerEnumType::SignChargePointCertificate:
