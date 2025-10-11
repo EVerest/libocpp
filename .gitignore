@@ -1,4 +1,4 @@
-/build
+/build*
 !.gitignore
 *vscode
 .cache/
@@ -7,3 +7,5 @@ CMakeLists.txt.user
 __pycache__
 !doc/build-with-fetchcontent
 /dist
+clang-tidy-*.yaml
+clang-tidy-*.txt
