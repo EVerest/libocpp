@@ -3,8 +3,8 @@
 #include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/ocpp_enums.hpp>
 
+#include <cstddef>
 #include <everest/logging.hpp>
-#include <stddef.h>
 #include <stdexcept>
 #include <utility>
 
