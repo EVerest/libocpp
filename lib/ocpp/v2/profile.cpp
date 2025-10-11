@@ -87,8 +87,8 @@ void period_entry_t::init(const DateTime& in_start, int in_duration, const Charg
     // note duration can be negative and hence end time is before start time
     // see period_entry_t::validate()
     const auto start_tp = std::chrono::floor<seconds>(in_start.to_time_point());
-    start = std::move(DateTime(start_tp + seconds(in_period.startPeriod)));
-    end = std::move(DateTime(start_tp + seconds(in_duration)));
+    start = DateTime(start_tp + seconds(in_period.startPeriod));
+    end = DateTime(start_tp + seconds(in_duration));
     number_phases = in_period.numberPhases;
     stack_level = in_profile.stackLevel;
     charging_rate_unit = in_profile.chargingSchedule.front().chargingRateUnit;

@@ -1183,7 +1183,7 @@ bool WebsocketLibwebsockets::send(const std::string& message) {
     }
 
     auto msg = std::make_shared<WebsocketMessage>();
-    msg->payload = std::move(message);
+    msg->payload = message;
     msg->protocol = LWS_WRITE_TEXT;
 
     poll_message(msg);
