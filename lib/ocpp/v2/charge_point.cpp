@@ -333,7 +333,11 @@ void ChargePoint::on_reservation_cleared(const int32_t evse_id, const int32_t co
 
 bool ChargePoint::on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
                                             const TriggerReasonEnum trigger_reason) {
-    auto& evse = this->evse_manager->get_evse(evse_id);
+    if (evse_id > std::numeric_limits<int32_t>::max()) {
+        EVLOG_error << "Can not change charging state: evse id unknown " << evse_id;
+        return false;
+    }
+    auto& evse = this->evse_manager->get_evse(clamp_to<int32_t>(evse_id));
 
     std::unique_ptr<EnhancedTransaction>& transaction = evse.get_transaction();
     if (transaction == nullptr) {

@@ -278,7 +278,7 @@ GetCompositeScheduleResponse SmartCharging::get_composite_schedule(const GetComp
 std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
                                                                        ChargingRateUnitEnum unit) {
     GetCompositeScheduleRequest request;
-    request.duration = duration.count();
+    request.duration = clamp_to<int32_t>(duration.count());
     request.evseId = evse_id;
     request.chargingRateUnit = unit;
 

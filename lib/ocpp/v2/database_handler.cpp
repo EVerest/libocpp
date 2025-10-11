@@ -179,7 +179,7 @@ void DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_
                             "BY LAST_USED ASC LIMIT @nr_to_remove)";
     auto delete_stmt = this->database->new_statement(sql);
 
-    delete_stmt->bind_int("@nr_to_remove", nr_to_remove);
+    delete_stmt->bind_int("@nr_to_remove", clamp_to<int>(nr_to_remove));
 
     if (delete_stmt->step() != SQLITE_DONE) {
         throw QueryExecutionException(this->database->get_error_message());
@@ -426,7 +426,7 @@ void DatabaseHandler::transaction_metervalues_insert(const std::string& transact
     auto insert_stmt = this->database->new_statement(sql2);
 
     for (const auto& item : meter_value.sampledValue) {
-        insert_stmt->bind_int("@meter_value_id", last_row_id);
+        insert_stmt->bind_int("@meter_value_id", clamp_to<int>(last_row_id));
         insert_stmt->bind_double("@value", item.value);
 
         if (item.measurand.has_value()) {
@@ -529,7 +529,7 @@ std::vector<MeterValue> DatabaseHandler::transaction_metervalues_get_all(const s
         while ((status = select_stmt2->step()) == SQLITE_ROW) {
             SampledValue sampled_value;
 
-            sampled_value.value = select_stmt2->column_double(1);
+            sampled_value.value = clamp_to<float>(select_stmt2->column_double(1));
             sampled_value.context = context;
 
             if (select_stmt2->column_type(2) == SQLITE_INTEGER) {

@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <cmath>
+#include <limits>
 #include <optional>
 #include <utility>
 
@@ -218,8 +219,12 @@ std::optional<CiString<20>> Evse::get_evse_connector_type(const uint32_t connect
         return std::nullopt;
     }
 
-    ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
-        this->evse_id, connector_id, ConnectorComponentVariables::Type);
+    if (connector_id > std::numeric_limits<int32_t>::max()) {
+        return std::nullopt;
+    }
+
+    const ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
+        this->evse_id, clamp_to<int32_t>(connector_id), ConnectorComponentVariables::Type);
 
     const std::optional<std::string> connector_type =
         this->device_model.get_optional_value<std::string>(connector_cv, AttributeEnum::Actual);

@@ -622,8 +622,8 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
                 }
 
                 for (const auto& required_variable : required_connector_variables) {
-                    const auto& variable =
-                        ConnectorComponentVariables::get_component_variable(evse_id, connector_id, required_variable);
+                    const auto& variable = ConnectorComponentVariables::get_component_variable(
+                        evse_id, clamp_to<int32_t>(connector_id), required_variable);
                     check_variable_has_value(variable);
                 }
             }

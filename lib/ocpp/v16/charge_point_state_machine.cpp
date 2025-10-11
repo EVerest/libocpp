@@ -291,7 +291,7 @@ void ChargePointStates::reset(std::map<int, ChargePointStatus> connector_status_
     state_machines.clear();
 
     for (size_t connector_id = 0; connector_id < connector_status_map.size(); ++connector_id) {
-        const auto initial_state = connector_status_map.at(connector_id);
+        const auto initial_state = connector_status_map.at(clamp_to<int>(connector_id));
 
         if (connector_id == 0 and initial_state != ChargePointStatus::Available and
             initial_state != ChargePointStatus::Unavailable and initial_state != ChargePointStatus::Faulted) {
@@ -314,8 +314,8 @@ void ChargePointStates::reset(std::map<int, ChargePointStatus> connector_status_
                                      ocpp::DateTime timestamp, std::optional<CiString<50>> info,
                                      std::optional<CiString<255>> vendor_id,
                                      std::optional<CiString<50>> vendor_error_code) {
-                    this->connector_status_callback(connector_id, error_code, status, timestamp, info, vendor_id,
-                                                    vendor_error_code);
+                    this->connector_status_callback(clamp_to<int>(connector_id), error_code, status, timestamp, info,
+                                                    vendor_id, vendor_error_code);
                 },
                 initial_state);
         }

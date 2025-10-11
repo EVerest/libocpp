@@ -4258,7 +4258,7 @@ void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction
     StartTransactionRequest req;
     req.connectorId = transaction->get_connector();
     req.idTag = transaction->get_id_tag();
-    req.meterStart = std::round(transaction->get_start_energy_wh()->energy_Wh);
+    req.meterStart = clamp_to<int32_t>(std::lround(transaction->get_start_energy_wh()->energy_Wh));
     req.timestamp = transaction->get_start_energy_wh()->timestamp;
     const auto message_id = ocpp::create_message_id();
 
@@ -4428,7 +4428,7 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
         }
     }
 
-    req.meterStop = std::round(energyWhStamped->energy_Wh);
+    req.meterStop = clamp_to<int32_t>(std::lround(energyWhStamped->energy_Wh));
     req.timestamp = energyWhStamped->timestamp;
     req.reason.emplace(reason);
     req.transactionId = transaction->get_transaction_id().value_or(transaction->get_internal_transaction_id());

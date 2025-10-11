@@ -284,7 +284,7 @@ int ConnectivityManager::get_next_configuration_slot(int32_t configuration_slot)
 
     const int network_configuration_priority =
         network_configuration_priority_opt.has_value()
-            ? (network_configuration_priority_opt.value() + 1) % (this->network_connection_slots.size())
+            ? (network_configuration_priority_opt.value() + 1) % (clamp_to<int>(this->network_connection_slots.size()))
             : 0;
 
     return get_configuration_slot_from_priority(network_configuration_priority);

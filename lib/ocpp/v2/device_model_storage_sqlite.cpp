@@ -346,7 +346,11 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
 
     VariableMonitoringMeta meta;
 
-    meta.monitor.id = last_row_id;
+    if (last_row_id > std::numeric_limits<int32_t>::max()) {
+        EVLOG_warning << "Monitor id exceeds 32 bit integer, clamped at maximum";
+    }
+
+    meta.monitor.id = clamp_to<int32_t>(last_row_id);
     meta.monitor.severity = data.severity;
     meta.monitor.transaction = data.transaction.value_or(false);
     meta.monitor.type = data.type;

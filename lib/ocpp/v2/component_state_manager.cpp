@@ -72,7 +72,7 @@ ComponentStateManager::ComponentStateManager(
 }
 
 int32_t ComponentStateManager::num_evses() {
-    return this->evse_and_connector_individual_statuses.size();
+    return clamp_to<int32_t>(this->evse_and_connector_individual_statuses.size());
 }
 
 void ComponentStateManager::check_evse_id(int32_t evse_id) {
@@ -83,7 +83,7 @@ void ComponentStateManager::check_evse_id(int32_t evse_id) {
 
 int32_t ComponentStateManager::num_connectors(int32_t evse_id) {
     check_evse_id(evse_id);
-    return this->evse_and_connector_individual_statuses[evse_id - 1].second.size();
+    return clamp_to<int32_t>(this->evse_and_connector_individual_statuses[evse_id - 1].second.size());
 }
 
 void ComponentStateManager::check_evse_and_connector_id(int32_t evse_id, int32_t connector_id) {

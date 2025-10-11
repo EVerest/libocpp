@@ -135,8 +135,11 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
         bool connector_exists = false;
         for (uint64_t i = 1; i <= number_of_evses; i++) {
+            if (i > std::numeric_limits<int32_t>::max()) {
+                break;
+            }
             if (this->context.evse_manager.does_connector_exist(
-                    i, request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
+                    clamp_to<int32_t>(i), request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
                 connector_exists = true;
                 break;
             }

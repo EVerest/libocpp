@@ -39,7 +39,7 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
 } // namespace
 
 int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
-    return duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count();
+    return clamp_to<int32_t>(duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count());
 }
 
 ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
@@ -196,16 +196,20 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
 
             switch (in_profile.recurrencyKind.value()) {
             case RecurrencyKindEnum::Daily:
-                seconds_to_go_back = duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
-                                     (HOURS_PER_DAY * SECONDS_PER_HOUR);
+                seconds_to_go_back = clamp_to<int>(
+                    duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
+                    (HOURS_PER_DAY * SECONDS_PER_HOUR));
                 if (seconds_to_go_back < 0) {
                     seconds_to_go_back += HOURS_PER_DAY * SECONDS_PER_HOUR;
                 }
                 seconds_to_go_forward = HOURS_PER_DAY * SECONDS_PER_HOUR;
                 break;
             case RecurrencyKindEnum::Weekly:
-                seconds_to_go_back = duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
-                                     (SECONDS_PER_DAY * DAYS_PER_WEEK);
+                seconds_to_go_back = clamp_to<int>(
+                    duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
+                    (SECONDS_PER_DAY * DAYS_PER_WEEK));
                 if (seconds_to_go_back < 0) {
                     seconds_to_go_back += SECONDS_PER_DAY * DAYS_PER_WEEK;
                 }
@@ -293,9 +297,9 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
 
                 // check duration doesn't extend into the next recurrence
                 if (has_next_occurrance) {
-                    const auto next_start =
+                    const auto next_start = clamp_to<int>(
                         duration_cast<seconds>(schedule_start[i + 1].to_time_point() - entry_start.to_time_point())
-                            .count();
+                            .count());
                     if (next_start < duration) {
                         duration = next_start;
                     }
@@ -305,8 +309,8 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
                 if (in_profile.validTo) {
                     // note can be negative
                     const auto valid_to = floor_seconds(in_profile.validTo.value());
-                    const auto valid_to_seconds =
-                        duration_cast<seconds>(valid_to.to_time_point() - entry_start.to_time_point()).count();
+                    const auto valid_to_seconds = clamp_to<int>(
+                        duration_cast<seconds>(valid_to.to_time_point() - entry_start.to_time_point()).count());
                     if (valid_to_seconds < duration) {
                         duration = valid_to_seconds;
                     }

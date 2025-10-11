@@ -470,8 +470,8 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     if (db_variable.variable_characteristics_db_id.has_value() &&
         is_characteristics_different(variable.characteristics, db_variable.characteristics)) {
         update_variable_characteristics(variable.characteristics,
-                                        static_cast<int64_t>(db_variable.variable_characteristics_db_id.value()),
-                                        static_cast<int64_t>(db_variable.db_id.value()));
+                                        clamp_to<int64_t>(db_variable.variable_characteristics_db_id.value()),
+                                        clamp_to<int64_t>(db_variable.db_id.value()));
     }
 
     if (!variable_has_same_attributes(variable.attributes, db_variable.attributes)) {
@@ -480,7 +480,7 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     }
 
     if (!variable_has_same_monitors(variable.monitors, db_variable.monitors)) {
-        update_variable_monitors(variable.monitors, db_variable.monitors, db_variable.db_id.value());
+        update_variable_monitors(variable.monitors, db_variable.monitors, clamp_to<int64_t>(db_variable.db_id.value()));
     }
 }
 
@@ -724,7 +724,7 @@ void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& mo
 
     auto insert_stmt = this->database->new_statement(insert_statement);
 
-    insert_stmt->bind_int(1, variable_id);
+    insert_stmt->bind_int(1, clamp_to<int>(variable_id));
     insert_stmt->bind_int(2, monitor.monitor.severity);
     insert_stmt->bind_int(3, monitor.monitor.transaction);
     insert_stmt->bind_int(4, static_cast<int>(monitor.monitor.type));
@@ -1126,7 +1126,7 @@ std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_fro
         "WHERE vm.VARIABLE_ID = @variable_id";
 
     auto select_stmt = this->database->new_statement(select_query);
-    select_stmt->bind_int(1, variable_id);
+    select_stmt->bind_int(1, clamp_to<int>(variable_id));
 
     int status = SQLITE_ERROR;
     while ((status = select_stmt->step()) == SQLITE_ROW) {

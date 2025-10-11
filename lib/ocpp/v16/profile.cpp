@@ -75,7 +75,7 @@ void update_itt(const int schedule_duration, std::vector<EnhancedChargingSchedul
 namespace ocpp::v16 {
 
 int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
-    return duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count();
+    return clamp_to<int32_t>(duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count());
 }
 
 ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
@@ -310,7 +310,7 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
                         duration_cast<seconds>(schedule_start[i + 1].to_time_point() - entry_start.to_time_point())
                             .count();
                     if (next_start < duration) {
-                        duration = next_start;
+                        duration = clamp_to<int>(next_start);
                     }
                 }
 
@@ -321,7 +321,7 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
                     const auto valid_to_seconds =
                         duration_cast<seconds>(valid_to.to_time_point() - entry_start.to_time_point()).count();
                     if (valid_to_seconds < duration) {
-                        duration = valid_to_seconds;
+                        duration = clamp_to<int>(valid_to_seconds);
                     }
                 }
 

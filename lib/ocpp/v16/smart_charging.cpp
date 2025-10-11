@@ -131,10 +131,10 @@ int SmartChargingHandler::get_number_installed_profiles() {
     const std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
     const std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
 
-    number += this->stack_level_charge_point_max_profiles_map.size();
+    number += clamp_to<int>(this->stack_level_charge_point_max_profiles_map.size());
     for (const auto& [connector_id, connector] : this->connectors) {
-        number += connector->stack_level_tx_default_profiles_map.size();
-        number += connector->stack_level_tx_profiles_map.size();
+        number += clamp_to<int>(connector->stack_level_tx_default_profiles_map.size());
+        number += clamp_to<int>(connector->stack_level_tx_profiles_map.size());
     }
 
     return number;
@@ -290,8 +290,8 @@ EnhancedChargingSchedule SmartChargingHandler::calculate_enhanced_composite_sche
     composite.duration = elapsed_seconds(floor_seconds(end_time), floor_seconds(start_time));
     composite.chargingRateUnit = charging_rate_unit;
 
-    // Convert the intermediate result into a proper schedule. Will fill in the periods with no limits with the default
-    // one
+    // Convert the intermediate result into a proper schedule. Will fill in the periods with no limits with the
+    // default one
     const auto limit = charging_rate_unit == ChargingRateUnit::A ? config.current_limit : config.power_limit;
     composite.chargingSchedulePeriod = convert_intermediate_into_schedule(
         retval, charging_rate_unit, limit, config.default_number_phases, config.supply_voltage);
@@ -413,7 +413,7 @@ void SmartChargingHandler::add_tx_default_profile(const ChargingProfile& profile
     const std::lock_guard<std::mutex> lk(this->tx_default_profiles_map_mutex);
     if (connector_id == 0) {
         for (size_t id = 1; id <= this->connectors.size() - 1; id++) {
-            this->connectors.at(id)->stack_level_tx_default_profiles_map[profile.stackLevel] = profile;
+            this->connectors.at(clamp_to<int>(id))->stack_level_tx_default_profiles_map[profile.stackLevel] = profile;
         }
     } else {
         this->connectors.at(connector_id)->stack_level_tx_default_profiles_map[profile.stackLevel] = profile;
