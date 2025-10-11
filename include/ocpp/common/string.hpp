@@ -48,10 +48,10 @@ public:
     /// \brief Sets the content of the string to the given \p data
     void set(const std::string& data, StringTooLarge to_large = StringTooLarge::Throw) {
         std::string_view view = data;
-        if (view.length() > this->length) {
+        if (view.length() > String<L>::length) {
             if (to_large == StringTooLarge::Throw) {
                 throw StringConversionException("String length (" + std::to_string(view.length()) +
-                                                ") exceeds permitted length (" + std::to_string(this->length) + ")");
+                                                ") exceeds permitted length (" + std::to_string(String<L>::length) + ")");
             }
             // Truncate
             view = view.substr(0, length);
