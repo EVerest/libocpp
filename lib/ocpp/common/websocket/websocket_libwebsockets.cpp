@@ -505,13 +505,13 @@ bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chai
         EVLOG_info << "Loading CA csms bundle to verify server certificate: " << ca_csms;
 
         if (std::filesystem::is_directory(ca_csms)) {
-            rc = SSL_CTX_load_verify_locations(ctx, NULL, ca_csms.c_str());
+            rc = SSL_CTX_load_verify_locations(ctx, nullptr, ca_csms.c_str());
         } else {
-            rc = SSL_CTX_load_verify_locations(ctx, ca_csms.c_str(), NULL);
+            rc = SSL_CTX_load_verify_locations(ctx, ca_csms.c_str(), nullptr);
         }
 
         if (rc != 1) {
-            EVLOG_error << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), NULL);
+            EVLOG_error << "Could not load CA verify locations, error: " << ERR_error_string(ERR_get_error(), nullptr);
             return false;
         }
     }
@@ -519,7 +519,8 @@ bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chai
     if (this->connection_options.use_ssl_default_verify_paths) {
         rc = SSL_CTX_set_default_verify_paths(ctx);
         if (rc != 1) {
-            EVLOG_error << "Could not load default CA verify path, error: " << ERR_error_string(ERR_get_error(), NULL);
+            EVLOG_error << "Could not load default CA verify path, error: "
+                        << ERR_error_string(ERR_get_error(), nullptr);
             return false;
         }
     }
@@ -557,7 +558,7 @@ bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chai
     */
 
     // Extra info
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); // to verify server certificate
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr); // to verify server certificate
 
     return true;
 }
