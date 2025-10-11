@@ -52,7 +52,8 @@ public:
     void start_monitoring() override;
     void process_triggered_monitors() override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     AuthorizationInterface& authorization;
     /// \brief Updater for triggered monitors
@@ -66,7 +67,7 @@ private: // Members
     std::optional<ClearCustomerInformationCallback> clear_customer_information_callback;
     const bool is_monitoring_available;
 
-private: // Functions
+    // Functions
     /* OCPP message requests */
     void notify_customer_information_req(const std::string& data, const int32_t request_id);
     void notify_monitoring_report_req(const int request_id, std::vector<MonitoringData>& montoring_data);

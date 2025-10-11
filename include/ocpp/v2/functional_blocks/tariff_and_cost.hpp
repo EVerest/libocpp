@@ -44,14 +44,15 @@ public:
                                 const TransactionEventRequest& original_message,
                                 const json& original_transaction_event_response) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     MeterValuesInterface& meter_values;
     std::optional<TariffMessageCallback> tariff_message_callback;
     std::optional<SetRunningCostCallback> set_running_cost_callback;
     boost::asio::io_context& io_context;
 
-private: // Functions
+    // Functions
     // Functional Block I: TariffAndCost
     void handle_costupdated_req(const Call<CostUpdatedRequest> call);
 

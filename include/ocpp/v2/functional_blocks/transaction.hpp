@@ -111,7 +111,8 @@ public:
                                       const int32_t remote_start_id) override;
     void schedule_reset(const std::optional<int32_t> reset_scheduled_evseid) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     MessageQueue<v2::MessageType>& message_queue;
     AuthorizationInterface& authorization;
@@ -130,7 +131,7 @@ private: // Members
     /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
     std::set<int32_t> reset_scheduled_evseids;
 
-private: // Functions
+    // Functions
     /* OCPP message handlers */
 
     // Functional Block E: Transaction

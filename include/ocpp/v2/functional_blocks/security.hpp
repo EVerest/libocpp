@@ -77,7 +77,7 @@ private:
     Everest::SteadyTimer client_certificate_expiration_check_timer;
     Everest::SteadyTimer v2g_certificate_expiration_check_timer;
 
-private: // Functions
+    // Functions
     /* OCPP message handlers */
 
     // Functional Block A: Security

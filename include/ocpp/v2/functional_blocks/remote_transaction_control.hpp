@@ -50,7 +50,8 @@ public:
                              std::atomic<int32_t>& upload_log_status_id);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
 
     TransactionInterface& transaction;
@@ -70,7 +71,7 @@ private: // Members
     std::atomic<UploadLogStatusEnum>& upload_log_status;
     std::atomic<int32_t>& upload_log_status_id;
 
-private: // Functions
+    // Functions
     /* OCPP message handlers */
 
     // Function Block F: Remote transaction control

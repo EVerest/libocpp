@@ -82,7 +82,8 @@ public:
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     MessageQueue<v2::MessageType>& message_queue;
     OcspUpdaterInterface& ocsp_updater;
@@ -105,7 +106,7 @@ private: // Members
 
     Everest::SteadyTimer boot_notification_timer;
 
-private: // Functions
+    // Functions
     /* OCPP message requests */
 
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);

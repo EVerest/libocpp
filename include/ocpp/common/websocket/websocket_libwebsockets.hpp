@@ -44,14 +44,12 @@ public:
     /// \return True if the websocket is connected or trying to connect, false otherwise
     bool is_trying_to_connect();
 
-public:
     int process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len);
 
 private:
     bool is_trying_to_connect_internal();
     void close_internal(const WebsocketCloseReason code, const std::string& reason);
 
-private:
     /// \brief Initializes the connection options, including the security info
     /// \return True if it was successful, false otherwise
     bool initialize_connection_options(std::shared_ptr<ConnectionData>& new_connection_data);
@@ -98,7 +96,6 @@ private:
     /// \brief Clears all messages and message queues both incoming and outgoing
     void clear_all_queues();
 
-private:
     std::shared_ptr<EvseSecurity> evse_security;
 
     // Connection related data

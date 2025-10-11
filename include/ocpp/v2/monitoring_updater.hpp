@@ -109,7 +109,6 @@ public:
     MonitoringUpdater(DeviceModel& device_model, notify_events notify_csms_events, is_offline is_chargepoint_offline);
     ~MonitoringUpdater();
 
-public:
     /// \brief Starts monitoring the variables, kicking the timer
     void start_monitoring();
     /// \brief Stops monitoring the variables, canceling the timer
@@ -168,7 +167,6 @@ private:
 
     bool is_monitoring_enabled();
 
-private:
     DeviceModel& device_model;
     Everest::SteadyTimer monitors_timer;
 
