@@ -14,6 +14,7 @@ target_sources(libocpp_unit_tests PRIVATE
         test_charge_point_state_machine.cpp
         test_composite_schedule.cpp
         test_config_validation.cpp
+        utils_tests.cpp
 )
 
 # Copy the json files used for testing to the destination directory

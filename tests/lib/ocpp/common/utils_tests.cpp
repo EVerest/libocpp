@@ -16,6 +16,17 @@ protected:
     }
 };
 
+TEST_F(UtilsTest, test_is_integer) {
+    ASSERT_TRUE(is_integer("+100"));
+    ASSERT_TRUE(is_integer("-100"));
+    ASSERT_TRUE(is_integer("100"));
+    ASSERT_FALSE(is_integer("10x"));
+    ASSERT_FALSE(is_integer("+10x"));
+    ASSERT_FALSE(is_integer("-10x"));
+    ASSERT_FALSE(is_integer("---"));
+    ASSERT_FALSE(is_integer("+++"));
+}
+
 TEST_F(UtilsTest, test_valid_datetime) {
     ASSERT_TRUE(is_rfc3339_datetime("2023-11-29T10:21:04Z"));
     ASSERT_TRUE(is_rfc3339_datetime("2019-04-12T23:20:50.5Z"));
