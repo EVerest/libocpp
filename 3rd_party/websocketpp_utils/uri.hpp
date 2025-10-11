@@ -29,6 +29,7 @@
 #define WEBSOCKETPP_URI_EVEREST_HPP
 
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -286,7 +287,7 @@ private:
             return (m_secure ? uri_default_secure_port : uri_default_port);
         }
 
-        unsigned int t_port = static_cast<unsigned int>(atoi(port.c_str()));
+        const auto t_port = std::stoul(port);
 
         if (t_port > 65535) {
             out_valid = false;
