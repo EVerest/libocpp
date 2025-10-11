@@ -33,8 +33,8 @@
 
 */
 
-#ifndef _BASE64_EVEREST_HPP_
-#define _BASE64_EVEREST_HPP_
+#ifndef BASE64_EVEREST_HPP_
+#define BASE64_EVEREST_HPP_
 
 #include <string>
 
@@ -168,4 +168,4 @@ inline std::string base64_decode(std::string const& input) {
 
 } // namespace ocpp
 
-#endif // _BASE64_HPP_
+#endif // BASE64_EVEREST_HPP_
