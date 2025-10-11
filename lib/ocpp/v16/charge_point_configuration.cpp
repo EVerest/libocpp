@@ -3594,8 +3594,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         if (key == "DefaultPrice") {
             return this->getDefaultPriceKeyValue();
         }
-        if (key.get().find("DefaultPriceText") == 0 and this->getCustomMultiLanguageMessagesEnabled().has_value() and
-            this->getCustomMultiLanguageMessagesEnabled().value()) {
+        if (key.get().find("DefaultPriceText") == 0 and this->getCustomMultiLanguageMessagesEnabled().value_or(false)) {
             const std::vector<std::string> message_language = split_string(key, ',');
             if (message_language.size() > 1) {
                 return this->getDefaultPriceTextKeyValue(message_language.at(1));

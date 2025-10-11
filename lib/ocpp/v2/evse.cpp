@@ -531,6 +531,10 @@ void Evse::set_meter_value_pricing_triggers(
         this->trigger_metervalue_at_time_timer = nullptr;
     }
 
+    if (not trigger_metervalue_at_time.has_value()) {
+        return;
+    }
+
     std::chrono::time_point<date::utc_clock> trigger_timepoint = trigger_metervalue_at_time.value().to_time_point();
     const std::chrono::time_point<date::utc_clock> now = date::utc_clock::now();
 

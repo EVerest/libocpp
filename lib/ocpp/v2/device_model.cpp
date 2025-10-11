@@ -100,7 +100,7 @@ bool DeviceModel::component_criteria_match(const Component& component,
             return true;
         }
         // also send true if the component crietria isn't part of the component except "problem"
-        else if (!value.has_value() and (variable.name != "Problem")) {
+        if (!value.has_value() and (variable.name != "Problem")) {
             return true;
         }
     }
@@ -132,11 +132,16 @@ bool component_variables_match(const std::vector<ComponentVariable>& component_v
 
 void DeviceModel::check_variable_has_value(const ComponentVariable& component_variable, const AttributeEnum attribute) {
     std::string value;
-    const auto response = this->request_value_internal(component_variable.component,
-                                                       component_variable.variable.value(), attribute, value, true);
+    if (not component_variable.variable.has_value()) {
+        throw DeviceModelError("Attempted to check if a variale of component " +
+                               component_variable.component.name.get() +
+                               " has a value but did not provide the variable");
+    }
+    const auto& variable = component_variable.variable.value();
+    const auto response = this->request_value_internal(component_variable.component, variable, attribute, value, true);
 
     if (response != GetVariableStatusEnum::Accepted) {
-        throw DeviceModelError("Required variable " + component_variable.variable->name.get() + " of component " +
+        throw DeviceModelError("Required variable " + variable.name.get() + " of component " +
                                component_variable.component.name.get() + " does not have a value in the device model");
     }
 }
@@ -224,10 +229,12 @@ namespace {
 bool validate_value(const VariableCharacteristics& characteristics, const std::string& value, bool allow_zero) {
     switch (characteristics.dataType) {
     case DataEnum::string:
-        if (characteristics.minLimit.has_value() and value.size() < characteristics.minLimit.value()) {
+        if (characteristics.minLimit.has_value() and
+            value.size() < convert_to_positive_size_t(characteristics.minLimit.value())) {
             return false;
         }
-        if (characteristics.maxLimit.has_value() and value.size() > characteristics.maxLimit.value()) {
+        if (characteristics.maxLimit.has_value() and
+            value.size() > convert_to_positive_size_t(characteristics.maxLimit.value())) {
             return false;
         }
         return true;
@@ -258,10 +265,10 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
         if (allow_zero and i == 0) {
             return true;
         }
-        if (characteristics.minLimit.has_value() and i < characteristics.minLimit.value()) {
+        if (characteristics.minLimit.has_value() and i < convert_to_positive_size_t(characteristics.minLimit.value())) {
             return false;
         }
-        if (characteristics.maxLimit.has_value() and i > characteristics.maxLimit.value()) {
+        if (characteristics.maxLimit.has_value() and i > convert_to_positive_size_t(characteristics.maxLimit.value())) {
             return false;
         }
         return true;
@@ -360,7 +367,7 @@ std::optional<MutabilityEnum> DeviceModel::get_mutability(const Component& compo
         return std::nullopt;
     }
 
-    return attribute.value().mutability.value();
+    return attribute.value().mutability;
 }
 
 SetVariableStatusEnum DeviceModel::set_value(const Component& component, const Variable& variable,

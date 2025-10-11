@@ -155,7 +155,7 @@ void ConnectivityManager::confirm_successful_connection() {
     const auto network_connection_profile = this->get_network_connection_profile(config_slot_int);
 
     if (const auto& security_profile_cv = ControllerComponentVariables::SecurityProfile;
-        security_profile_cv.variable.has_value()) {
+        security_profile_cv.variable.has_value() and network_connection_profile.has_value()) {
         this->device_model.set_read_only_value(security_profile_cv.component, security_profile_cv.variable.value(),
                                                AttributeEnum::Actual,
                                                std::to_string(network_connection_profile.value().securityProfile),
@@ -472,6 +472,10 @@ void ConnectivityManager::check_cache_for_invalid_security_profiles() {
 }
 
 void ConnectivityManager::remove_network_connection_profiles_below_actual_security_profile() {
+    if (not ControllerComponentVariables::NetworkConnectionProfiles.variable.has_value()) {
+        // FIXME: warning?
+        return;
+    }
     // Remove all the profiles that are a lower security level than security_level
     const auto security_level = this->device_model.get_value<int>(ControllerComponentVariables::SecurityProfile);
 
@@ -511,7 +515,10 @@ void ConnectivityManager::remove_network_connection_profiles_below_actual_securi
             new_network_priority += item;
         }
     }
-
+    if (not ControllerComponentVariables::NetworkConfigurationPriority.variable.has_value()) {
+        // FIXME: warning?
+        return;
+    }
     this->device_model.set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,
                                  ControllerComponentVariables::NetworkConfigurationPriority.variable.value(),
                                  AttributeEnum::Actual, new_network_priority, VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);

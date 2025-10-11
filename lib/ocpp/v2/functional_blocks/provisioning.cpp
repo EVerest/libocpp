@@ -400,6 +400,14 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
         network_connection_profiles.push_back(msg);
     }
 
+    if (not ControllerComponentVariables::NetworkConnectionProfiles.variable.has_value()) {
+        EVLOG_warning << "Could not set a network profile because NetworkConnectionProfiles.variable is not defined";
+        response.status = SetNetworkProfileStatusEnum::Rejected;
+        const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
+        this->context.message_dispatcher.dispatch_call_result(call_result);
+        return;
+    }
+
     if (this->context.device_model.set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
                                              ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
                                              AttributeEnum::Actual, network_connection_profiles.dump(),

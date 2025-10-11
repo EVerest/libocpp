@@ -260,11 +260,12 @@ std::unique_ptr<ocpp::MessageQueue<v16::MessageType>> ChargePointImpl::create_me
     };
 
     std::set<v16::MessageType> message_types_discard_for_queueing;
-
-    if (this->configuration->getMessageTypesDiscardForQueueing().has_value()) {
+    const auto get_message_types_discard_for_queueing = this->configuration->getMessageTypesDiscardForQueueing();
+    if (get_message_types_discard_for_queueing.has_value()) {
+        const auto& message_types_discard_for_queueing_value = get_message_types_discard_for_queueing.value();
         try {
             const auto message_types_discard_for_queueing_csl =
-                ocpp::split_string(this->configuration->getMessageTypesDiscardForQueueing().value(), ',');
+                ocpp::split_string(message_types_discard_for_queueing_value, ',');
             std::transform(message_types_discard_for_queueing_csl.begin(), message_types_discard_for_queueing_csl.end(),
                            std::inserter(message_types_discard_for_queueing, message_types_discard_for_queueing.end()),
                            [](const std::string element) { return conversions::string_to_messagetype(element); });
@@ -993,13 +994,17 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
 
     if (connector > 0) {
         auto transaction = this->transaction_handler->get_transaction(connector);
-        if (transaction != nullptr and transaction->get_transaction_id().has_value()) {
-            auto transaction_id = transaction->get_transaction_id().value();
-            req.transactionId.emplace(transaction_id);
-        } else if (transaction != nullptr) {
-            // this means a transaction is active but we have not received a transaction_id from CSMS yet
-            this->message_queue->add_meter_value_message_id(transaction->get_start_transaction_message_id(),
-                                                            message_id.get());
+        if (transaction != nullptr) {
+            const auto get_transaction_id = transaction->get_transaction_id();
+
+            if (get_transaction_id.has_value()) {
+                auto transaction_id = get_transaction_id.value();
+                req.transactionId.emplace(transaction_id);
+            } else {
+                // this means a transaction is active but we have not received a transaction_id from CSMS yet
+                this->message_queue->add_meter_value_message_id(transaction->get_start_transaction_message_id(),
+                                                                message_id.get());
+            }
         }
     }
 
@@ -1845,7 +1850,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
 
     auto kv = this->configuration->get(call.msg.key);
     if (kv || call.msg.key == "AuthorizationKey") {
-        if (call.msg.key != "AuthorizationKey" && kv.value().readonly) {
+        if (call.msg.key != "AuthorizationKey" && kv.has_value() && kv.value().readonly) {
             // supported but could not be changed
             response.status = ConfigurationStatus::Rejected;
         } else {
@@ -1860,7 +1865,10 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                     this->update_clock_aligned_meter_values_interval();
                 } else if (call.msg.key == "AuthorizationKey") {
                     EVLOG_info << "AuthorizationKey was changed by central system";
-                    this->websocket->set_authorization_key(this->configuration->getAuthorizationKey().value());
+                    const auto get_authorization_key = this->configuration->getAuthorizationKey();
+                    if (get_authorization_key.has_value()) {
+                        this->websocket->set_authorization_key(get_authorization_key.value());
+                    }
                     if (this->configuration->getSecurityProfile() == 0) {
                         EVLOG_info << "AuthorizationKey was changed while on security profile 0.";
                     } else if (this->configuration->getSecurityProfile() == 1 ||
@@ -1949,8 +1957,10 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                             std::chrono::seconds(this->configuration->getOcspRequestInterval()));
                     }
                 } else if (call.msg.key == "NextTimeOffsetTransitionDateTime") {
-                    if (this->configuration->getNextTimeOffsetTransitionDateTime().has_value()) {
-                        set_time_offset_timer(this->configuration->getNextTimeOffsetTransitionDateTime().value());
+                    const auto get_next_time_offset_transition_datetime =
+                        this->configuration->getNextTimeOffsetTransitionDateTime();
+                    if (get_next_time_offset_transition_datetime.has_value()) {
+                        set_time_offset_timer(get_next_time_offset_transition_datetime.value());
                     }
                 }
             }
@@ -1966,11 +1976,11 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
 
     if ((this->configuration_key_changed_callbacks.count(call.msg.key) != 0) and
         this->configuration_key_changed_callbacks[call.msg.key] != nullptr and
-        response.status == ConfigurationStatus::Accepted) {
+        response.status == ConfigurationStatus::Accepted and kv.has_value()) {
         kv.value().value = call.msg.value;
         this->configuration_key_changed_callbacks[call.msg.key](kv.value());
     } else if (this->generic_configuration_key_changed_callback != nullptr and
-               response.status == ConfigurationStatus::Accepted) {
+               response.status == ConfigurationStatus::Accepted and kv.has_value()) {
         kv.value().value = call.msg.value;
         this->generic_configuration_key_changed_callback(kv.value());
     }
@@ -2776,9 +2786,19 @@ void ChargePointImpl::sign_certificate(const ocpp::CertificateSigningUseEnum& ce
     EVLOG_info << "Create CSR (TPM=" << use_tpm << ")";
     SignCertificateRequest req;
 
+    auto result = GetCertificateSignRequestStatus::GenerationError;
+    const auto& cpo_name = this->configuration->getCpoName();
+    if (not cpo_name.has_value()) {
+        std::string gen_error = "Sign certificate failed due to CPO name not being set";
+        this->securityEventNotification(ocpp::security_events::CSRGENERATIONFAILED,
+                                        std::optional<CiString<255>>(gen_error), true);
+
+        return;
+    }
+
     const auto response = this->evse_security->generate_certificate_signing_request(
-        certificate_signing_use, this->configuration->getSeccLeafSubjectCountry().value_or("DE"),
-        this->configuration->getCpoName().value(), this->configuration->getChargeBoxSerialNumber(), use_tpm);
+        certificate_signing_use, this->configuration->getSeccLeafSubjectCountry().value_or("DE"), cpo_name.value(),
+        this->configuration->getChargeBoxSerialNumber(), use_tpm);
 
     if (response.status != GetCertificateSignRequestStatus::Accepted || !response.csr.has_value()) {
         EVLOG_error << "Create CSR (TPM=" << use_tpm << ")"
@@ -3233,8 +3253,9 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     if (data.contains("priceText")) {
         DisplayMessageContent m;
         m.message = data.at("priceText");
-        if (this->configuration->getLanguage().has_value()) {
-            m.language = this->configuration->getLanguage().value();
+        const auto get_language = this->configuration->getLanguage();
+        if (get_language.has_value()) {
+            m.language = get_language.value();
         }
         tariff_message.message.push_back(m);
     }
@@ -3979,6 +4000,9 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
     response.status = DataTransferStatus::Rejected;
 
     try {
+        if (not call.msg.data.has_value()) {
+            throw std::runtime_error("Could not parse message, data is missing");
+        }
         const ocpp::v2::CertificateSignedRequest req = json::parse(call.msg.data.value());
 
         response.status = DataTransferStatus::Accepted;
@@ -3987,13 +4011,14 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
         certificate_response.status = CertificateSignedStatusEnumType::Rejected;
         std::string tech_info; // in case certificate is rejected this contains human readable information
 
+        const auto get_certificate_signed_max_chain_size = this->configuration->getCertificateSignedMaxChainSize();
         if (req.certificateType.has_value() and
             req.certificateType.value() != ocpp::v2::CertificateSigningUseEnum::V2GCertificate) {
             tech_info = "Received DataTransfer.req containing CertificateSigned.req where certificateType is not "
                         "V2GCertificate";
             EVLOG_warning << tech_info;
-        } else if (this->configuration->getCertificateSignedMaxChainSize().has_value() and
-                   static_cast<size_t>(this->configuration->getCertificateSignedMaxChainSize().value()) <
+        } else if (get_certificate_signed_max_chain_size.has_value() and
+                   static_cast<size_t>(get_certificate_signed_max_chain_size.value()) <
                        req.certificateChain.get().size()) {
             tech_info = "Received DataTransfer.req containing CertificateSigned.req where chain size is greater "
                         "than configured CertificateSignedMaxChainSize";
@@ -4237,10 +4262,11 @@ void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction
     req.timestamp = transaction->get_start_energy_wh()->timestamp;
     const auto message_id = ocpp::create_message_id();
 
+    const auto reservation_id = transaction->get_reservation_id();
     try {
         this->database_handler->insert_transaction(
             transaction->get_session_id(), transaction->get_internal_transaction_id(), req.connectorId, req.idTag.get(),
-            req.timestamp, req.meterStart, false, transaction->get_reservation_id(), message_id);
+            req.timestamp, req.meterStart, false, reservation_id, message_id);
     } catch (const QueryExecutionException& e) {
         EVLOG_warning << "Could not insert transaction with session_id " << transaction->get_session_id()
                       << " into database: " << e.what();
@@ -4251,9 +4277,7 @@ void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction
 
     ocpp::Call<StartTransactionRequest> call(req, message_id);
 
-    if (transaction->get_reservation_id()) {
-        call.msg.reservationId = transaction->get_reservation_id().value();
-    }
+    call.msg.reservationId = reservation_id;
 
     transaction->set_start_transaction_message_id(message_id.get());
     transaction->change_meter_values_sample_interval(this->configuration->getMeterValueSampleInterval());

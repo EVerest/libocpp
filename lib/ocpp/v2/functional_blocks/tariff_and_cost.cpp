@@ -121,9 +121,12 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
             if (custom_data.contains("updatedPersonalMessageExtra") and is_multilanguage_enabled()) {
                 // Get supported languages, which is stored in the values list of "Language" of
                 // "DisplayMessageCtrlr"
-                std::optional<VariableMetaData> metadata = this->context.device_model.get_variable_meta_data(
-                    ControllerComponentVariables::DisplayMessageLanguage.component,
-                    ControllerComponentVariables::DisplayMessageLanguage.variable.value());
+                std::optional<VariableMetaData> metadata;
+                if (ControllerComponentVariables::DisplayMessageLanguage.variable.has_value()) {
+                    metadata = this->context.device_model.get_variable_meta_data(
+                        ControllerComponentVariables::DisplayMessageLanguage.component,
+                        ControllerComponentVariables::DisplayMessageLanguage.variable.value());
+                }
 
                 std::vector<std::string> supported_languages;
 

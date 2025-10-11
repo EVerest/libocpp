@@ -466,14 +466,18 @@ void ocpp::v2::Authorization::cache_cleanup_handler() {
             this->context.database_handler.authorization_cache_delete_expired_entries(
                 lifetime.has_value() ? std::optional<std::chrono::seconds>(*lifetime) : std::nullopt);
 
-            auto meta_data = this->context.device_model.get_variable_meta_data(
-                ControllerComponentVariables::AuthCacheStorage.component,
-                ControllerComponentVariables::AuthCacheStorage.variable.value());
+            std::optional<VariableMetaData> meta_data;
+            if (ControllerComponentVariables::AuthCacheStorage.variable.has_value()) {
+                meta_data = this->context.device_model.get_variable_meta_data(
+                    ControllerComponentVariables::AuthCacheStorage.component,
+                    ControllerComponentVariables::AuthCacheStorage.variable.value());
+            }
 
             if (meta_data.has_value()) {
-                auto max_storage = meta_data->characteristics.maxLimit;
+                auto max_storage = meta_data.value().characteristics.maxLimit;
                 if (max_storage.has_value()) {
-                    while (this->context.database_handler.authorization_cache_get_binary_size() > max_storage.value()) {
+                    while (this->context.database_handler.authorization_cache_get_binary_size() >
+                           convert_to_positive_size_t(max_storage.value())) {
                         this->context.database_handler.authorization_cache_delete_nr_of_oldest_entries(1);
                     }
                 }

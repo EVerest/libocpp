@@ -1078,8 +1078,17 @@ void SmartCharging::handle_set_charging_profile_req(Call<SetChargingProfileReque
         EVLOG_debug << "Accepting SetChargingProfileRequest";
         this->set_charging_profiles_callback();
     } else {
-        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << response.statusInfo->reasonCode.get()
-                    << "\nadditionalInfo: " << response.statusInfo->additionalInfo->get();
+        std::string reason_code = "Unknown";
+        std::string additional_info = "Unknown";
+        if (response.statusInfo.has_value()) {
+            const auto& status_info = response.statusInfo.value();
+            reason_code = status_info.reasonCode.get();
+            if (status_info.additionalInfo.has_value()) {
+                additional_info = status_info.additionalInfo.value().get();
+            }
+        }
+        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << reason_code
+                    << "\nadditionalInfo: " << additional_info;
     }
 
     const ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
@@ -1249,7 +1258,7 @@ GetCompositeScheduleResponse SmartCharging::get_composite_schedule_internal(cons
             });
 
         if (unit_supported) {
-            charging_rate_unit = request.chargingRateUnit.value();
+            charging_rate_unit = request.chargingRateUnit;
         }
     } else if (!supported_charging_rate_units.empty()) {
         charging_rate_unit = conversions::string_to_charging_rate_unit_enum(supported_charging_rate_units.at(0));

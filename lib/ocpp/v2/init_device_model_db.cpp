@@ -544,6 +544,7 @@ void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, con
 
     if (has_attribute_actual_value(attribute, default_actual_value)) {
         insert_variable_attribute_value(
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access): has_attribute_actual_value ensures this
             attribute_id, (attribute.value.has_value() ? attribute.value.value().get() : default_actual_value.value()),
             true);
     }
@@ -649,9 +650,10 @@ void InitDeviceModelDb::update_attribute(const VariableAttribute& attribute, con
     if (has_attribute_actual_value(attribute, default_actual_value)) {
         if (!insert_variable_attribute_value(
                 static_cast<int64_t>(db_attribute.db_id.value()),
+                // NOLINTNEXTLINE(bugprone-unchecked-optional-access): has_attribute_actual_value ensures this
                 (attribute.value.has_value() ? attribute.value.value().get() : default_actual_value.value()), false)) {
             EVLOG_error << "Can not update variable attribute (" << db_attribute.db_id.value()
-                        << ") value: " << attribute.value.value();
+                        << ") value: " << attribute.value.value_or("");
         }
     }
 }

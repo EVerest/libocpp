@@ -156,9 +156,17 @@ void RemoteTransactionControl::handle_remote_start_transaction_request(Call<Requ
                     if (add_profile_response.status == ChargingProfileStatusEnum::Accepted) {
                         EVLOG_debug << "Accepting SetChargingProfileRequest";
                     } else {
-                        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: "
-                                    << add_profile_response.statusInfo->reasonCode.get()
-                                    << "\nadditionalInfo: " << add_profile_response.statusInfo->additionalInfo->get();
+                        std::string reason_code = "unknown";
+                        std::string additional_info = "unknown";
+                        if (add_profile_response.statusInfo.has_value()) {
+                            const auto status_info = add_profile_response.statusInfo.value();
+                            reason_code = status_info.reasonCode;
+                            if (status_info.additionalInfo.has_value()) {
+                                additional_info = status_info.additionalInfo.value();
+                            }
+                        }
+                        EVLOG_debug << "Rejecting SetChargingProfileRequest:\n reasonCode: " << reason_code
+                                    << "\nadditionalInfo: " << additional_info;
                         response.statusInfo = add_profile_response.statusInfo;
                     }
                 }

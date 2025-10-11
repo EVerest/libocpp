@@ -463,7 +463,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
             // If the new ChargingSchedulePeriod.phaseToUse field is set, pass it on
             // Profile validation has already ensured that the values have been properly set.
             if (chosen->phase_to_use.has_value()) {
-                charging_schedule_period.phaseToUse = chosen->phase_to_use.value();
+                charging_schedule_period.phaseToUse = chosen->phase_to_use;
             }
 
             combined.push_back(charging_schedule_period);

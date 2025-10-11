@@ -117,8 +117,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
         // Check if there is a connector available for this evse id.
         if (!this->context.evse_manager.does_connector_exist(
-                static_cast<uint32_t>(evse_id.value()),
-                request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
+                evse_id.value(), request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
             EVLOG_info << "Trying to make a reservation for connector type "
                        << request.connectorType.value_or(ConnectorEnumStringType::Unknown) << " for evse "
                        << evse_id.value() << ", but this connector type does not exist.";

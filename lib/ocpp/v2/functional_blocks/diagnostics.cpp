@@ -223,10 +223,16 @@ void Diagnostics::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
     SetMonitoringBaseResponse response;
     const auto& msg = call.msg;
 
-    auto result = this->context.device_model.set_value(
-        ControllerComponentVariables::ActiveMonitoringBase.component,
-        ControllerComponentVariables::ActiveMonitoringBase.variable.value(), AttributeEnum::Actual,
-        conversions::monitoring_base_enum_to_string(msg.monitoringBase), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, true);
+    auto result = SetVariableStatusEnum::Rejected;
+    if (not ControllerComponentVariables::ActiveMonitoringBase.variable.has_value()) {
+        result = SetVariableStatusEnum::UnknownVariable;
+    } else {
+        result = this->context.device_model.set_value(
+            ControllerComponentVariables::ActiveMonitoringBase.component,
+            ControllerComponentVariables::ActiveMonitoringBase.variable.value(), AttributeEnum::Actual,
+            conversions::monitoring_base_enum_to_string(msg.monitoringBase), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS,
+            true);
+    }
 
     if (result != SetVariableStatusEnum::Accepted) {
         EVLOG_warning << "Could not persist in device model new monitoring base: "
@@ -257,11 +263,16 @@ void Diagnostics::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
     if (msg.severity < MonitoringLevelSeverity::MIN or msg.severity > MonitoringLevelSeverity::MAX) {
         response.status = GenericStatusEnum::Rejected;
     } else {
-        auto result = this->context.device_model.set_value(
-            ControllerComponentVariables::ActiveMonitoringLevel.component,
-            ControllerComponentVariables::ActiveMonitoringLevel.variable.value(), AttributeEnum::Actual,
-            std::to_string(msg.severity), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, true);
+        auto result = SetVariableStatusEnum::Rejected;
 
+        if (not ControllerComponentVariables::ActiveMonitoringLevel.variable.has_value()) {
+            result = SetVariableStatusEnum::UnknownVariable;
+        } else {
+            result = this->context.device_model.set_value(
+                ControllerComponentVariables::ActiveMonitoringLevel.component,
+                ControllerComponentVariables::ActiveMonitoringLevel.variable.value(), AttributeEnum::Actual,
+                std::to_string(msg.severity), VARIABLE_ATTRIBUTE_VALUE_SOURCE_CSMS, true);
+        }
         if (result != SetVariableStatusEnum::Accepted) {
             EVLOG_warning << "Could not persist in device model new monitoring level: " << msg.severity;
             response.status = GenericStatusEnum::Rejected;

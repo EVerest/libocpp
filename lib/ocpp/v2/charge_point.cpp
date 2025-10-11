@@ -533,9 +533,15 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     if (device_model->get_optional_value<bool>(ControllerComponentVariables::ReservationCtrlrAvailable)
             .value_or(false)) {
-        this->reservation = std::make_unique<Reservation>(
-            *this->functional_block_context, this->callbacks.reserve_now_callback.value(),
-            this->callbacks.cancel_reservation_callback.value(), this->callbacks.is_reservation_for_token_callback);
+        if (this->callbacks.reserve_now_callback.has_value() and
+            this->callbacks.cancel_reservation_callback.has_value()) {
+            this->reservation = std::make_unique<Reservation>(
+                *this->functional_block_context, this->callbacks.reserve_now_callback.value(),
+                this->callbacks.cancel_reservation_callback.value(), this->callbacks.is_reservation_for_token_callback);
+        } else {
+            EVLOG_warning << "ReservationCtrlr available but no reserve_now_callback set, did not initialize "
+                             "reservation functional block";
+        }
     }
 
     this->authorization = std::make_unique<Authorization>(*this->functional_block_context);
@@ -548,10 +554,17 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     if (device_model->get_optional_value<bool>(ControllerComponentVariables::DisplayMessageCtrlrAvailable)
             .value_or(false)) {
-        this->display_message = std::make_unique<DisplayMessageBlock>(
-            *this->functional_block_context, this->callbacks.get_display_message_callback.value(),
-            this->callbacks.set_display_message_callback.value(),
-            this->callbacks.clear_display_message_callback.value());
+        if (this->callbacks.get_display_message_callback.has_value() and
+            this->callbacks.set_display_message_callback.has_value() and
+            this->callbacks.clear_display_message_callback.has_value()) {
+            this->display_message = std::make_unique<DisplayMessageBlock>(
+                *this->functional_block_context, this->callbacks.get_display_message_callback.value(),
+                this->callbacks.set_display_message_callback.value(),
+                this->callbacks.clear_display_message_callback.value());
+        } else {
+            EVLOG_warning << "DisplayMessageCtrlr available but some of its callbacks are not set, did not initialize "
+                             "display message functional block";
+        }
     }
 
     this->meter_values = std::make_unique<MeterValues>(*this->functional_block_context);

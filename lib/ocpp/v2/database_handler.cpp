@@ -671,9 +671,10 @@ void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction,
     insert_stmt->bind_int("@connector_id", transaction.connector_id);
     insert_stmt->bind_int64("@time_start", to_unix_milliseconds(transaction.start_time));
     insert_stmt->bind_int("@seq_no", transaction.seq_no);
-    insert_stmt->bind_text("@charging_state",
-                           conversions::charging_state_enum_to_string(transaction.chargingState.value()),
-                           SQLiteString::Transient);
+    insert_stmt->bind_text(
+        "@charging_state",
+        conversions::charging_state_enum_to_string(transaction.chargingState.value_or(ChargingStateEnum::Idle)),
+        SQLiteString::Transient);
     insert_stmt->bind_int("@id_token_sent", transaction.id_token_sent ? 1 : 0);
 
     if (insert_stmt->step() != SQLITE_DONE) {
