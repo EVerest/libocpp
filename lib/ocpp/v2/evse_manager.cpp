@@ -63,7 +63,8 @@ bool EvseManager::are_all_connectors_effectively_inoperative() const {
     // Check that all connectors on all EVSEs are inoperative
     for (const auto& evse : this->evses) {
         for (int connector_id = 1; connector_id <= evse->get_number_of_connectors(); connector_id++) {
-            OperationalStatusEnum connector_status = evse->get_connector_effective_operational_status(connector_id);
+            const OperationalStatusEnum connector_status =
+                evse->get_connector_effective_operational_status(connector_id);
             if (connector_status == OperationalStatusEnum::Operative) {
                 return false;
             }
@@ -90,7 +91,7 @@ std::optional<int32_t> EvseManager::get_transaction_evseid(const CiString<36>& t
 
 bool EvseManager::any_transaction_active(const std::optional<EVSE>& evse) const {
     if (!evse.has_value()) {
-        for (auto const& evse : this->evses) {
+        for (const auto& evse : this->evses) {
             if (evse->has_active_transaction()) {
                 return true;
             }
@@ -109,7 +110,7 @@ bool EvseManager::is_valid_evse(const EVSE& evse) const {
 // Free functions
 
 void set_evse_connectors_unavailable(EvseInterface& evse, bool persist) {
-    uint32_t number_of_connectors = evse.get_number_of_connectors();
+    const uint32_t number_of_connectors = evse.get_number_of_connectors();
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
         evse.set_connector_operative_status(static_cast<int32_t>(i), OperationalStatusEnum::Inoperative, persist);

@@ -97,7 +97,7 @@ bool Evse::does_connector_exist(const CiString<20> connector_type) const {
     }
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        Connector* connector;
+        const Connector* connector = nullptr;
         try {
             connector = this->get_connector(static_cast<int32_t>(i));
         } catch (const std::logic_error&) {
@@ -233,7 +233,7 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
 
-    bool tx_database_enabled =
+    const bool tx_database_enabled =
         this->device_model.get_optional_value<bool>(ControllerComponentVariables::ResumeTransactionsOnBoot)
             .value_or(false);
 
@@ -343,7 +343,7 @@ void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
 }
 
 void Evse::on_meter_value(const MeterValue& meter_value) {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    const std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->meter_value = meter_value;
     this->aligned_data_updated.set_values(meter_value);
     this->aligned_data_tx_end.set_values(meter_value);
@@ -352,7 +352,7 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
 }
 
 MeterValue Evse::get_meter_value() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    const std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     return this->meter_value;
 }
 
@@ -365,7 +365,7 @@ void Evse::clear_idle_meter_values() {
 }
 
 std::optional<float> Evse::get_active_import_register_meter_value() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    const std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     auto it = std::find_if(
         this->meter_value.sampledValue.begin(), this->meter_value.sampledValue.end(), [](const SampledValue& value) {
             return value.measurand == MeasurandEnum::Energy_Active_Import_Register and !value.phase.has_value();
@@ -619,7 +619,7 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
         // Hysteresis of 5% to avoid repetitive triggers when the power fluctuates around the trigger level.
         const double hysterisis_kw = trigger_power_kw * 0.05;
         const double triggered_power_kw = this->last_triggered_metervalue_power_kw.value();
-        const double current_metervalue_w = static_cast<double>(active_power_meter_value.value());
+        const auto current_metervalue_w = static_cast<double>(active_power_meter_value.value());
         const double current_metervalue_kw = current_metervalue_w / 1000;
 
         if ( // Check if trigger value is crossed in upward direction.
@@ -678,7 +678,7 @@ Connector* Evse::get_connector(int32_t connector_id) const {
 }
 
 CurrentPhaseType Evse::get_current_phase_type() {
-    ComponentVariable evse_variable =
+    const ComponentVariable evse_variable =
         EvseComponentVariables::get_component_variable(this->evse_id, EvseComponentVariables::SupplyPhases);
     auto supply_phases = this->device_model.get_optional_value<int32_t>(evse_variable);
     if (supply_phases == std::nullopt) {

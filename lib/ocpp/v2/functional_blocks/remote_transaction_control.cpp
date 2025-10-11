@@ -86,7 +86,7 @@ void RemoteTransactionControl::handle_unlock_connector(Call<UnlockConnectorReque
         unlock_response.status = UnlockStatusEnum::UnknownConnector;
     }
 
-    ocpp::CallResult<UnlockConnectorResponse> call_result(unlock_response, call.uniqueId);
+    const ocpp::CallResult<UnlockConnectorResponse> call_result(unlock_response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -106,7 +106,7 @@ void RemoteTransactionControl::handle_remote_start_transaction_request(Call<Requ
 
         // When available but there was a reservation for another token id or group token id:
         //    send rejected (F01.FR.21 & F01.FR.22)
-        ocpp::ReservationCheckStatus reservation_status =
+        const ocpp::ReservationCheckStatus reservation_status =
             is_evse_reserved_for_other(evse, call.msg.idToken, call.msg.groupIdToken);
 
         const bool is_reserved = (reservation_status == ocpp::ReservationCheckStatus::ReservedForOtherToken);
@@ -130,7 +130,7 @@ void RemoteTransactionControl::handle_remote_start_transaction_request(Call<Requ
         // with RequestStartTransactionResponse with status = Rejected and optionally with reasonCode =
         // "InvalidProfile" or "InvalidSchedule".
 
-        bool is_smart_charging_enabled =
+        const bool is_smart_charging_enabled =
             this->context.device_model.get_optional_value<bool>(ControllerComponentVariables::SmartChargingCtrlrEnabled)
                 .value_or(false);
 
@@ -202,7 +202,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
     response.status = TriggerMessageStatusEnum::Rejected;
 
     if (msg.evse.has_value()) {
-        int32_t evse_id = msg.evse.value().id;
+        const int32_t evse_id = msg.evse.value().id;
         evse_ptr = &this->context.evse_manager.get_evse(evse_id);
     }
 
@@ -248,7 +248,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
                 response.status = TriggerMessageStatusEnum::Accepted;
             }
         } else {
-            for (auto const& evse : this->context.evse_manager) {
+            for (const auto& evse : this->context.evse_manager) {
                 if (evse.has_active_transaction()) {
                     response.status = TriggerMessageStatusEnum::Accepted;
                     break;
@@ -259,7 +259,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
 
     case MessageTriggerEnum::StatusNotification:
         if (msg.evse.has_value() and msg.evse.value().connectorId.has_value()) {
-            int32_t connector_id = msg.evse.value().connectorId.value();
+            const int32_t connector_id = msg.evse.value().connectorId.value();
             if (evse_ptr != nullptr and connector_id > 0 and connector_id <= evse_ptr->get_number_of_connectors()) {
                 response.status = TriggerMessageStatusEnum::Accepted;
             }
@@ -295,7 +295,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
         break;
     }
 
-    ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     if (response.status != TriggerMessageStatusEnum::Accepted) {
@@ -374,7 +374,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
             request.status = UploadLogStatusEnum::Idle;
         }
 
-        ocpp::Call<LogStatusNotificationRequest> call(request);
+        const ocpp::Call<LogStatusNotificationRequest> call(request);
         this->context.message_dispatcher.dispatch_call(call, true);
     } break;
 

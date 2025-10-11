@@ -83,7 +83,7 @@ void WebsocketBase::disconnect(const WebsocketCloseReason code) {
     }
 
     {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        const std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         if (code == WebsocketCloseReason::Normal) {
             this->shutting_down = true;
         }
@@ -110,7 +110,7 @@ std::optional<std::string> WebsocketBase::getAuthorizationHeader() {
     const auto authorization_key = this->connection_options.authorization_key;
     if (authorization_key.has_value()) {
         EVLOG_debug << "AuthorizationKey present, encoding authentication header";
-        std::string plain_auth_header =
+        const std::string plain_auth_header =
             this->connection_options.csms_uri.get_chargepoint_id() + ":" + authorization_key.value();
 
         // TODO (ioan): replace with libevse-security usage
@@ -142,7 +142,7 @@ long WebsocketBase::get_reconnect_interval() {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distr(0, this->connection_options.retry_backoff_random_range_s);
 
-    int random_number = distr(gen);
+    const int random_number = distr(gen);
 
     if (this->connection_attempts == 1) {
         this->reconnect_backoff_ms = (this->connection_options.retry_backoff_wait_minimum_s + random_number) * 1000;
@@ -154,7 +154,7 @@ long WebsocketBase::get_reconnect_interval() {
 }
 
 void WebsocketBase::cancel_reconnect_timer() {
-    std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+    const std::lock_guard<std::mutex> lk(this->reconnect_mutex);
     if (this->reconnect_timer) {
         this->reconnect_timer.get()->cancel();
     }

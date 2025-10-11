@@ -158,7 +158,7 @@ public:
     std::string get_message_log_path();
 
     /// \returns If session logging is active
-    bool session_logging_active();
+    bool session_logging_active() const;
 };
 
 } // namespace ocpp

@@ -92,7 +92,7 @@ Security::on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest
     }
 
     try {
-        ocpp::CallResult<Get15118EVCertificateResponse> call_result = response_message.message;
+        const ocpp::CallResult<Get15118EVCertificateResponse> call_result = response_message.message;
         return call_result.msg;
     } catch (const EnumConversionException& e) {
         EVLOG_error << "EnumConversionException during handling of message: " << e.what();
@@ -143,7 +143,7 @@ void Security::security_event_notification_req(const CiString<50>& event_type,
     req.techInfo = tech_info;
     this->logging.security(json(req).dump());
     if (critical) {
-        ocpp::Call<SecurityEventNotificationRequest> call(req);
+        const ocpp::Call<SecurityEventNotificationRequest> call(req);
         this->context.message_dispatcher.dispatch_call(call);
     }
     if (triggered_internally and this->security_event_callback != nullptr) {
@@ -222,7 +222,7 @@ void Security::sign_certificate_req(const ocpp::CertificateSigningUseEnum& certi
 
     this->awaited_certificate_signing_use_enum = certificate_signing_use;
 
-    ocpp::Call<SignCertificateRequest> call(req);
+    const ocpp::Call<SignCertificateRequest> call(req);
     this->context.message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -262,7 +262,7 @@ void Security::handle_certificate_signed_req(Call<CertificateSignedRequest> call
         this->context.evse_security.update_certificate_links(cert_signing_use);
     }
 
-    ocpp::CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     if (result != ocpp::InstallCertificateResult::Accepted) {
@@ -278,7 +278,7 @@ void Security::handle_certificate_signed_req(Call<CertificateSignedRequest> call
         this->context.connectivity_manager.on_charging_station_certificate_changed();
 
         const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
-        std::string tech_info = "Changed charging station certificate";
+        const std::string tech_info = "Changed charging station certificate";
         this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
                                               utils::is_critical(security_event));
     }
@@ -315,9 +315,9 @@ void Security::handle_sign_certificate_response(CallResult<SignCertificateRespon
             this->awaited_certificate_signing_use_enum = std::nullopt;
             return;
         }
-        int retry_backoff_seconds =
-            std::max(minimum_cert_signing_wait_time_seconds, cert_signing_wait_minimum.value()) *
-            std::pow(2, this->csr_attempt); // prevent immediate repetition in case of value 0
+        const int retry_backoff_seconds = clamp_to<int>(
+            static_cast<double>(std::max(minimum_cert_signing_wait_time_seconds, cert_signing_wait_minimum.value())) *
+            std::pow(2, this->csr_attempt)); // prevent immediate repetition in case of value 0
         this->certificate_signed_timer.timeout(
             [this]() {
                 EVLOG_info << "Did not receive CertificateSigned.req in time. Will retry with SignCertificate.req";
@@ -370,7 +370,7 @@ void Security::handle_get_installed_certificate_ids_req(Call<GetInstalledCertifi
         response.status = GetInstalledCertificateStatusEnum::Accepted;
     }
 
-    ocpp::CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -391,13 +391,13 @@ void Security::handle_install_certificate_req(Call<InstallCertificateRequest> ca
         response.status = ocpp::evse_security_conversions::to_ocpp_v2(result);
         if (response.status == InstallCertificateStatusEnum::Accepted) {
             const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
-            std::string tech_info =
+            const std::string tech_info =
                 "Installed certificate: " + conversions::install_certificate_use_enum_to_string(msg.certificateType);
             this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
                                                   utils::is_critical(security_event));
         }
     }
-    ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -415,12 +415,13 @@ void Security::handle_delete_certificate_req(Call<DeleteCertificateRequest> call
 
     if (response.status == DeleteCertificateStatusEnum::Accepted) {
         const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
-        std::string tech_info = "Deleted certificate wit serial number: " + msg.certificateHashData.serialNumber.get();
+        const std::string tech_info =
+            "Deleted certificate wit serial number: " + msg.certificateHashData.serialNumber.get();
         this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
                                               utils::is_critical(security_event));
     }
 
-    ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -453,7 +454,7 @@ bool Security::should_allow_certificate_install(InstallCertificateUseEnum cert_t
 
 void Security::scheduled_check_client_certificate_expiration() {
     EVLOG_info << "Checking if CSMS client certificate has expired";
-    int expiry_days_count = this->context.evse_security.get_leaf_expiry_days_count(
+    const int expiry_days_count = this->context.evse_security.get_leaf_expiry_days_count(
         ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
     if (expiry_days_count < 30) {
         EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
@@ -474,7 +475,7 @@ void Security::scheduled_check_v2g_certificate_expiration() {
             .get_optional_value<bool>(ControllerComponentVariables::V2GCertificateInstallationEnabled)
             .value_or(false)) {
         EVLOG_info << "Checking if V2GCertificate has expired";
-        int expiry_days_count =
+        const int expiry_days_count =
             this->context.evse_security.get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::V2GCertificate);
         if (expiry_days_count < 30) {
             EVLOG_info << "V2GCertificate is invalid in " << expiry_days_count

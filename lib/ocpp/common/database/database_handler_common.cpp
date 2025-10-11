@@ -42,7 +42,8 @@ std::vector<DBTransactionMessage> DatabaseHandlerCommon::get_message_queue_messa
 
     const std::string table_name = queue_type == QueueType::Normal ? "NORMAL_QUEUE" : "TRANSACTION_QUEUE";
 
-    std::string sql = "SELECT UNIQUE_ID, MESSAGE, MESSAGE_TYPE, MESSAGE_ATTEMPTS, MESSAGE_TIMESTAMP FROM " + table_name;
+    const std::string sql =
+        "SELECT UNIQUE_ID, MESSAGE, MESSAGE_TYPE, MESSAGE_ATTEMPTS, MESSAGE_TIMESTAMP FROM " + table_name;
 
     auto stmt = this->database->new_statement(sql);
 
@@ -55,7 +56,7 @@ std::vector<DBTransactionMessage> DatabaseHandlerCommon::get_message_queue_messa
             const std::string message_timestamp = stmt->column_text(4);
             const int message_attempts = stmt->column_int(3);
 
-            json json_message = json::parse(message);
+            const json json_message = json::parse(message);
 
             DBTransactionMessage control_message;
             control_message.message_attempts = message_attempts;
@@ -105,7 +106,7 @@ void DatabaseHandlerCommon::insert_message_queue_message(const DBTransactionMess
 
 void DatabaseHandlerCommon::remove_message_queue_message(const std::string& unique_id, const QueueType queue_type) {
     const std::string table_name = queue_type == QueueType::Normal ? "NORMAL_QUEUE" : "TRANSACTION_QUEUE";
-    std::string sql = "DELETE FROM " + table_name + " WHERE UNIQUE_ID = @unique_id";
+    const std::string sql = "DELETE FROM " + table_name + " WHERE UNIQUE_ID = @unique_id";
 
     auto stmt = this->database->new_statement(sql);
 

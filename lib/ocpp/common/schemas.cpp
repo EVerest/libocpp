@@ -14,7 +14,7 @@ Schemas::Schemas(fs::path schemas_path) : schemas_path(schemas_path) {
         EVLOG_error << this->schemas_path << " does not exist";
         // FIXME(kai): exception?
     } else {
-        for (auto file : fs::directory_iterator(this->schemas_path)) {
+        for (const auto& file : fs::directory_iterator(this->schemas_path)) {
             available_schemas_paths.insert(file.path());
         }
         this->load_root_schema();
@@ -34,17 +34,17 @@ Schemas::Schemas(json&& schema_in) : schema(std::move(schema_in)) {
 }
 
 void Schemas::load_root_schema() {
-    fs::path config_schema_path = this->schemas_path / "Config.json";
+    const fs::path config_schema_path = this->schemas_path / "Config.json";
 
     EVLOG_debug << "parsing root schema file: " << fs::canonical(config_schema_path);
 
     std::ifstream ifs(config_schema_path.c_str());
-    std::string schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+    const std::string schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
     this->schema = json::parse(schema_file);
 
     const auto custom_schema_path = schemas_path / "Custom.json";
     if (fs::exists(custom_schema_path)) {
-        json custom_object = {{"type", "object"}, {"$ref", "Custom.json"}};
+        const json custom_object = {{"type", "object"}, {"$ref", "Custom.json"}};
         this->schema["properties"]["Custom"] = custom_object;
     }
 
@@ -71,10 +71,10 @@ void Schemas::loader(const json_uri& uri, json& schema) {
         location.erase(0, 1);
     }
 
-    fs::path schema_path = this->schemas_path / fs::path(location);
+    const fs::path schema_path = this->schemas_path / fs::path(location);
     if (available_schemas_paths.count(schema_path) != 0) {
         std::ifstream ifs(schema_path.string().c_str());
-        std::string schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        const std::string schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
         schema = json::parse(schema_file);
         return;
     }

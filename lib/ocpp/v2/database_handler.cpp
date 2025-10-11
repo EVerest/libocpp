@@ -80,7 +80,7 @@ void DatabaseHandler::init_enum_table_inner(const std::string& table_name, const
 
     auto transaction = this->database->begin_transaction();
 
-    std::string sql = "INSERT INTO " + table_name + " VALUES (@id, @value);";
+    const std::string sql = "INSERT INTO " + table_name + " VALUES (@id, @value);";
     auto insert_stmt = this->database->new_statement(sql);
 
     for (int i = begin; i <= end; i++) {
@@ -109,8 +109,9 @@ void DatabaseHandler::init_enum_table(const std::string& table_name, T begin, T 
 
 void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_token_hash,
                                                        const IdTokenInfo& id_token_info) {
-    std::string sql = "INSERT OR REPLACE INTO AUTH_CACHE (ID_TOKEN_HASH, ID_TOKEN_INFO, LAST_USED, EXPIRY_DATE) VALUES "
-                      "(@id_token_hash, @id_token_info, @last_used, @expiry_date)";
+    const std::string sql =
+        "INSERT OR REPLACE INTO AUTH_CACHE (ID_TOKEN_HASH, ID_TOKEN_INFO, LAST_USED, EXPIRY_DATE) VALUES "
+        "(@id_token_hash, @id_token_info, @last_used, @expiry_date)";
     auto insert_stmt = this->database->new_statement(sql);
 
     insert_stmt->bind_text("@id_token_hash", id_token_hash);
@@ -128,7 +129,7 @@ void DatabaseHandler::authorization_cache_insert_entry(const std::string& id_tok
 }
 
 void DatabaseHandler::authorization_cache_update_last_used(const std::string& id_token_hash) {
-    std::string sql = "UPDATE AUTH_CACHE SET LAST_USED = @last_used WHERE ID_TOKEN_HASH = @id_token_hash";
+    const std::string sql = "UPDATE AUTH_CACHE SET LAST_USED = @last_used WHERE ID_TOKEN_HASH = @id_token_hash";
     auto insert_stmt = this->database->new_statement(sql);
 
     insert_stmt->bind_int64("@last_used", to_unix_milliseconds(DateTime()));
@@ -141,7 +142,7 @@ void DatabaseHandler::authorization_cache_update_last_used(const std::string& id
 
 std::optional<AuthorizationCacheEntry>
 DatabaseHandler::authorization_cache_get_entry(const std::string& id_token_hash) {
-    std::string sql = "SELECT ID_TOKEN_INFO, LAST_USED FROM AUTH_CACHE WHERE ID_TOKEN_HASH = @id_token_hash";
+    const std::string sql = "SELECT ID_TOKEN_INFO, LAST_USED FROM AUTH_CACHE WHERE ID_TOKEN_HASH = @id_token_hash";
     auto select_stmt = this->database->new_statement(sql);
 
     select_stmt->bind_text("@id_token_hash", id_token_hash);
@@ -161,7 +162,7 @@ DatabaseHandler::authorization_cache_get_entry(const std::string& id_token_hash)
 }
 
 void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_token_hash) {
-    std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH = @id_token_hash";
+    const std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH = @id_token_hash";
     auto delete_stmt = this->database->new_statement(sql);
 
     delete_stmt->bind_text("@id_token_hash", id_token_hash);
@@ -172,8 +173,8 @@ void DatabaseHandler::authorization_cache_delete_entry(const std::string& id_tok
 }
 
 void DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_to_remove) {
-    std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE ORDER "
-                      "BY LAST_USED ASC LIMIT @nr_to_remove)";
+    const std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE ORDER "
+                            "BY LAST_USED ASC LIMIT @nr_to_remove)";
     auto delete_stmt = this->database->new_statement(sql);
 
     delete_stmt->bind_int("@nr_to_remove", nr_to_remove);
@@ -186,11 +187,11 @@ void DatabaseHandler::authorization_cache_delete_nr_of_oldest_entries(size_t nr_
 void DatabaseHandler::authorization_cache_delete_expired_entries(
     std::optional<std::chrono::seconds> auth_cache_lifetime) {
 
-    std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
-                      "EXPIRY_DATE < @before_date OR LAST_USED < @before_last_used)";
+    const std::string sql = "DELETE FROM AUTH_CACHE WHERE ID_TOKEN_HASH IN (SELECT ID_TOKEN_HASH FROM AUTH_CACHE WHERE "
+                            "EXPIRY_DATE < @before_date OR LAST_USED < @before_last_used)";
     auto delete_stmt = this->database->new_statement(sql);
 
-    DateTime now;
+    const DateTime now;
     delete_stmt->bind_int64("@before_date", to_unix_milliseconds(now));
     if (auth_cache_lifetime.has_value()) {
         delete_stmt->bind_int64("@before_last_used",
@@ -211,7 +212,7 @@ void DatabaseHandler::authorization_cache_clear() {
 }
 
 size_t DatabaseHandler::authorization_cache_get_binary_size() {
-    std::string sql = "SELECT SUM(\"payload\") FROM \"dbstat\" WHERE name='AUTH_CACHE';";
+    const std::string sql = "SELECT SUM(\"payload\") FROM \"dbstat\" WHERE name='AUTH_CACHE';";
     auto stmt = this->database->new_statement(sql);
 
     if (stmt->step() != SQLITE_ROW) {
@@ -247,14 +248,14 @@ void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
 }
 
 OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t connector_id) {
-    std::string sql =
+    const std::string sql =
         "SELECT OPERATIONAL_STATUS FROM AVAILABILITY WHERE EVSE_ID = @evse_id AND CONNECTOR_ID = @connector_id;";
     auto select_stmt = this->database->new_statement(sql);
 
     select_stmt->bind_int("@evse_id", evse_id);
     select_stmt->bind_int("@connector_id", connector_id);
 
-    int status = select_stmt->step();
+    const int status = select_stmt->step();
 
     if (status == SQLITE_DONE) {
         throw everest::db::RequiredEntryNotFoundException("Could not find operational status for connector");
@@ -267,7 +268,7 @@ OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t
 }
 
 void DatabaseHandler::insert_or_update_local_authorization_list_version(int32_t version) {
-    std::string sql = "INSERT OR REPLACE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
+    const std::string sql = "INSERT OR REPLACE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
     auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@version", version);
@@ -279,7 +280,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list_version(int32_t 
 }
 
 int32_t DatabaseHandler::get_local_authorization_list_version() {
-    std::string sql = "SELECT VERSION FROM AUTH_LIST_VERSION WHERE ID = 0";
+    const std::string sql = "SELECT VERSION FROM AUTH_LIST_VERSION WHERE ID = 0";
     auto stmt = this->database->new_statement(sql);
 
     if (stmt->step() != SQLITE_ROW) {
@@ -293,8 +294,8 @@ int32_t DatabaseHandler::get_local_authorization_list_version() {
 void DatabaseHandler::insert_or_update_local_authorization_list_entry(const IdToken& id_token,
                                                                       const IdTokenInfo& id_token_info) {
     // add or replace
-    std::string sql = "INSERT OR REPLACE INTO AUTH_LIST (ID_TOKEN_HASH, ID_TOKEN_INFO) "
-                      "VALUES (@id_token_hash, @id_token_info)";
+    const std::string sql = "INSERT OR REPLACE INTO AUTH_LIST (ID_TOKEN_HASH, ID_TOKEN_INFO) "
+                            "VALUES (@id_token_hash, @id_token_info)";
     auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_token_hash", utils::generate_token_hash(id_token), SQLiteString::Transient);
@@ -328,7 +329,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list(
 }
 
 void DatabaseHandler::delete_local_authorization_list_entry(const IdToken& id_token) {
-    std::string sql = "DELETE FROM AUTH_LIST WHERE ID_TOKEN_HASH = @id_token_hash;";
+    const std::string sql = "DELETE FROM AUTH_LIST WHERE ID_TOKEN_HASH = @id_token_hash;";
     auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_token_hash", utils::generate_token_hash(id_token), SQLiteString::Transient);
@@ -340,12 +341,12 @@ void DatabaseHandler::delete_local_authorization_list_entry(const IdToken& id_to
 
 std::optional<IdTokenInfo> DatabaseHandler::get_local_authorization_list_entry(const IdToken& id_token) {
 
-    std::string sql = "SELECT ID_TOKEN_INFO FROM AUTH_LIST WHERE ID_TOKEN_HASH = @id_token_hash;";
+    const std::string sql = "SELECT ID_TOKEN_INFO FROM AUTH_LIST WHERE ID_TOKEN_HASH = @id_token_hash;";
     auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@id_token_hash", utils::generate_token_hash(id_token), SQLiteString::Transient);
 
-    int status = stmt->step();
+    const int status = stmt->step();
 
     if (status == SQLITE_DONE) {
         return std::nullopt;
@@ -366,7 +367,7 @@ void DatabaseHandler::clear_local_authorization_list() {
 }
 
 int32_t DatabaseHandler::get_local_authorization_list_number_of_entries() {
-    std::string sql = "SELECT COUNT(*) FROM AUTH_LIST;";
+    const std::string sql = "SELECT COUNT(*) FROM AUTH_LIST;";
     auto stmt = this->database->new_statement(sql);
 
     if (stmt->step() != SQLITE_ROW) {
@@ -393,8 +394,9 @@ void DatabaseHandler::transaction_metervalues_insert(const std::string& transact
         throw std::invalid_argument("All metervalues must have the same context");
     }
 
-    std::string sql1 = "INSERT INTO METER_VALUES (TRANSACTION_ID, TIMESTAMP, READING_CONTEXT, CUSTOM_DATA) VALUES "
-                       "(@transaction_id, @timestamp, @context, @custom_data)";
+    const std::string sql1 =
+        "INSERT INTO METER_VALUES (TRANSACTION_ID, TIMESTAMP, READING_CONTEXT, CUSTOM_DATA) VALUES "
+        "(@transaction_id, @timestamp, @context, @custom_data)";
 
     auto stmt = this->database->new_statement(sql1);
 
@@ -411,11 +413,12 @@ void DatabaseHandler::transaction_metervalues_insert(const std::string& transact
     auto last_row_id = this->database->get_last_inserted_rowid();
     stmt->reset();
 
-    std::string sql2 = "INSERT INTO METER_VALUE_ITEMS (METER_VALUE_ID, VALUE, MEASURAND, PHASE, LOCATION, CUSTOM_DATA, "
-                       "UNIT_CUSTOM_DATA, UNIT_TEXT, UNIT_MULTIPLIER, SIGNED_METER_DATA, SIGNING_METHOD, "
-                       "ENCODING_METHOD, PUBLIC_KEY) VALUES (@meter_value_id, @value, @measurand, "
-                       "@phase, @location, @custom_data, @unit_custom_data, @unit_text, @unit_multiplier, "
-                       "@signed_meter_data, @signing_method, @encoding_method, @public_key);";
+    const std::string sql2 =
+        "INSERT INTO METER_VALUE_ITEMS (METER_VALUE_ID, VALUE, MEASURAND, PHASE, LOCATION, CUSTOM_DATA, "
+        "UNIT_CUSTOM_DATA, UNIT_TEXT, UNIT_MULTIPLIER, SIGNED_METER_DATA, SIGNING_METHOD, "
+        "ENCODING_METHOD, PUBLIC_KEY) VALUES (@meter_value_id, @value, @measurand, "
+        "@phase, @location, @custom_data, @unit_custom_data, @unit_text, @unit_multiplier, "
+        "@signed_meter_data, @signing_method, @encoding_method, @public_key);";
 
     auto transaction = this->database->begin_transaction();
     auto insert_stmt = this->database->new_statement(sql2);
@@ -498,8 +501,8 @@ void DatabaseHandler::transaction_metervalues_insert(const std::string& transact
 
 std::vector<MeterValue> DatabaseHandler::transaction_metervalues_get_all(const std::string& transaction_id) {
 
-    std::string sql1 = "SELECT * FROM METER_VALUES WHERE TRANSACTION_ID = @transaction_id;";
-    std::string sql2 = "SELECT * FROM METER_VALUE_ITEMS WHERE METER_VALUE_ID = @row_id;";
+    const std::string sql1 = "SELECT * FROM METER_VALUES WHERE TRANSACTION_ID = @transaction_id;";
+    const std::string sql2 = "SELECT * FROM METER_VALUE_ITEMS WHERE METER_VALUE_ID = @row_id;";
     auto select_stmt = this->database->new_statement(sql1);
     auto select_stmt2 = this->database->new_statement(sql2);
 
@@ -590,13 +593,13 @@ std::vector<MeterValue> DatabaseHandler::transaction_metervalues_get_all(const s
 
 void DatabaseHandler::transaction_metervalues_clear(const std::string& transaction_id) {
 
-    std::string sql1 = "SELECT ROWID FROM METER_VALUES WHERE TRANSACTION_ID = @transaction_id;";
+    const std::string sql1 = "SELECT ROWID FROM METER_VALUES WHERE TRANSACTION_ID = @transaction_id;";
 
     auto select_stmt = this->database->new_statement(sql1);
 
     select_stmt->bind_text("@transaction_id", transaction_id);
 
-    std::string sql2 = "DELETE FROM METER_VALUE_ITEMS WHERE METER_VALUE_ID = @row_id";
+    const std::string sql2 = "DELETE FROM METER_VALUE_ITEMS WHERE METER_VALUE_ID = @row_id";
     auto delete_stmt = this->database->new_statement(sql2);
     int status;
     while ((status = select_stmt->step()) == SQLITE_ROW) {
@@ -613,7 +616,7 @@ void DatabaseHandler::transaction_metervalues_clear(const std::string& transacti
         throw QueryExecutionException(this->database->get_error_message());
     }
 
-    std::string sql3 = "DELETE FROM METER_VALUES WHERE TRANSACTION_ID = @transaction_id";
+    const std::string sql3 = "DELETE FROM METER_VALUES WHERE TRANSACTION_ID = @transaction_id";
     auto delete_stmt2 = this->database->new_statement(sql3);
     delete_stmt2->bind_text("@transaction_id", transaction_id);
     if (delete_stmt2->step() != SQLITE_DONE) {
@@ -655,7 +658,7 @@ OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_i
 
 // transactions
 void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction, int32_t evse_id) {
-    std::string sql =
+    const std::string sql =
         "INSERT INTO TRANSACTIONS "
         "(TRANSACTION_ID, EVSE_ID, CONNECTOR_ID, TIME_START, SEQ_NO, CHARGING_STATE, ID_TAG_SENT) VALUES"
         "(@transaction_id, @evse_id, @connector_id, @time_start, @seq_no, @charging_state, @id_token_sent)";
@@ -677,8 +680,8 @@ void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction,
 }
 
 std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int32_t evse_id) {
-    std::string sql = "SELECT TRANSACTION_ID, CONNECTOR_ID, TIME_START, SEQ_NO, CHARGING_STATE, ID_TAG_SENT FROM "
-                      "TRANSACTIONS WHERE EVSE_ID = @evse_id";
+    const std::string sql = "SELECT TRANSACTION_ID, CONNECTOR_ID, TIME_START, SEQ_NO, CHARGING_STATE, ID_TAG_SENT FROM "
+                            "TRANSACTIONS WHERE EVSE_ID = @evse_id";
     auto get_stmt = this->database->new_statement(sql);
     get_stmt->bind_int("@evse_id", evse_id);
 
@@ -706,7 +709,7 @@ std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int3
 }
 
 void DatabaseHandler::transaction_update_seq_no(const std::string& transaction_id, int32_t seq_no) {
-    std::string sql = "UPDATE TRANSACTIONS SET SEQ_NO = @seq_no WHERE TRANSACTION_ID = @transaction_id";
+    const std::string sql = "UPDATE TRANSACTIONS SET SEQ_NO = @seq_no WHERE TRANSACTION_ID = @transaction_id";
     auto update_stmt = this->database->new_statement(sql);
 
     update_stmt->bind_int("@seq_no", seq_no);
@@ -719,7 +722,8 @@ void DatabaseHandler::transaction_update_seq_no(const std::string& transaction_i
 
 void DatabaseHandler::transaction_update_charging_state(const std::string& transaction_id,
                                                         const ChargingStateEnum charging_state) {
-    std::string sql = "UPDATE TRANSACTIONS SET CHARGING_STATE = @charging_state WHERE TRANSACTION_ID = @transaction_id";
+    const std::string sql =
+        "UPDATE TRANSACTIONS SET CHARGING_STATE = @charging_state WHERE TRANSACTION_ID = @transaction_id";
     auto update_stmt = this->database->new_statement(sql);
 
     update_stmt->bind_text("@charging_state", conversions::charging_state_enum_to_string(charging_state));
@@ -731,7 +735,8 @@ void DatabaseHandler::transaction_update_charging_state(const std::string& trans
 }
 
 void DatabaseHandler::transaction_update_id_token_sent(const std::string& transaction_id, bool id_token_sent) {
-    std::string sql = "UPDATE TRANSACTIONS SET ID_TAG_SENT = @id_token_sent WHERE TRANSACTION_ID = @transaction_id";
+    const std::string sql =
+        "UPDATE TRANSACTIONS SET ID_TAG_SENT = @id_token_sent WHERE TRANSACTION_ID = @transaction_id";
     auto update_stmt = this->database->new_statement(sql);
 
     update_stmt->bind_int("@id_token_sent", id_token_sent ? 1 : 0);
@@ -743,7 +748,7 @@ void DatabaseHandler::transaction_update_id_token_sent(const std::string& transa
 }
 
 void DatabaseHandler::transaction_delete(const std::string& transaction_id) {
-    std::string sql = "DELETE FROM TRANSACTIONS WHERE TRANSACTION_ID = @transaction_id";
+    const std::string sql = "DELETE FROM TRANSACTIONS WHERE TRANSACTION_ID = @transaction_id";
     auto delete_stmt = this->database->new_statement(sql);
     delete_stmt->bind_text("@transaction_id", transaction_id);
     if (delete_stmt->step() != SQLITE_DONE) {
@@ -754,13 +759,13 @@ void DatabaseHandler::transaction_delete(const std::string& transaction_id) {
 void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const v2::ChargingProfile& profile,
                                                         const CiString<20> charging_limit_source) {
     // add or replace
-    std::string sql =
+    const std::string sql =
         "INSERT OR REPLACE INTO CHARGING_PROFILES (ID, EVSE_ID, STACK_LEVEL, CHARGING_PROFILE_PURPOSE, "
         "TRANSACTION_ID, PROFILE, CHARGING_LIMIT_SOURCE) VALUES "
         "(@id, @evse_id, @stack_level, @charging_profile_purpose, @transaction_id, @profile, @charging_limit_source)";
     auto stmt = this->database->new_statement(sql);
 
-    json json_profile(profile);
+    const json json_profile(profile);
 
     stmt->bind_int("@id", profile.id);
     stmt->bind_int("@evse_id", evse_id);
@@ -783,7 +788,7 @@ void DatabaseHandler::insert_or_update_charging_profile(const int evse_id, const
 }
 
 bool DatabaseHandler::delete_charging_profile(const int profile_id) {
-    std::string sql = "DELETE FROM CHARGING_PROFILES WHERE ID = @profile_id;";
+    const std::string sql = "DELETE FROM CHARGING_PROFILES WHERE ID = @profile_id;";
     auto stmt = this->database->new_statement(sql);
 
     stmt->bind_int("@profile_id", profile_id);
@@ -795,7 +800,7 @@ bool DatabaseHandler::delete_charging_profile(const int profile_id) {
 }
 
 void DatabaseHandler::delete_charging_profile_by_transaction_id(const std::string& transaction_id) {
-    std::string sql = "DELETE FROM CHARGING_PROFILES WHERE TRANSACTION_ID = @transaction_id";
+    const std::string sql = "DELETE FROM CHARGING_PROFILES WHERE TRANSACTION_ID = @transaction_id";
     auto stmt = this->database->new_statement(sql);
 
     stmt->bind_text("@transaction_id", transaction_id);
@@ -879,7 +884,7 @@ DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int
     }
 
     if (criteria.chargingProfileId.has_value() && !criteria.chargingProfileId->empty()) {
-        std::string profile_ids =
+        const std::string profile_ids =
             boost::algorithm::join(criteria.chargingProfileId.value() |
                                        boost::adaptors::transformed([](int32_t id) { return std::to_string(id); }),
                                    ", ");
@@ -912,7 +917,7 @@ DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int
     }
 
     if (criteria.chargingLimitSource.has_value() && !criteria.chargingLimitSource->empty()) {
-        std::string sources = boost::algorithm::join(
+        const std::string sources = boost::algorithm::join(
             criteria.chargingLimitSource.value() |
                 boost::adaptors::transformed([](CiString<20> source) { return "'" + source.get() + "'"; }),
             ", ");
@@ -953,7 +958,7 @@ DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int
 std::vector<v2::ChargingProfile> DatabaseHandler::get_charging_profiles_for_evse(const int evse_id) {
     std::vector<v2::ChargingProfile> profiles;
 
-    std::string sql = "SELECT PROFILE FROM CHARGING_PROFILES WHERE EVSE_ID = @evse_id";
+    const std::string sql = "SELECT PROFILE FROM CHARGING_PROFILES WHERE EVSE_ID = @evse_id";
 
     auto stmt = this->database->new_statement(sql);
 
@@ -970,7 +975,7 @@ std::vector<v2::ChargingProfile> DatabaseHandler::get_charging_profiles_for_evse
 std::vector<v2::ChargingProfile> DatabaseHandler::get_all_charging_profiles() {
     std::vector<v2::ChargingProfile> profiles;
 
-    std::string sql = "SELECT PROFILE FROM CHARGING_PROFILES";
+    const std::string sql = "SELECT PROFILE FROM CHARGING_PROFILES";
 
     auto stmt = this->database->new_statement(sql);
 
@@ -985,7 +990,7 @@ std::vector<v2::ChargingProfile> DatabaseHandler::get_all_charging_profiles() {
 std::map<int32_t, std::vector<v2::ChargingProfile>> DatabaseHandler::get_all_charging_profiles_group_by_evse() {
     std::map<int32_t, std::vector<v2::ChargingProfile>> map;
 
-    std::string sql = "SELECT EVSE_ID, PROFILE FROM CHARGING_PROFILES";
+    const std::string sql = "SELECT EVSE_ID, PROFILE FROM CHARGING_PROFILES";
 
     auto stmt = this->database->new_statement(sql);
 
@@ -1003,7 +1008,7 @@ std::map<int32_t, std::vector<v2::ChargingProfile>> DatabaseHandler::get_all_cha
 }
 
 CiString<20> DatabaseHandler::get_charging_limit_source_for_profile(const int profile_id) {
-    std::string sql = "SELECT CHARGING_LIMIT_SOURCE FROM CHARGING_PROFILES WHERE ID = @profile_id;";
+    const std::string sql = "SELECT CHARGING_LIMIT_SOURCE FROM CHARGING_PROFILES WHERE ID = @profile_id;";
 
     auto stmnt = this->database->new_statement(sql);
 

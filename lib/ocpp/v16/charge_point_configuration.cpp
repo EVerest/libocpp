@@ -44,7 +44,8 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
         const auto custom_schema_path = schemas_path / "Custom.json";
         if (fs::exists(custom_schema_path)) {
             std::ifstream ifs(custom_schema_path.c_str());
-            std::string custom_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+            const std::string custom_schema_file((std::istreambuf_iterator<char>(ifs)),
+                                                 (std::istreambuf_iterator<char>()));
             this->custom_schema = json::parse(custom_schema_file);
         }
     } catch (const json::parse_error& e) {
@@ -55,7 +56,8 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
     try {
         const auto internal_schema_path = schemas_path / "Internal.json";
         std::ifstream ifs(internal_schema_path.c_str());
-        std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        const std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)),
+                                               (std::istreambuf_iterator<char>()));
         this->internal_schema = json::parse(internal_schema_file);
     } catch (const json::parse_error& e) {
         EVLOG_error << "Error while parsing Internal.json file.";
@@ -66,7 +68,8 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
         const auto core_schema_path = schemas_path / "Core.json";
         if (fs::exists(core_schema_path)) {
             std::ifstream ifs(core_schema_path.c_str());
-            std::string core_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+            const std::string core_schema_file((std::istreambuf_iterator<char>(ifs)),
+                                               (std::istreambuf_iterator<char>()));
             const auto core_schema = json::parse(core_schema_file);
             this->core_schema_unlock_connector_on_ev_side_disconnect_ro_value =
                 core_schema["properties"]["UnlockConnectorOnEVSideDisconnect"]["readOnly"];
@@ -216,7 +219,7 @@ json ChargePointConfiguration::get_user_config() {
     if (fs::exists(this->user_config_path)) {
         // reading from and overriding to existing user config
         std::fstream ifs(user_config_path.c_str());
-        std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        const std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
         ifs.close();
         return json::parse(user_config_file);
     }
@@ -482,7 +485,7 @@ bool ChargePointConfiguration::setIgnoredProfilePurposesOffline(const std::strin
     }
 
     const auto profile_purposes = split_string(ignored_profile_purposes_offline, ',');
-    for (const auto purpose : profile_purposes) {
+    for (const auto& purpose : profile_purposes) {
         try {
             conversions::string_to_charging_profile_purpose_type(purpose);
         } catch (const StringToEnumException& e) {
@@ -605,12 +608,12 @@ void ChargePointConfiguration::setSupplyVoltage(int32_t supply_voltage) {
 }
 
 std::string ChargePointConfiguration::getSupportedCiphers12() {
-    std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers12"];
+    const std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers12"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
 
 std::string ChargePointConfiguration::getSupportedCiphers13() {
-    std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers13"];
+    const std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers13"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
 
@@ -1026,7 +1029,7 @@ std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_
     }
     for (const auto& component : components) {
         MeasurandWithPhase measurand_with_phase;
-        Measurand measurand = conversions::string_to_measurand(component);
+        const Measurand measurand = conversions::string_to_measurand(component);
         // check if this measurand can be provided on multiple phases
         if (this->supported_measurands.count(measurand) and this->supported_measurands.at(measurand).size() > 0) {
             // multiple phases are available
@@ -1070,7 +1073,7 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
     measurands_vector.push_back(config["Core"]["StopTxnAlignedData"]);
     measurands_vector.push_back(config["Core"]["StopTxnSampledData"]);
 
-    for (const auto measurands : measurands_vector) {
+    for (const auto& measurands : measurands_vector) {
         if (!this->measurands_supported(measurands)) {
             return false;
         }
@@ -2083,24 +2086,24 @@ std::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
     return authorization_key;
 }
 
-std::string hexToString(std::string const& s) {
+std::string hexToString(const std::string& s) {
     std::string str;
     for (size_t i = 0; i < s.length(); i += 2) {
-        std::string byte = s.substr(i, 2);
-        char chr = (char)(int)strtol(byte.c_str(), NULL, 16);
+        const std::string byte = s.substr(i, 2);
+        const char chr = (char)(int)strtol(byte.c_str(), nullptr, 16);
         str.push_back(chr);
     }
     return str;
 }
 
-bool isHexNotation(std::string const& s) {
-    bool is_hex = s.size() > 2 and s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
+bool isHexNotation(const std::string& s) {
+    const bool is_hex = s.size() > 2 and s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
 
     if (is_hex) {
         // check if every char is printable
         for (size_t i = 0; i < s.length(); i += 2) {
-            std::string byte = s.substr(i, 2);
-            char chr = (char)(int)strtol(byte.c_str(), NULL, 16);
+            const std::string byte = s.substr(i, 2);
+            const char chr = (char)(int)strtol(byte.c_str(), nullptr, 16);
             if ((chr < 0x20 or chr > 0x7e) and chr != 0xa) {
                 return false;
             }
@@ -2135,8 +2138,8 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
 
     // Filter per element of type 0.NotApplicable, 1.NotApplicable, or 0.Unknown etc
     for (int connector_id = 0; connector_id <= this->getNumberOfConnectors(); connector_id++) {
-        std::string myNotApplicable = std::to_string(connector_id) + ".NotApplicable";
-        std::string myNotDefined = std::to_string(connector_id) + ".Unknown";
+        const std::string myNotApplicable = std::to_string(connector_id) + ".NotApplicable";
+        const std::string myNotDefined = std::to_string(connector_id) + ".Unknown";
         elements.erase(std::remove(elements.begin(), elements.end(), myNotApplicable), elements.end());
         elements.erase(std::remove(elements.begin(), elements.end(), myNotDefined), elements.end());
     }
@@ -2157,7 +2160,7 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
         } catch (const std::invalid_argument&) {
             return false;
         }
-        std::string phase_rotation = e.substr(2, 5);
+        const std::string phase_rotation = e.substr(2, 5);
         if (phase_rotation != "RST" and phase_rotation != "RTS" and phase_rotation != "SRT" and
             phase_rotation != "STR" and phase_rotation != "TRS" and phase_rotation != "TSR") {
             return false;
@@ -2842,7 +2845,7 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString
 
     json default_price = json::object();
     if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
-        json result = json::object();
+        const json result = json::object();
         default_price = this->config["CostAndPrice"]["DefaultPriceText"];
     }
 
@@ -2995,7 +2998,7 @@ std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetTransition
 }
 
 ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetTransitionDateTime(const std::string& date_time) {
-    DateTime d(date_time);
+    const DateTime d(date_time);
     if (d.to_time_point() > date::utc_clock::now()) {
         this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"] = date_time;
         this->setInUserConfig("CostAndPrice", "NextTimeOffsetTransitionDateTime", date_time);
@@ -3174,7 +3177,7 @@ std::optional<KeyValue> ChargePointConfiguration::getLanguageKeyValue() {
 
 // Custom
 std::optional<KeyValue> ChargePointConfiguration::getCustomKeyValue(CiString<50> key) {
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (!this->config["Custom"].contains(key.get())) {
         return std::nullopt;
     }
@@ -3199,7 +3202,7 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
     if (!kv.has_value() or (kv.value().readonly and !force)) {
         return ConfigurationStatus::Rejected;
     }
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     try {
         const auto type = custom_schema["properties"][key]["type"];
         json new_value;
@@ -3237,7 +3240,7 @@ void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri)
 }
 
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     // Internal Profile
     if (key == "ChargePointId") {
         return this->getChargePointIdKeyValue();
@@ -3654,7 +3657,7 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
 }
 
 ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (key == "IgnoredProfilePurposesOffline") {
         if (this->setIgnoredProfilePurposesOffline(value) == false) {
             return ConfigurationStatus::Rejected;
@@ -3681,7 +3684,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
     if (key == "AuthorizationKey") {
-        std::string authorization_key = value.get();
+        const std::string authorization_key = value.get();
         if (authorization_key.length() >= AUTHORIZATION_KEY_MIN_LENGTH) {
             this->setAuthorizationKey(value.get());
             return ConfigurationStatus::Accepted;

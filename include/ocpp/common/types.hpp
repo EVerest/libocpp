@@ -81,7 +81,7 @@ public:
 
     /// \brief Conversion operatpr std::string returns a RFC 3339 compatible string representation of the stored
     /// DateTime
-    operator std::string() {
+    operator std::string() const {
         return this->to_rfc3339();
     }
 

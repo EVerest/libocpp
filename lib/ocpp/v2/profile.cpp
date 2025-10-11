@@ -343,7 +343,7 @@ std::vector<period_entry_t> calculate_profile_unsorted(const DateTime& now, cons
 
 void sort_periods_into_date_order(std::vector<period_entry_t>& periods) {
     // sort into date order
-    struct {
+    const struct {
         bool operator()(const period_entry_t& a, const period_entry_t& b) const {
             // earliest first
             return a.start < b.start;
@@ -389,7 +389,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
     }
 
     // sort the combined_schedules in stack priority order
-    struct {
+    const struct {
         bool operator()(const period_entry_t& a, const period_entry_t& b) const {
             // highest stack level first
             return a.stack_level > b.stack_level;
@@ -592,7 +592,7 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
     };
 
     // This ordering together with the combinator will prefer the tx_profile above the default profile
-    std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
+    const std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
 
     return combine_list_of_profiles(profiles, combinator);
 }

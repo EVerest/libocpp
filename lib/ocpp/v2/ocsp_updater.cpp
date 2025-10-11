@@ -26,7 +26,7 @@ OcspUpdater::OcspUpdater(std::shared_ptr<EvseSecurity> evse_security, cert_statu
 }
 
 void OcspUpdater::start() {
-    std::unique_lock lock(this->update_ocsp_cache_lock);
+    const std::unique_lock lock(this->update_ocsp_cache_lock);
     this->running = true;
     // Create the updater thread - we are holding the lock, so it will only start after we leave this function.
     // Because the deadline is in the past, it will immediately attempt an update
@@ -46,7 +46,7 @@ void OcspUpdater::stop() {
 }
 
 void OcspUpdater::trigger_ocsp_cache_update() {
-    std::unique_lock lock(this->update_ocsp_cache_lock);
+    const std::unique_lock lock(this->update_ocsp_cache_lock);
     if (!this->running) {
         throw std::logic_error("Called trigger_ocsp_cache_update, but the OcspUpdater is not running.");
     }
@@ -122,8 +122,9 @@ void OcspUpdater::execute_ocsp_update() {
         const auto response = this->get_cert_status_from_csms(request);
 
         if (response.status != GetCertificateStatusEnum::Accepted) {
-            std::string error_msg = (response.statusInfo.has_value()) ? response.statusInfo.value().reasonCode.get()
-                                                                      : "(No status info provided)";
+            const std::string error_msg = (response.statusInfo.has_value())
+                                              ? response.statusInfo.value().reasonCode.get()
+                                              : "(No status info provided)";
             throw OcspUpdateFailedException(std::string("CSMS rejected certificate status update: ") + error_msg, true);
         }
 

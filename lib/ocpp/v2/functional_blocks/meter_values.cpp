@@ -36,7 +36,7 @@ void ocpp::v2::MeterValues::update_aligned_data_interval() {
             if (this->context.device_model
                     .get_optional_value<bool>(ControllerComponentVariables::AlignedDataSendDuringIdle)
                     .value_or(false)) {
-                for (auto const& evse : this->context.evse_manager) {
+                for (const auto& evse : this->context.evse_manager) {
                     if (evse.has_active_transaction()) {
                         return;
                     }
@@ -113,6 +113,6 @@ void ocpp::v2::MeterValues::meter_values_req(const int32_t evse_id, const std::v
     req.evseId = evse_id;
     req.meterValue = meter_values;
 
-    ocpp::Call<MeterValuesRequest> call(req);
+    const ocpp::Call<MeterValuesRequest> call(req);
     this->context.message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }

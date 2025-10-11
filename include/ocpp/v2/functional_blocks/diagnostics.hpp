@@ -108,6 +108,6 @@ private: // Functions
 
     /// \brief Check if monitoring is available and if not, throw.
     /// \param type Message type to include in MessageTypeNotImplementedException when thrown.
-    void throw_when_monitoring_not_available(const MessageType type);
+    void throw_when_monitoring_not_available(const MessageType type) const;
 };
 } // namespace ocpp::v2

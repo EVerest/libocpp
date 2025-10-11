@@ -27,7 +27,7 @@ Transaction::Transaction(const int32_t internal_transaction_id, const int32_t& c
     stop_transaction_message_id("") {
 }
 
-int32_t Transaction::get_connector() {
+int32_t Transaction::get_connector() const {
     return this->connector;
 }
 
@@ -37,11 +37,11 @@ CiString<20> Transaction::get_id_tag() {
 
 void Transaction::add_meter_value(MeterValue meter_value) {
     if (this->active) {
-        std::lock_guard<std::mutex> lock(this->meter_values_mutex);
+        const std::lock_guard<std::mutex> lock(this->meter_values_mutex);
         this->meter_values.push_back(meter_value);
 
         if (std::find_if(meter_value.sampledValue.begin(), meter_value.sampledValue.end(),
-                         [](SampledValue const& SampledValueItem) {
+                         [](const SampledValue& SampledValueItem) {
                              return SampledValueItem.format == ValueFormat::SignedData;
                          }) != meter_value.sampledValue.end()) {
             this->set_has_signed_meter_values();
@@ -50,7 +50,7 @@ void Transaction::add_meter_value(MeterValue meter_value) {
 }
 
 std::vector<MeterValue> Transaction::get_meter_values() {
-    std::lock_guard<std::mutex> lock(this->meter_values_mutex);
+    const std::lock_guard<std::mutex> lock(this->meter_values_mutex);
     return this->meter_values;
 }
 
@@ -63,7 +63,7 @@ std::optional<int32_t> Transaction::get_transaction_id() {
     return this->transaction_id;
 }
 
-int32_t Transaction::get_internal_transaction_id() {
+int32_t Transaction::get_internal_transaction_id() const {
     return this->internal_transaction_id;
 }
 
@@ -93,7 +93,7 @@ void Transaction::set_transaction_id(int32_t transaction_id) {
 
 std::vector<TransactionData> Transaction::get_transaction_data() {
     std::vector<TransactionData> transaction_data_vec;
-    for (auto meter_value : this->get_meter_values()) {
+    for (const auto& meter_value : this->get_meter_values()) {
         TransactionData transaction_data;
         transaction_data.timestamp = meter_value.timestamp;
         transaction_data.sampledValue = meter_value.sampledValue;
@@ -109,11 +109,11 @@ void Transaction::stop() {
     this->active = false;
 }
 
-bool Transaction::is_active() {
+bool Transaction::is_active() const {
     return this->active;
 }
 
-bool Transaction::is_finished() {
+bool Transaction::is_finished() const {
     return this->finished;
 }
 
@@ -135,7 +135,7 @@ void Transaction::set_has_signed_meter_values() {
 }
 
 bool Transaction::get_has_signed_meter_values() {
-    std::lock_guard<std::mutex> lock(this->meter_values_mutex);
+    const std::lock_guard<std::mutex> lock(this->meter_values_mutex);
     return this->has_signed_meter_values;
 }
 
@@ -161,7 +161,7 @@ int32_t TransactionHandler::get_negative_random_transaction_id() {
 }
 
 void TransactionHandler::add_transaction(std::shared_ptr<Transaction> transaction) {
-    std::lock_guard<std::mutex> lk(this->active_transactions_mutex);
+    const std::lock_guard<std::mutex> lk(this->active_transactions_mutex);
     this->active_transactions.at(transaction->get_connector()) = std::move(transaction);
 }
 
@@ -175,7 +175,7 @@ bool TransactionHandler::remove_active_transaction(int32_t connector) {
         return false;
     }
     {
-        std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
+        const std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
         this->active_transactions.at(connector) = nullptr;
     }
     return true;
@@ -191,7 +191,7 @@ void TransactionHandler::erase_stopped_transaction(std::string stop_transaction_
 }
 
 std::shared_ptr<Transaction> TransactionHandler::get_transaction(int32_t connector) {
-    std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
+    const std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
     if (this->active_transactions.at(connector) == nullptr) {
         return nullptr;
     }
@@ -199,7 +199,7 @@ std::shared_ptr<Transaction> TransactionHandler::get_transaction(int32_t connect
 }
 
 std::shared_ptr<Transaction> TransactionHandler::get_transaction(const std::string& transaction_message_id) {
-    std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
+    const std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
     for (const auto& transaction : this->active_transactions) {
         if (transaction != nullptr && (transaction->get_start_transaction_message_id() == transaction_message_id or
                                        transaction->get_stop_transaction_message_id() == transaction_message_id)) {
@@ -216,7 +216,7 @@ std::shared_ptr<Transaction> TransactionHandler::get_transaction(const std::stri
 }
 
 std::shared_ptr<Transaction> TransactionHandler::get_transaction_from_id_tag(const std::string& id_tag) {
-    std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
+    const std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
     for (const auto& transaction : this->active_transactions) {
         if (transaction != nullptr && (transaction->get_id_tag().get() == id_tag)) {
             return transaction;
@@ -231,7 +231,7 @@ std::shared_ptr<Transaction> TransactionHandler::get_transaction_from_id_tag(con
 }
 
 int32_t TransactionHandler::get_connector_from_transaction_id(int32_t transaction_id) {
-    std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
+    const std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
     int32_t index = 0;
     for (auto& transaction : this->active_transactions) {
         if (transaction != nullptr) {
@@ -245,7 +245,7 @@ int32_t TransactionHandler::get_connector_from_transaction_id(int32_t transactio
 }
 
 void TransactionHandler::add_meter_value(int32_t connector, const MeterValue& meter_value) {
-    std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
+    const std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
     if (this->active_transactions.at(connector) == nullptr) {
         return;
     }
@@ -253,7 +253,7 @@ void TransactionHandler::add_meter_value(int32_t connector, const MeterValue& me
 }
 
 void TransactionHandler::change_meter_values_sample_intervals(int32_t interval) {
-    std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
+    const std::lock_guard<std::mutex> lock(this->active_transactions_mutex);
     for (auto& transaction : this->active_transactions) {
         if (transaction != nullptr && transaction->is_active()) {
             transaction->change_meter_values_sample_interval(interval);

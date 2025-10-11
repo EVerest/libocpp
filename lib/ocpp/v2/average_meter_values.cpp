@@ -10,13 +10,13 @@ namespace v2 {
 AverageMeterValues::AverageMeterValues() {
 }
 void AverageMeterValues::clear_values() {
-    std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
+    const std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
     this->aligned_meter_values.clear();
     this->averaged_meter_values.sampledValue.clear();
 }
 
 void AverageMeterValues::set_values(const MeterValue& meter_value) {
-    std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
+    const std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
     // store all the meter values in the struct
     this->averaged_meter_values = meter_value;
 
@@ -34,7 +34,7 @@ void AverageMeterValues::set_values(const MeterValue& meter_value) {
 }
 
 MeterValue AverageMeterValues::retrieve_processed_values() {
-    std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
+    const std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
     this->average_meter_value();
     return this->averaged_meter_values;
 }

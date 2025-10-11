@@ -46,7 +46,7 @@ public:
         return this->path_without_chargepoint_id;
     }
 
-    uint16_t get_port() {
+    uint16_t get_port() const {
         return this->port;
     }
 

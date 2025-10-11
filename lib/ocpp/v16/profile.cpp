@@ -357,7 +357,7 @@ std::vector<period_entry_t> calculate_profile_unsorted(const DateTime& now, cons
 
 void sort_periods_into_date_order(std::vector<period_entry_t>& periods) {
     // sort into date order
-    struct {
+    const struct {
         bool operator()(const period_entry_t& a, const period_entry_t& b) const {
             // earliest first
             return a.start < b.start;
@@ -402,7 +402,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
     }
 
     // sort the combined_schedules in stack priority order
-    struct {
+    const struct {
         bool operator()(const period_entry_t& a, const period_entry_t& b) const {
             // highest stack level first
             return a.stack_level > b.stack_level;
@@ -453,7 +453,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
                 stack_level_power = chosen->stack_level;
             }
 
-            IntermediatePeriod charging_schedule_period{
+            const IntermediatePeriod charging_schedule_period{
                 elapsed_seconds(current, now), current_limit, power_limit, stack_level_current, stack_level_power,
                 chosen->number_phases,         std::nullopt};
 
@@ -575,7 +575,7 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
     };
 
     // This ordering together with the combinator will prefer the tx_profile above the default profile
-    std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
+    const std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
 
     return combine_list_of_profiles(profiles, combinator);
 }
@@ -658,7 +658,8 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
         if (period.current_limit == NO_LIMIT_SPECIFIED && period.power_limit == NO_LIMIT_SPECIFIED) {
             period_out.limit = default_limit;
         } else {
-            float transform_value = supply_voltage * period_out.numberPhases.value_or(default_number_phases);
+            const float transform_value =
+                supply_voltage * static_cast<float>(period_out.numberPhases.value_or(default_number_phases));
             period_out.limit = std::numeric_limits<float>::max();
             if (charging_rate_unit == ChargingRateUnit::A) {
                 if (period.current_limit != NO_LIMIT_SPECIFIED) {

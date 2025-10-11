@@ -329,7 +329,7 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
         throw std::runtime_error("Could not retrieve NetworkProfile");
     }
 
-    const auto network_connection_profile = network_connection_profile_opt.value();
+    const auto& network_connection_profile = network_connection_profile_opt.value();
 
     try {
         auto uri = Uri::parse_and_validate(
@@ -437,7 +437,7 @@ void ConnectivityManager::cache_network_connection_profiles() {
     for (const std::string& str : ocpp::split_string(
              this->device_model.get_value<std::string>(ControllerComponentVariables::NetworkConfigurationPriority),
              ',')) {
-        int num = std::stoi(str);
+        const int num = std::stoi(str);
         this->network_connection_slots.push_back(num);
     }
 }

@@ -34,7 +34,7 @@ DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, cons
 }
 
 DeviceModelStorageSqlite::DeviceModelStorageSqlite(const fs::path& db_path, const fs::path& migration_files_path) {
-    InitDeviceModelDb init_device_model_db(db_path, migration_files_path);
+    const InitDeviceModelDb init_device_model_db(db_path, migration_files_path);
     initialize_connection(db_path);
 }
 
@@ -51,7 +51,7 @@ void DeviceModelStorageSqlite::initialize_connection(const fs::path& db_path) {
 }
 
 int DeviceModelStorageSqlite::get_component_id(const Component& component_id) {
-    std::string select_query =
+    const std::string select_query =
         "SELECT ID FROM COMPONENT WHERE NAME = ? AND INSTANCE IS ? AND EVSE_ID IS ? AND CONNECTOR_ID IS ?";
 
     auto select_stmt = this->db->new_statement(select_query);
@@ -86,7 +86,7 @@ int DeviceModelStorageSqlite::get_variable_id(const Component& component_id, con
         return -1;
     }
 
-    std::string select_query = "SELECT ID FROM VARIABLE WHERE COMPONENT_ID = ? AND NAME = ? AND INSTANCE IS ?";
+    const std::string select_query = "SELECT ID FROM VARIABLE WHERE COMPONENT_ID = ? AND NAME = ? AND INSTANCE IS ?";
     auto select_stmt = this->db->new_statement(select_query);
 
     select_stmt->bind_int(1, _component_id);
@@ -106,7 +106,7 @@ int DeviceModelStorageSqlite::get_variable_id(const Component& component_id, con
 DeviceModelMap DeviceModelStorageSqlite::get_device_model() {
     std::map<Component, std::map<Variable, VariableMetaData>> device_model;
 
-    std::string select_query =
+    const std::string select_query =
         "SELECT c.NAME, c.EVSE_ID, c.CONNECTOR_ID, c.INSTANCE, v.NAME, v.INSTANCE, vc.DATATYPE_ID, "
         "vc.SUPPORTS_MONITORING, vc.UNIT, vc.MIN_LIMIT, vc.MAX_LIMIT, vc.VALUES_LIST, v.SOURCE "
         "FROM COMPONENT c "
@@ -239,7 +239,7 @@ SetVariableStatusEnum DeviceModelStorageSqlite::set_variable_attribute_value(con
                                                                              const std::string& source) {
     auto transaction = this->db->begin_transaction();
 
-    std::string insert_query =
+    const std::string insert_query =
         "UPDATE VARIABLE_ATTRIBUTE SET VALUE = ?, VALUE_SOURCE = ? WHERE VARIABLE_ID = ? AND TYPE_ID = ?";
     auto insert_stmt = this->db->new_statement(insert_query);
 
@@ -266,7 +266,7 @@ bool DeviceModelStorageSqlite::update_monitoring_reference(const int32_t monitor
                                                            const std::string& reference_value) {
     auto transaction = this->db->begin_transaction();
 
-    std::string update_query = "UPDATE VARIABLE_MONITORING SET REFERENCE_VALUE = ? WHERE ID = ?";
+    const std::string update_query = "UPDATE VARIABLE_MONITORING SET REFERENCE_VALUE = ? WHERE ID = ?";
     auto update_stmt = this->db->new_statement(update_query);
 
     update_stmt->bind_text(1, reference_value, SQLiteString::Transient);
@@ -279,7 +279,7 @@ bool DeviceModelStorageSqlite::update_monitoring_reference(const int32_t monitor
 
     transaction->commit();
 
-    int changes = update_stmt->changes();
+    const int changes = update_stmt->changes();
 
     return (changes == 1);
 }
@@ -347,7 +347,7 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
 
     transaction->commit();
 
-    int64_t last_row_id = this->db->get_last_inserted_rowid();
+    const int64_t last_row_id = this->db->get_last_inserted_rowid();
 
     VariableMonitoringMeta meta;
 
@@ -374,7 +374,7 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
     }
 
     // TODO (ioan): optimize select based on criterions
-    std::string select_query =
+    const std::string select_query =
         "SELECT vm.TYPE_ID, vm.ID, vm.SEVERITY, vm.'TRANSACTION', vm.VALUE, vm.CONFIG_TYPE_ID, vm.REFERENCE_VALUE "
         "FROM VARIABLE_MONITORING vm "
         "WHERE vm.VARIABLE_ID = @variable_id";
@@ -395,7 +395,7 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
         monitor.transaction = static_cast<bool>(select_stmt->column_int(3));
         monitor.value = static_cast<float>(select_stmt->column_double(4));
 
-        VariableMonitorType type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
+        const auto type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
         auto reference_value = select_stmt->column_text_nullable(6);
         // this is a workaround to set the eventNotificationType which became a required property for the
         // VariableMonitoringType in OCPP2.1
@@ -415,7 +415,7 @@ DeviceModelStorageSqlite::get_monitoring_data(const std::vector<MonitoringCriter
 }
 
 ClearMonitoringStatusEnum DeviceModelStorageSqlite::clear_variable_monitor(int monitor_id, bool allow_protected) {
-    std::string select_query = "SELECT COUNT(*) FROM VARIABLE_MONITORING WHERE ID = ?";
+    const std::string select_query = "SELECT COUNT(*) FROM VARIABLE_MONITORING WHERE ID = ?";
 
     auto select_stmt = this->db->new_statement(select_query);
     select_stmt->bind_int(1, monitor_id);
@@ -459,7 +459,7 @@ ClearMonitoringStatusEnum DeviceModelStorageSqlite::clear_variable_monitor(int m
 }
 
 int32_t DeviceModelStorageSqlite::clear_custom_variable_monitors() {
-    std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE CONFIG_TYPE_ID = ?";
+    const std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE CONFIG_TYPE_ID = ?";
 
     auto transaction = this->db->begin_transaction();
     auto delete_stmt = this->db->new_statement(delete_query);

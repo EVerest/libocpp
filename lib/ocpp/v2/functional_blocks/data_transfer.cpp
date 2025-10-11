@@ -15,7 +15,7 @@ void DataTransfer::handle_message(const EnhancedMessage<MessageType>& message) {
         throw MessageTypeNotImplementedException(message.messageType);
     }
 
-    Call<DataTransferRequest> call = message.message;
+    const Call<DataTransferRequest> call = message.message;
     const auto msg = call.msg;
     DataTransferResponse response;
     response.status = DataTransferStatusEnum::UnknownVendorId;
@@ -27,7 +27,7 @@ void DataTransfer::handle_message(const EnhancedMessage<MessageType>& message) {
         EVLOG_warning << "Received a DataTransferRequest but no data transfer callback was registered";
     }
 
-    ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -46,7 +46,7 @@ std::optional<DataTransferResponse> DataTransfer::data_transfer_req(const DataTr
     DataTransferResponse response;
     response.status = DataTransferStatusEnum::Rejected;
 
-    ocpp::Call<DataTransferRequest> call(request);
+    const ocpp::Call<DataTransferRequest> call(request);
     auto data_transfer_future = this->context.message_dispatcher.dispatch_call_async(call);
 
     if (data_transfer_future.wait_for(this->response_timeout) == std::future_status::timeout) {
@@ -62,7 +62,7 @@ std::optional<DataTransferResponse> DataTransfer::data_transfer_req(const DataTr
 
     if (enhanced_message.messageType == MessageType::DataTransferResponse) {
         try {
-            ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
+            const ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
             response = call_result.msg;
         } catch (const EnumConversionException& e) {
             EVLOG_error << "EnumConversionException during handling of message: " << e.what();

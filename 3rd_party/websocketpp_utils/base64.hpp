@@ -40,7 +40,7 @@
 
 namespace ocpp {
 
-static std::string const base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
                                         "0123456789+/";
 
@@ -62,7 +62,7 @@ static inline bool is_base64(unsigned char c) {
  * @param len The length of input in bytes
  * @return A base64 encoded string representing input
  */
-inline std::string base64_encode(unsigned char const* input, size_t len) {
+inline std::string base64_encode(const unsigned char* input, size_t len) {
     std::string ret;
     int i = 0;
     int j = 0;
@@ -111,7 +111,7 @@ inline std::string base64_encode(unsigned char const* input, size_t len) {
  * @param input The input data
  * @return A base64 encoded string representing input
  */
-inline std::string base64_encode(std::string const& input) {
+inline std::string base64_encode(const std::string& input) {
     return base64_encode(reinterpret_cast<const unsigned char*>(input.data()), input.size());
 }
 
@@ -120,7 +120,7 @@ inline std::string base64_encode(std::string const& input) {
  * @param input The base64 encoded input data
  * @return A string representing the decoded raw bytes
  */
-inline std::string base64_decode(std::string const& input) {
+inline std::string base64_decode(const std::string& input) {
     size_t in_len = input.size();
     int i = 0;
     int j = 0;

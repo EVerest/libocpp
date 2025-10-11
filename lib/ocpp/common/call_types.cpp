@@ -11,7 +11,7 @@ namespace ocpp {
 
 MessageId create_message_id() {
     static boost::uuids::random_generator uuid_generator;
-    boost::uuids::uuid uuid = uuid_generator();
+    const boost::uuids::uuid uuid = uuid_generator();
     std::stringstream s;
     s << uuid;
     return MessageId(s.str());

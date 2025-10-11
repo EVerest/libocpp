@@ -88,7 +88,7 @@ bool Callbacks::all_callbacks_valid(std::shared_ptr<DeviceModel> device_model,
             }
         }
 
-        bool v2x_available = std::any_of(
+        const bool v2x_available = std::any_of(
             evse_connector_structure.begin(), evse_connector_structure.end(), [device_model](const auto& entry) {
                 const auto& [evse, connectors] = entry;
                 return device_model

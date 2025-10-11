@@ -44,15 +44,15 @@ void Availability::status_notification_req(const int32_t evse_id, const int32_t 
     req.timestamp = DateTime();
     req.connectorStatus = status;
 
-    ocpp::Call<StatusNotificationRequest> call(req);
+    const ocpp::Call<StatusNotificationRequest> call(req);
     this->context.message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
 void Availability::heartbeat_req(const bool initiated_by_trigger_message) {
-    HeartbeatRequest req;
+    const HeartbeatRequest req;
 
     heartbeat_request_time = std::chrono::steady_clock::now();
-    ocpp::Call<HeartbeatRequest> call(req);
+    const ocpp::Call<HeartbeatRequest> call(req);
     this->context.message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -98,7 +98,7 @@ void Availability::handle_change_availability_req(Call<ChangeAvailabilityRequest
     if (msg.evse.has_value() and !this->context.evse_manager.is_valid_evse(msg.evse.value())) {
         EVLOG_warning << "CSMS requested ChangeAvailability for invalid evse id or connector id";
         response.status = ChangeAvailabilityStatusEnum::Rejected;
-        ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -130,7 +130,7 @@ void Availability::handle_change_availability_req(Call<ChangeAvailabilityRequest
 
     // Respond to the CSMS before performing any changes to avoid StatusNotification.req being sent before
     // the ChangeAvailabilityResponse.
-    ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     if (!transaction_active) {
@@ -141,7 +141,7 @@ void Availability::handle_change_availability_req(Call<ChangeAvailabilityRequest
         if (evse_id == 0) {
             // The whole CS is being addressed - we need to prevent further transactions from starting.
             // To do that, make all EVSEs without an active transaction Inoperative
-            for (auto const& evse : this->context.evse_manager) {
+            for (const auto& evse : this->context.evse_manager) {
                 if (!evse.has_active_transaction()) {
                     // FIXME: This will linger after the update too! We probably need another mechanism...
                     this->set_evse_operative_status(evse.get_id(), OperationalStatusEnum::Inoperative, false);
@@ -150,8 +150,8 @@ void Availability::handle_change_availability_req(Call<ChangeAvailabilityRequest
         } else {
             // A single EVSE is being addressed. We need to prevent further transactions from starting on it.
             // To do that, make all connectors of the EVSE without an active transaction Inoperative.
-            int number_of_connectors = this->context.evse_manager.get_evse(evse_id).get_number_of_connectors();
-            for (int connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
+            const auto number_of_connectors = this->context.evse_manager.get_evse(evse_id).get_number_of_connectors();
+            for (auto connector_id = 1; connector_id <= number_of_connectors; connector_id++) {
                 if (!this->context.evse_manager.get_evse(evse_id).has_active_transaction(connector_id)) {
                     // FIXME: This will linger after the update too! We probably need another mechanism...
                     this->set_connector_operative_status(evse_id, connector_id, OperationalStatusEnum::Inoperative,
@@ -169,7 +169,7 @@ void Availability::handle_heartbeat_response(CallResult<HeartbeatResponse> call)
         // the received currentTime was the time the CSMS received the heartbeat request
         // to get a system time as accurate as possible keep the time-of-flight into account
         auto timeOfFlight = (std::chrono::steady_clock::now() - this->heartbeat_request_time) / 2;
-        ocpp::DateTime currentTimeCompensated(call.msg.currentTime.to_time_point() + timeOfFlight);
+        const ocpp::DateTime currentTimeCompensated(call.msg.currentTime.to_time_point() + timeOfFlight);
         this->time_sync_callback.value()(currentTimeCompensated);
     }
 }

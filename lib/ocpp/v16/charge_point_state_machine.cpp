@@ -250,7 +250,7 @@ bool ChargePointFSM::handle_error_cleared(const std::string uuid) {
     if (this->active_errors.size() > 0) {
         const auto latest_error_opt = this->get_latest_error();
         if (latest_error_opt.has_value()) {
-            const auto latest_error = latest_error_opt.value();
+            const auto& latest_error = latest_error_opt.value();
             error_code = latest_error.error_code;
             info = latest_error.info;
             vendor_id = latest_error.vendor_id;

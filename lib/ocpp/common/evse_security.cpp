@@ -130,7 +130,7 @@ ocpp::v2::OCSPRequestData to_ocpp_v2(ocpp::OCSPRequestData other) {
 std::vector<ocpp::v2::OCSPRequestData> to_ocpp_v2(const std::vector<ocpp::OCSPRequestData>& ocsp_request_data) {
     std::vector<ocpp::v2::OCSPRequestData> ocsp_request_data_list;
     for (const auto& ocsp_data : ocsp_request_data) {
-        ocpp::v2::OCSPRequestData request = to_ocpp_v2(ocsp_data);
+        const ocpp::v2::OCSPRequestData request = to_ocpp_v2(ocsp_data);
         ocsp_request_data_list.push_back(request);
     }
     return ocsp_request_data_list;

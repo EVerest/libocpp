@@ -73,7 +73,7 @@ void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criter
     }
 
     for (auto it = std::begin(monitors); it != std::end(monitors);) {
-        bool any_filter_match = filter_criteria_monitor(criteria, *it);
+        const bool any_filter_match = filter_criteria_monitor(criteria, *it);
 
         if (any_filter_match == false) {
             it = monitors.erase(it);
@@ -182,7 +182,7 @@ void DeviceModel::check_required_variables() {
 
     // Check controller-specific required variables (if controller is available)
     for (const auto& available_required : required_component_available_variables) {
-        std::optional<bool> available = this->get_optional_value<bool>(available_required.first);
+        const std::optional<bool> available = this->get_optional_value<bool>(available_required.first);
         if (!available.value_or(false)) {
             continue;
         }
@@ -225,7 +225,7 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
         if (!is_decimal_number(value)) {
             return false;
         }
-        float f = std::stof(value);
+        const float f = std::stof(value);
 
         if (allow_zero and f == 0) {
             return true;
@@ -243,7 +243,7 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
             return false;
         }
 
-        int i = std::stoi(value);
+        const int i = std::stoi(value);
 
         if (allow_zero and i == 0) {
             return true;
@@ -442,8 +442,8 @@ std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Compon
 std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base) {
     std::vector<ReportData> report_data_vec;
 
-    for (auto const& [component, variable_map] : this->device_model_map) {
-        for (auto const& [variable, variable_meta_data] : variable_map) {
+    for (const auto& [component, variable_map] : this->device_model_map) {
+        for (const auto& [variable, variable_meta_data] : variable_map) {
 
             ReportData report_data;
             report_data.component = component;
@@ -487,10 +487,10 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
                                     const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
     std::vector<ReportData> report_data_vec;
 
-    for (auto const& [component, variable_map] : this->device_model_map) {
+    for (const auto& [component, variable_map] : this->device_model_map) {
         if (!component_criteria.has_value() or component_criteria_match(component, component_criteria.value())) {
 
-            for (auto const& [variable, variable_meta_data] : variable_map) {
+            for (const auto& [variable, variable_meta_data] : variable_map) {
                 if (!component_variables.has_value() or
                     component_variables_match(component_variables.value(), component, variable)) {
                     ReportData report_data;
@@ -690,7 +690,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 
         // N04.FR.16 - If we find a monitor with this ID, and there's a comp/var mismatch, send a rejected result
         // N04.FR.13 - If we receive an ID but we can't find a monitor with this ID send a rejected result
-        bool request_has_id = request.id.has_value();
+        const bool request_has_id = request.id.has_value();
         bool id_found = false;
 
         if (request_has_id) {
@@ -814,7 +814,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                                                                                 AttributeEnum::Actual);
 
                     if (attribute.has_value()) {
-                        static std::string empty_value{};
+                        static const std::string empty_value{};
                         const auto& current_value = attribute.value().value.value_or(empty_value);
 
                         monitor_update_listener(monitor_meta.value(), component_it->first, variable_it->first,
@@ -984,7 +984,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
 
 int32_t DeviceModel::clear_custom_monitors() {
     try {
-        int32_t deleted = this->device_model->clear_custom_variable_monitors();
+        const int32_t deleted = this->device_model->clear_custom_variable_monitors();
 
         // Clear from memory too
         for (auto& [component, variable_map] : this->device_model_map) {

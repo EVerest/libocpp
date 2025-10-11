@@ -443,7 +443,7 @@ private:
                     conversions::messagetype_to_string(expected_response_message_type) +
                     ", got: " + conversions::messagetype_to_string(enhanced_response.messageType));
             }
-            ocpp::CallResult<ResponseType> call_result = enhanced_response.message;
+            const ocpp::CallResult<ResponseType> call_result = enhanced_response.message;
             return call_result.msg;
         };
     }

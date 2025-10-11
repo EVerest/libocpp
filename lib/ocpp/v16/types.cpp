@@ -611,7 +611,7 @@ void to_json(json& j, const EnhancedChargingSchedule& k) {
 void from_json(const json& j, EnhancedChargingSchedule& k) {
     // the required parts of the message
     k.chargingRateUnit = conversions::string_to_charging_rate_unit(j.at("chargingRateUnit"));
-    for (auto val : j.at("chargingSchedulePeriod")) {
+    for (const auto& val : j.at("chargingSchedulePeriod")) {
         k.chargingSchedulePeriod.push_back(val);
     }
 

@@ -218,8 +218,8 @@ private:
         return MessageId(json_message.at(MESSAGE_ID).get<std::string>());
     }
     MessageTypeId getMessageTypeId(const json::array_t& json_message) {
-        if (json_message.size() > 0) {
-            auto messageTypeId = json_message.at(MESSAGE_TYPE_ID);
+        if (not json_message.empty()) {
+            const auto& messageTypeId = json_message.at(MESSAGE_TYPE_ID);
             if (messageTypeId == MessageTypeId::CALL) {
                 return MessageTypeId::CALL;
             }
@@ -243,7 +243,7 @@ private:
     void add_to_normal_message_queue(std::shared_ptr<ControlMessage<M>> message) {
         EVLOG_debug << "Adding message to normal message queue";
         {
-            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+            const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
             // A BootNotification message should always jump the queue
             if (message->messageType == M::BootNotification) {
                 this->normal_message_queue.push_front(message);
@@ -251,7 +251,7 @@ private:
                 this->normal_message_queue.push_back(message);
             }
             if (this->config.check_queue(message->messageType)) {
-                ocpp::common::DBTransactionMessage db_message{
+                const ocpp::common::DBTransactionMessage db_message{
                     message->message, messagetype_to_string(message->messageType), message->message_attempts,
                     message->timestamp, message->uniqueId()};
                 try {
@@ -269,11 +269,11 @@ private:
     void add_to_transaction_message_queue(std::shared_ptr<ControlMessage<M>> message) {
         EVLOG_debug << "Adding message to transaction message queue";
         {
-            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+            const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
             this->transaction_message_queue.push_back(message);
-            ocpp::common::DBTransactionMessage db_message{message->message, messagetype_to_string(message->messageType),
-                                                          message->message_attempts, message->timestamp,
-                                                          message->uniqueId()};
+            const ocpp::common::DBTransactionMessage db_message{
+                message->message, messagetype_to_string(message->messageType), message->message_attempts,
+                message->timestamp, message->uniqueId()};
             try {
                 this->database_handler->insert_message_queue_message(db_message);
             } catch (const everest::db::QueryExecutionException& e) {
@@ -309,8 +309,8 @@ private:
 
     void drop_messages_from_normal_message_queue() {
         // try to drop approx 10% of the allowed size (at least 1)
-        int number_of_dropped_messages = std::min((int)this->normal_message_queue.size(),
-                                                  std::max(this->config.queues_total_size_threshold / 10, 1));
+        const int number_of_dropped_messages = std::min((int)this->normal_message_queue.size(),
+                                                        std::max(this->config.queues_total_size_threshold / 10, 1));
 
         EVLOG_warning << "Dropping " << number_of_dropped_messages << " messages from normal message queue.";
 
@@ -374,7 +374,7 @@ private:
 
     // The public resume() delegates the actual resumption to this method
     void resume_now(u_int64_t expected_pause_resume_ctr) {
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         if (this->pause_resume_ctr == expected_pause_resume_ctr) {
             this->paused = false;
             this->resuming = false;
@@ -394,7 +394,7 @@ public:
     MessageQueue(
         const std::function<bool(json message)>& send_callback, const MessageQueueConfig<M>& config,
         const std::vector<M>& external_notify, std::shared_ptr<common::DatabaseHandlerCommon> database_handler,
-        const std::function<void(const std::string& new_message_id, const std::string& old_message_id)>
+        const std::function<void(const std::string& new_message_id, const std::string& old_message_id)>&
             start_transaction_message_retry_callback =
                 [](const std::string& new_message_id, const std::string& old_message_id) {}) :
         database_handler(std::move(database_handler)),
@@ -504,7 +504,7 @@ public:
                 }
 
                 {
-                    std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+                    const std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
                     if (next_message_to_send.has_value()) {
                         if (next_message_to_send.value() != message->uniqueId()) {
                             EVLOG_debug << "Message with id " << message->uniqueId()
@@ -577,13 +577,13 @@ public:
 
     /// \brief Resets next message to send. Can be used in situation when we dont want to reply to a CALL message
     void reset_next_message_to_send() {
-        std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+        const std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
         this->next_message_to_send.reset();
     }
 
     /// \brief Gets all persisted messages of normal message queue and persisted message queue from the database
     void get_persisted_messages_from_db(bool ignore_security_event_notifications = false) {
-        std::vector<QueueType> queue_types = {QueueType::Normal, QueueType::Transaction};
+        const std::vector<QueueType> queue_types = {QueueType::Normal, QueueType::Transaction};
         // do for Normal and Transaction queue
         for (const auto queue_type : queue_types) {
             const auto persisted_messages = database_handler->get_message_queue_messages(queue_type);
@@ -602,7 +602,7 @@ public:
                             EVLOG_warning << "Could not delete message from message queue: " << e.what();
                         }
                     } else {
-                        std::shared_ptr<ControlMessage<M>> message =
+                        const std::shared_ptr<ControlMessage<M>> message =
                             std::make_shared<ControlMessage<M>>(persisted_message.json_message, true);
                         message->messageType = string_to_messagetype(persisted_message.message_type);
                         message->timestamp = persisted_message.timestamp;
@@ -657,7 +657,7 @@ public:
         }
         this->send_callback(call_result);
         {
-            std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+            const std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
             if (next_message_to_send.has_value()) {
                 if (next_message_to_send.value() == static_cast<MessageId>(call_result.at(MESSAGE_ID))) {
                     next_message_to_send.reset();
@@ -676,7 +676,7 @@ public:
 
         this->send_callback(call_error);
         {
-            std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+            const std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
             if (next_message_to_send.has_value()) {
                 if (next_message_to_send.value() == call_error.uniqueId) {
                     next_message_to_send.reset();
@@ -731,7 +731,7 @@ public:
             enhanced_message.call_message = enhanced_message.message;
 
             {
-                std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+                const std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
                 // save the uid of the message we just received to ensure the next message we send is a response to
                 // this message
                 next_message_to_send.emplace(enhanced_message.uniqueId);
@@ -742,7 +742,7 @@ public:
         if (enhanced_message.messageTypeId == MessageTypeId::CALLRESULT ||
             enhanced_message.messageTypeId == MessageTypeId::CALLERROR) {
             {
-                std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
+                const std::lock_guard<std::recursive_mutex> lk(this->next_message_mutex);
                 next_message_to_send.reset();
             }
             // we need to remove Call messages from in_flight if we receive a CallResult OR a CallError
@@ -812,9 +812,9 @@ public:
 
     /// \brief Handles a message timeout or a CALLERROR. \p enhanced_message_opt is set only in case of CALLERROR
     void handle_timeout_or_callerror(const std::optional<EnhancedMessage<M>>& enhanced_message_opt) {
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         // We got a timeout iff enhanced_message_opt is empty. Otherwise, enhanced_message_opt contains the CallError.
-        bool timeout = !enhanced_message_opt.has_value();
+        const bool timeout = !enhanced_message_opt.has_value();
         if (timeout) {
             EVLOG_warning << "Message timeout for: " << this->in_flight->messageType << " ("
                           << this->in_flight->uniqueId() << ")";
@@ -926,7 +926,7 @@ public:
     /// \brief Pauses the message queue
     void pause() {
         EVLOG_debug << "pause()";
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         this->pause_resume_ctr++;
         this->resume_timer.stop();
         this->paused = true;
@@ -938,7 +938,7 @@ public:
     /// \brief Resumes the message queue
     void resume(std::chrono::seconds delay_on_reconnect) {
         EVLOG_debug << "resume() called";
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         if (!this->paused) {
             return;
         }
@@ -947,7 +947,7 @@ public:
         if (this->pause_resume_ctr > 1 && delay_on_reconnect > std::chrono::seconds(0)) {
             this->resuming = true;
             EVLOG_debug << "Delaying message queue resume by " << delay_on_reconnect.count() << " seconds";
-            u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
+            const u_int64_t expected_pause_resume_ctr = this->pause_resume_ctr;
             this->resume_timer.timeout(
                 [this, expected_pause_resume_ctr] { this->resume_now(expected_pause_resume_ctr); }, delay_on_reconnect);
         } else {
@@ -957,22 +957,22 @@ public:
 
     void set_registration_status_accepted() {
         {
-            std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+            const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
             this->is_registration_status_accepted = true;
         }
         this->cv.notify_all();
     }
 
     bool is_transaction_message_queue_empty() {
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         return this->transaction_message_queue.empty();
     }
 
-    bool contains_transaction_messages(const CiString<36> transaction_id) {
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
-        for (const auto control_message : this->transaction_message_queue) {
+    bool contains_transaction_messages(const CiString<36>& transaction_id) {
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        for (const auto& control_message : this->transaction_message_queue) {
             if (control_message->messageType == v2::MessageType::TransactionEvent) {
-                v2::TransactionEventRequest req = control_message->message.at(CALL_PAYLOAD);
+                const v2::TransactionEventRequest req = control_message->message.at(CALL_PAYLOAD);
                 if (req.transactionInfo.transactionId == transaction_id) {
                     return true;
                 }
@@ -982,10 +982,10 @@ public:
     }
 
     bool contains_stop_transaction_message(const int32_t transaction_id) {
-        std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
-        for (const auto control_message : this->transaction_message_queue) {
+        const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
+        for (const auto& control_message : this->transaction_message_queue) {
             if (control_message->messageType == v16::MessageType::StopTransaction) {
-                v16::StopTransactionRequest req = control_message->message.at(CALL_PAYLOAD);
+                const v16::StopTransactionRequest req = control_message->message.at(CALL_PAYLOAD);
                 if (req.transactionId == transaction_id) {
                     return true;
                 }

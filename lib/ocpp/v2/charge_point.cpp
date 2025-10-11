@@ -134,7 +134,7 @@ void ChargePoint::start(BootReasonEnum bootreason, bool start_connecting) {
         this->connectivity_manager->connect();
     }
 
-    const std::string firmware_version =
+    const auto firmware_version =
         this->device_model->get_value<std::string>(ControllerComponentVariables::FirmwareVersion);
 
     if (this->bootreason == BootReasonEnum::RemoteReset) {
@@ -256,25 +256,25 @@ void ChargePoint::on_meter_value(const int32_t evse_id, const MeterValue& meter_
 
 void ChargePoint::configure_message_logging_format(const std::string& message_log_path) {
     auto log_formats = this->device_model->get_value<std::string>(ControllerComponentVariables::LogMessagesFormat);
-    bool log_to_console = log_formats.find("console") != log_formats.npos;
-    bool detailed_log_to_console = log_formats.find("console_detailed") != log_formats.npos;
-    bool log_to_file = log_formats.find("log") != log_formats.npos;
-    bool log_to_html = log_formats.find("html") != log_formats.npos;
-    bool log_raw =
+    const bool log_to_console = log_formats.find("console") != std::string::npos;
+    const bool detailed_log_to_console = log_formats.find("console_detailed") != std::string::npos;
+    const bool log_to_file = log_formats.find("log") != std::string::npos;
+    const bool log_to_html = log_formats.find("html") != std::string::npos;
+    const bool log_raw =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogMessagesRaw).value_or(false);
-    bool log_security = log_formats.find("security") != log_formats.npos;
-    bool session_logging = log_formats.find("session_logging") != log_formats.npos;
-    bool message_callback = log_formats.find("callback") != log_formats.npos;
+    const bool log_security = log_formats.find("security") != std::string::npos;
+    const bool session_logging = log_formats.find("session_logging") != std::string::npos;
+    const bool message_callback = log_formats.find("callback") != std::string::npos;
     std::function<void(const std::string& message, MessageDirection direction)> logging_callback = nullptr;
-    bool log_rotation =
+    const bool log_rotation =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogRotation).value_or(false);
-    bool log_rotation_date_suffix =
+    const bool log_rotation_date_suffix =
         this->device_model->get_optional_value<bool>(ControllerComponentVariables::LogRotationDateSuffix)
             .value_or(false);
-    uint64_t log_rotation_maximum_file_size =
+    const uint64_t log_rotation_maximum_file_size =
         this->device_model->get_optional_value<uint64_t>(ControllerComponentVariables::LogRotationMaximumFileSize)
             .value_or(0);
-    uint64_t log_rotation_maximum_file_count =
+    const uint64_t log_rotation_maximum_file_count =
         this->device_model->get_optional_value<uint64_t>(ControllerComponentVariables::LogRotationMaximumFileCount)
             .value_or(0);
 
@@ -291,7 +291,7 @@ void ChargePoint::configure_message_logging_format(const std::string& message_lo
             [this](ocpp::LogRotationStatus status) {
                 if (status == ocpp::LogRotationStatus::RotatedWithDeletion) {
                     const auto& security_event = ocpp::security_events::SECURITYLOGWASCLEARED;
-                    std::string tech_info = "Security log was rotated and an old log was deleted in the process";
+                    const std::string tech_info = "Security log was rotated and an old log was deleted in the process";
                     this->security->security_event_notification_req(CiString<50>(security_event),
                                                                     CiString<255>(tech_info), true,
                                                                     utils::is_critical(security_event));
@@ -382,7 +382,7 @@ void ChargePoint::on_log_status_notification(UploadLogStatusEnum status, int32_t
     this->upload_log_status = status;
     this->upload_log_status_id = requestId;
 
-    ocpp::Call<LogStatusNotificationRequest> call(request);
+    const ocpp::Call<LogStatusNotificationRequest> call(request);
     this->message_dispatcher->dispatch_call(call);
 }
 
@@ -603,7 +603,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
         this->callbacks.stop_transaction_callback, this->registration_status, this->upload_log_status,
         this->upload_log_status_id);
 
-    bool v2x_available =
+    const bool v2x_available =
         std::any_of(evse_connector_structure.begin(), evse_connector_structure.end(), [this](const auto& entry) {
             const auto& [evse, connectors] = entry;
             return this->device_model
@@ -962,7 +962,7 @@ void ChargePoint::message_callback(const std::string& message) {
                                                                                        enhanced_message.uniqueId);
                     this->message_dispatcher->dispatch_call_result(call_result);
                 } else {
-                    std::string const call_error_message =
+                    const std::string call_error_message =
                         "Received invalid MessageType: " +
                         conversions::messagetype_to_string(enhanced_message.messageType) +
                         " from CSMS while in state Pending";
@@ -977,7 +977,7 @@ void ChargePoint::message_callback(const std::string& message) {
             if (enhanced_message.messageType == MessageType::BootNotificationResponse) {
                 this->provisioning->handle_message(enhanced_message);
             } else if (enhanced_message.messageType == MessageType::TriggerMessage) {
-                Call<TriggerMessageRequest> call(json_message);
+                const Call<TriggerMessageRequest> call(json_message);
                 if (call.msg.requestedMessage == MessageTriggerEnum::BootNotification) {
                     this->handle_message(enhanced_message);
                 } else {

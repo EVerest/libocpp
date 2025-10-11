@@ -16,14 +16,14 @@ template <typename T> class SafeQueue {
 public:
     /// \return True if the queue is empty
     inline bool empty() const {
-        std::lock_guard lock(mutex);
+        const std::lock_guard lock(mutex);
         return queue.empty();
     }
 
     /// \brief We return a copy here, since while might be accessing the
     /// reference while another thread uses pop and makes the reference stale
     inline T front() {
-        std::lock_guard lock(mutex);
+        const std::lock_guard lock(mutex);
         return queue.front();
     }
 
@@ -45,7 +45,7 @@ public:
     /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
     inline void push(T&& value) {
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            const std::lock_guard<std::mutex> lock(mutex);
             queue.push(value);
         }
 
@@ -55,7 +55,7 @@ public:
     /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
     inline void push(const T& value) {
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            const std::lock_guard<std::mutex> lock(mutex);
             queue.push(value);
         }
 
@@ -65,7 +65,7 @@ public:
     /// \brief Clears the queue
     inline void clear() {
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            const std::lock_guard<std::mutex> lock(mutex);
 
             std::queue<T> empty;
             empty.swap(queue);

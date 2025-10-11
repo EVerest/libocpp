@@ -45,8 +45,8 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
 
     // Check if there is a tariff message and if 'Tariff' is available and enabled
     if (response.updatedPersonalMessage.has_value() and tariff_enabled) {
-        MessageContent personal_message = response.updatedPersonalMessage.value();
-        DisplayMessageContent message = message_content_to_display_message_content(personal_message);
+        const MessageContent personal_message = response.updatedPersonalMessage.value();
+        const DisplayMessageContent message = message_content_to_display_message_content(personal_message);
         cost_messages.push_back(message);
 
         // If cost is enabled, the message will be sent to the running cost callback. But if it is not enabled, the
@@ -68,7 +68,7 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
         // float first and then multiply by 10^5 for example (5 decimals) will give some rounding errors. With a initial
         // double instead of float, we have (a bit) more accuracy.
         if (original_transaction_event_response.contains("totalCost")) {
-            std::string total_cost = original_transaction_event_response.at("totalCost").dump();
+            const std::string total_cost = original_transaction_event_response.at("totalCost").dump();
             running_cost.cost = stod(total_cost);
         } else {
             running_cost.cost = static_cast<double>(response.totalCost.value());
@@ -170,7 +170,7 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
             this->context.device_model
                 .get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
                 .value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
-        uint32_t decimals =
+        const uint32_t decimals =
             (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<uint32_t>(number_of_decimals));
         const std::optional<std::string> currency =
             this->context.device_model.get_value<std::string>(ControllerComponentVariables::TariffCostCtrlrCurrency);
@@ -179,8 +179,8 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
 }
 
 void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) {
-    CostUpdatedResponse response;
-    ocpp::CallResult<CostUpdatedResponse> call_result(response, call.uniqueId);
+    const CostUpdatedResponse response;
+    const ocpp::CallResult<CostUpdatedResponse> call_result(response, call.uniqueId);
 
     if (!is_cost_enabled() or !this->set_running_cost_callback.has_value()) {
         this->context.message_dispatcher.dispatch_call_result(call_result);
@@ -211,7 +211,7 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
     running_cost.cost = static_cast<double>(call.msg.totalCost);
     running_cost.transaction_id = call.msg.transactionId;
 
-    std::optional<int32_t> transaction_evse_id =
+    const std::optional<int32_t> transaction_evse_id =
         this->context.evse_manager.get_transaction_evseid(running_cost.transaction_id);
     if (!transaction_evse_id.has_value()) {
         // We just put an error in the log as the spec does not define what to do here. It is not possible to return
@@ -222,7 +222,7 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
     const int number_of_decimals =
         this->context.device_model.get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
             .value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
-    uint32_t decimals =
+    const uint32_t decimals =
         (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<uint32_t>(number_of_decimals));
     const std::optional<std::string> currency =
         this->context.device_model.get_value<std::string>(ControllerComponentVariables::TariffCostCtrlrCurrency);

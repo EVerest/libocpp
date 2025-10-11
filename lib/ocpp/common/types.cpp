@@ -656,7 +656,7 @@ std::string running_cost_state_to_string(const RunningCostState& state) {
 void from_json(const json& j, RunningCost& c) {
     if (j.contains("transactionId")) {
         if (j.at("transactionId").is_number()) {
-            uint32_t transaction_id = j.at("transactionId");
+            const uint32_t transaction_id = j.at("transactionId");
             c.transaction_id = std::to_string(transaction_id);
         } else if (j.at("transactionId").is_string()) {
             c.transaction_id = j.at("transactionId");
@@ -722,7 +722,7 @@ void from_json(const json& j, RunningCost& c) {
                 c.cost_messages = std::vector<DisplayMessageContent>();
             }
             for (const json& p : price_text) {
-                DisplayMessageContent display_message = p;
+                const DisplayMessageContent display_message = p;
                 c.cost_messages->push_back(display_message);
             }
         }
@@ -749,7 +749,7 @@ void from_json(const json& j, TriggerMeterValue& t) {
 
         if (j.contains("atCPStatus")) {
             std::vector<v16::ChargePointStatus> trigger_cp_status;
-            json array;
+            const json array;
             for (const auto& cp_status : j.at("atCPStatus").items()) {
                 try {
                     trigger_cp_status.push_back(
@@ -995,7 +995,7 @@ void to_json(json& j, const CertificateHashDataChain& k) {
     // the optional parts of the message
     if (k.childCertificateHashData) {
         j["childCertificateHashData"] = json::array();
-        for (auto val : k.childCertificateHashData.value()) {
+        for (const auto& val : k.childCertificateHashData.value()) {
             j["childCertificateHashData"].push_back(val);
         }
     }
@@ -1009,9 +1009,9 @@ void from_json(const json& j, CertificateHashDataChain& k) {
 
     // the optional parts of the message
     if (j.contains("childCertificateHashData")) {
-        json arr = j.at("childCertificateHashData");
+        const json& arr = j.at("childCertificateHashData");
         std::vector<CertificateHashDataType> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.childCertificateHashData.emplace(vec);

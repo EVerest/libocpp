@@ -69,7 +69,7 @@ ocpp::v2::Authorization::authorize_req(const IdToken id_token, const std::option
         return response;
     }
 
-    ocpp::Call<AuthorizeRequest> call(req);
+    const ocpp::Call<AuthorizeRequest> call(req);
     auto future = this->context.message_dispatcher.dispatch_call_async(call);
 
     if (future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
@@ -90,7 +90,7 @@ ocpp::v2::Authorization::authorize_req(const IdToken id_token, const std::option
     }
 
     try {
-        ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+        const ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
         return call_result.msg;
     } catch (const EnumConversionException& e) {
         // We don't get here normally, because the future.get() already throws. Code was not removed, because something
@@ -104,7 +104,7 @@ ocpp::v2::Authorization::authorize_req(const IdToken id_token, const std::option
 
 void ocpp::v2::Authorization::trigger_authorization_cache_cleanup() {
     {
-        std::scoped_lock lk(this->auth_cache_cleanup_mutex);
+        const std::scoped_lock lk(this->auth_cache_cleanup_mutex);
         this->auth_cache_cleanup_required = true;
     }
     this->auth_cache_cleanup_cv.notify_one();
@@ -182,15 +182,15 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
             forwarded_to_csms = true;
         } else if (certificate.has_value()) {
             // First try to validate the contract certificate locally
-            CertificateValidationResult local_verify_result = this->context.evse_security.verify_certificate(
+            const CertificateValidationResult local_verify_result = this->context.evse_security.verify_certificate(
                 certificate.value().get(), {ocpp::LeafCertificateType::MO, ocpp::LeafCertificateType::V2G});
             EVLOG_info << "Local contract validation result: " << local_verify_result;
 
-            bool central_contract_validation_allowed =
+            const bool central_contract_validation_allowed =
                 this->context.device_model
                     .get_optional_value<bool>(ControllerComponentVariables::CentralContractValidationAllowed)
                     .value_or(false);
-            bool contract_validation_offline =
+            const bool contract_validation_offline =
                 this->context.device_model
                     .get_optional_value<bool>(ControllerComponentVariables::ContractValidationOffline)
                     .value_or(false);
@@ -404,7 +404,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
 void ocpp::v2::Authorization::stop_auth_cache_cleanup_thread() {
     if (this->auth_cache_cleanup_handler_running) {
         {
-            std::scoped_lock lk(this->auth_cache_cleanup_mutex);
+            const std::scoped_lock lk(this->auth_cache_cleanup_mutex);
             this->auth_cache_cleanup_handler_running = false;
         }
         this->auth_cache_cleanup_cv.notify_one();
@@ -432,7 +432,7 @@ void ocpp::v2::Authorization::handle_clear_cache_req(Call<ClearCacheRequest> cal
         }
     }
 
-    ocpp::CallResult<ClearCacheResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ClearCacheResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -521,7 +521,7 @@ void ocpp::v2::Authorization::handle_send_local_authorization_list_req(Call<Send
         }
     }
 
-    ocpp::CallResult<SendLocalListResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SendLocalListResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -542,7 +542,7 @@ void ocpp::v2::Authorization::handle_get_local_authorization_list_version_req(Ca
         response.versionNumber = 0;
     }
 
-    ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 

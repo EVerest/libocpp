@@ -306,8 +306,8 @@ void MessageLogging::charge_point(const std::string& message_type, const std::st
     auto formatted = format_message(message_type, json_str);
     log_output(LogType::ChargePoint, formatted.message_type, formatted.message);
     if (this->session_logging) {
-        std::scoped_lock lock(this->session_id_logging_mutex);
-        for (auto const& [session_id, logging] : this->session_id_logging) {
+        const std::scoped_lock lock(this->session_id_logging_mutex);
+        for (const auto& [session_id, logging] : this->session_id_logging) {
             logging->charge_point(message_type, json_str);
         }
     }
@@ -320,8 +320,8 @@ void MessageLogging::central_system(const std::string& message_type, const std::
     auto formatted = format_message(message_type, json_str);
     log_output(LogType::CentralSystem, formatted.message_type, formatted.message);
     if (this->session_logging) {
-        std::scoped_lock lock(this->session_id_logging_mutex);
-        for (auto const& [session_id, logging] : this->session_id_logging) {
+        const std::scoped_lock lock(this->session_id_logging_mutex);
+        for (const auto& [session_id, logging] : this->session_id_logging) {
             logging->central_system(message_type, json_str);
         }
     }
@@ -330,15 +330,15 @@ void MessageLogging::central_system(const std::string& message_type, const std::
 void MessageLogging::sys(const std::string& msg) {
     log_output(LogType::System, msg, "");
     if (this->session_logging) {
-        std::scoped_lock lock(this->session_id_logging_mutex);
-        for (auto const& [session_id, logging] : this->session_id_logging) {
+        const std::scoped_lock lock(this->session_id_logging_mutex);
+        for (const auto& [session_id, logging] : this->session_id_logging) {
             log_output(LogType::System, msg, "");
         }
     }
 }
 
 void MessageLogging::security(const std::string& msg) {
-    std::lock_guard<std::mutex> lock(this->output_file_mutex);
+    const std::lock_guard<std::mutex> lock(this->output_file_mutex);
     auto status = this->rotate_log_if_needed(this->security_log_file, this->security_log_os);
     if (status_callback != nullptr) {
         status_callback(status);
@@ -351,8 +351,8 @@ void MessageLogging::raw(const std::string& msg, LogType log_type) {
     if (this->log_raw) {
         log_output(log_type, msg, "", true);
         if (this->session_logging) {
-            std::scoped_lock lock(this->session_id_logging_mutex);
-            for (auto const& [session_id, logging] : this->session_id_logging) {
+            const std::scoped_lock lock(this->session_id_logging_mutex);
+            for (const auto& [session_id, logging] : this->session_id_logging) {
                 log_output(log_type, "", msg, true);
             }
         }
@@ -386,9 +386,9 @@ void write_html_log_to_file(std::ofstream& html_log_os, LogType typ, const std::
 
 void MessageLogging::log_output(LogType typ, const std::string& message_type, const std::string& json_str, bool raw) {
     if (this->log_messages) {
-        std::lock_guard<std::mutex> lock(this->output_file_mutex);
+        const std::lock_guard<std::mutex> lock(this->output_file_mutex);
 
-        std::string ts = DateTime().to_rfc3339();
+        const std::string ts = DateTime().to_rfc3339();
 
         std::string origin, target;
 
@@ -465,13 +465,13 @@ FormattedMessageWithType MessageLogging::format_message(const std::string& messa
 }
 
 void MessageLogging::start_session_logging(const std::string& session_id, const std::string& log_path) {
-    std::scoped_lock lock(this->session_id_logging_mutex);
+    const std::scoped_lock lock(this->session_id_logging_mutex);
     this->session_id_logging[session_id] = std::make_shared<ocpp::MessageLogging>(
         true, log_path, "incomplete-ocpp", false, false, false, true, true, false, false, nullptr);
 }
 
 void MessageLogging::stop_session_logging(const std::string& session_id) {
-    std::scoped_lock lock(this->session_id_logging_mutex);
+    const std::scoped_lock lock(this->session_id_logging_mutex);
     if (this->session_id_logging.count(session_id)) {
         auto old_file_path =
             this->session_id_logging.at(session_id)->get_message_log_path() + "/" + "incomplete-ocpp.html";
@@ -485,7 +485,7 @@ std::string MessageLogging::get_message_log_path() {
     return this->message_log_path;
 }
 
-bool MessageLogging::session_logging_active() {
+bool MessageLogging::session_logging_active() const {
     return this->session_logging;
 }
 

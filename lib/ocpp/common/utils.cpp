@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/common/utils.hpp>
 
@@ -93,11 +93,11 @@ std::vector<std::string> split_string(const std::string& string_to_split, const 
 }
 
 std::string trim_string(const std::string& string_to_trim) {
-    size_t first = string_to_trim.find_first_not_of(' ');
+    const size_t first = string_to_trim.find_first_not_of(' ');
     if (std::string::npos == first) {
         return string_to_trim;
     }
-    size_t last = string_to_trim.find_last_not_of(' ');
+    const size_t last = string_to_trim.find_last_not_of(' ');
     return string_to_trim.substr(first, (last - first + 1));
 }
 

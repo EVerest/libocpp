@@ -91,32 +91,32 @@ struct ConnectionData {
     }
 
     void bind_thread_client(std::thread::id id) {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         websocket_client_thread_id = id;
     }
 
     void bind_thread_message(std::thread::id id) {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         websocket_recv_thread_id = id;
     }
 
     std::thread::id get_client_thread_id() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         return websocket_client_thread_id;
     }
 
     std::thread::id get_message_thread_id() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         return websocket_recv_thread_id;
     }
 
     void update_state(EConnectionState in_state) {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         state = in_state;
     }
 
     EConnectionState get_state() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         return state;
     }
 
@@ -126,7 +126,7 @@ struct ConnectionData {
             EVLOG_AND_THROW(std::runtime_error("Attempted to awake connection from websocket thread!"));
         }
 
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
 
         if (lws_ctx) {
             lws_cancel_service(lws_ctx.get());
@@ -140,7 +140,7 @@ struct ConnectionData {
             EVLOG_AND_THROW(std::runtime_error("Attempted to interrupt connection from websocket thread!"));
         }
 
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
 
         if (is_running) {
             is_running = false;
@@ -154,17 +154,17 @@ struct ConnectionData {
     }
 
     bool is_interupted() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         return (is_running == false);
     }
 
     void mark_stop_executed() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         this->is_stopped_run = true;
     }
 
     bool is_stop_executed() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         return this->is_stopped_run;
     }
 
@@ -179,7 +179,7 @@ public:
         std::unique_ptr<lws_context> clear_lws;
 
         {
-            std::lock_guard lock(this->mutex);
+            const std::lock_guard lock(this->mutex);
             this->wsi = nullptr;
 
             if (this->sec_context) {
@@ -193,7 +193,7 @@ public:
     }
 
     void init_connection_context(lws_context* lws_ctx, SSL_CTX* ssl_ctx) {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
 
         if (this->lws_ctx || this->sec_context) {
             EVLOG_AND_THROW(std::runtime_error("Cleanup must be called before re-initing a connection!"));
@@ -211,17 +211,17 @@ public:
     }
 
     void init_connection(lws* lws) {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         this->wsi = lws;
     }
 
     lws* get_conn() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         return wsi;
     }
 
     lws_context* get_context() {
-        std::lock_guard lock(this->mutex);
+        const std::lock_guard lock(this->mutex);
         return lws_ctx.get();
     }
 
@@ -280,10 +280,10 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
     // This thus gives also the position (in the chain)  of the currently to be verified certificate.
     // If depth is 0, we need to check the leaf certificate;
     // If depth > 0, we are verifying a CA (or SUB-CA) certificate and thus trust "preverified"
-    int depth = X509_STORE_CTX_get_error_depth(ctx);
+    const int depth = X509_STORE_CTX_get_error_depth(ctx);
 
     if (!preverified) {
-        int error = X509_STORE_CTX_get_error(ctx);
+        const int error = X509_STORE_CTX_get_error(ctx);
         EVLOG_warning << "Invalid certificate error '" << X509_verify_cert_error_string(error) << "' (at chain depth '"
                       << depth << "')";
     }
@@ -309,7 +309,7 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
         }
 
         if (result != 1) {
-            X509_NAME* subject_name = X509_get_subject_name(server_cert);
+            const X509_NAME* subject_name = X509_get_subject_name(server_cert);
             char common_name[256];
 
             if (X509_NAME_get_text_by_NID(subject_name, NID_commonName, common_name, sizeof(common_name)) <= 0) {
@@ -319,8 +319,8 @@ static bool verify_csms_cn(const std::string& hostname, bool preverified, const 
             }
 
             if (not allow_wildcards) {
-                int wildcard_result = X509_check_host(server_cert, hostname.c_str(), hostname.length(),
-                                                      X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS, nullptr);
+                const int wildcard_result = X509_check_host(server_cert, hostname.c_str(), hostname.length(),
+                                                            X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS, nullptr);
                 if (result != wildcard_result) {
                     EVLOG_error << "Failed to verify server certificate hostname: \"" << hostname
                                 << "\". Server certificate common name \"" << common_name
@@ -887,7 +887,7 @@ void WebsocketLibwebsockets::clear_all_queues() {
 
 void WebsocketLibwebsockets::safe_close_threads() {
     // If we already have a connection attempt started for now shut it down first
-    std::shared_ptr<ConnectionData> local_conn_data = conn_data;
+    const std::shared_ptr<ConnectionData> local_conn_data = conn_data;
     bool in_message_thread = false;
 
     if (local_conn_data != nullptr) {
@@ -939,18 +939,18 @@ void WebsocketLibwebsockets::safe_close_threads() {
 }
 
 bool WebsocketLibwebsockets::is_trying_to_connect() {
-    std::lock_guard lock(this->connection_mutex);
+    const std::lock_guard lock(this->connection_mutex);
     return is_trying_to_connect_internal();
 }
 
 bool WebsocketLibwebsockets::is_trying_to_connect_internal() {
-    std::shared_ptr<ConnectionData> local_conn_data = conn_data;
+    const std::shared_ptr<ConnectionData> local_conn_data = conn_data;
     return (local_conn_data != nullptr) && (local_conn_data->get_state() != EConnectionState::FINALIZED);
 }
 
 // Will be called from external threads as well
 bool WebsocketLibwebsockets::start_connecting() {
-    std::lock_guard lock(this->connection_mutex);
+    const std::lock_guard lock(this->connection_mutex);
 
     if (!this->initialized()) {
         EVLOG_error << "Websocket not properly initialized. A reconnect attempt will not be made.";
@@ -974,7 +974,7 @@ bool WebsocketLibwebsockets::start_connecting() {
 
     // Stop any pending reconnect timer
     {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        const std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         this->reconnect_timer_tpm.stop();
     }
 
@@ -1007,12 +1007,12 @@ bool WebsocketLibwebsockets::start_connecting() {
 }
 
 void WebsocketLibwebsockets::close(const WebsocketCloseReason code, const std::string& reason) {
-    std::lock_guard lock(this->connection_mutex);
+    const std::lock_guard lock(this->connection_mutex);
     close_internal(code, reason);
 }
 
 void WebsocketLibwebsockets::close_internal(const WebsocketCloseReason code, const std::string& reason) {
-    bool trying_connecting = is_trying_to_connect_internal() || this->m_is_connected;
+    const bool trying_connecting = is_trying_to_connect_internal() || this->m_is_connected;
 
     if (!trying_connecting) {
         EVLOG_warning << "Trying to close inactive websocket with code: " << (int)code << " and reason: " << reason
@@ -1030,13 +1030,13 @@ void WebsocketLibwebsockets::close_internal(const WebsocketCloseReason code, con
     this->m_is_connected = false;
 
     {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        const std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         this->reconnect_timer_tpm.stop();
     }
 }
 
 void WebsocketLibwebsockets::reconnect(long delay) {
-    std::lock_guard lock(this->connection_mutex);
+    const std::lock_guard lock(this->connection_mutex);
 
     if (this->shutting_down) {
         EVLOG_info << "Not reconnecting because the websocket is being shutdown.";
@@ -1050,7 +1050,7 @@ void WebsocketLibwebsockets::reconnect(long delay) {
     EVLOG_info << "Externally called reconnect in: " << delay << "ms"
                << ", attempt: " << this->connection_attempts;
 
-    std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+    const std::lock_guard<std::mutex> lk(this->reconnect_mutex);
     this->reconnect_timer_tpm.timeout(
         [this]() {
             // close connection before reconnecting
@@ -1067,8 +1067,8 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
     static std::vector<char> buff;
 
     std::string& message = msg->payload;
-    size_t message_len = message.length();
-    size_t buff_req_size = message_len + LWS_PRE;
+    const size_t message_len = message.length();
+    const size_t buff_req_size = message_len + LWS_PRE;
 
     if (buff.size() < buff_req_size)
         buff.resize(buff_req_size);
@@ -1112,7 +1112,7 @@ static bool send_internal(lws* wsi, WebsocketMessage* msg) {
 
 void WebsocketLibwebsockets::request_write() {
     if (this->m_is_connected) {
-        std::shared_ptr<ConnectionData> local_data = conn_data;
+        const std::shared_ptr<ConnectionData> local_data = conn_data;
 
         if (local_data != nullptr) {
             // Notify waiting processing thread to wake up. According to docs
@@ -1130,7 +1130,7 @@ void WebsocketLibwebsockets::poll_message(const std::shared_ptr<WebsocketMessage
         return;
     }
 
-    std::shared_ptr<ConnectionData> local_data = conn_data;
+    const std::shared_ptr<ConnectionData> local_data = conn_data;
 
     if (local_data != nullptr) {
         auto cd_tid = local_data->get_client_thread_id();
@@ -1191,7 +1191,7 @@ void WebsocketLibwebsockets::ping() {
 }
 
 int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason, void* user, void* in, size_t len) {
-    enum lws_callback_reasons reason = static_cast<lws_callback_reasons>(callback_reason);
+    const auto reason = static_cast<lws_callback_reasons>(callback_reason);
 
     lws* wsi = reinterpret_cast<lws*>(wsi_ptr);
 
@@ -1323,8 +1323,8 @@ int WebsocketLibwebsockets::process_callback(void* wsi_ptr, int callback_reason,
 
     case LWS_CALLBACK_WS_PEER_INITIATED_CLOSE: {
         std::string close_reason(reinterpret_cast<char*>(in), len);
-        unsigned char* pp = reinterpret_cast<unsigned char*>(in);
-        unsigned short close_code = (unsigned short)((pp[0] << 8) | pp[1]);
+        const unsigned char* pp = reinterpret_cast<unsigned char*>(in);
+        const auto close_code = (unsigned short)((pp[0] << 8) | pp[1]);
 
         // In the case that the websocket (server) has closed the
         // connection we  must ALWAYS try to reconnect
@@ -1519,7 +1519,7 @@ void WebsocketLibwebsockets::on_conn_connected(ConnectionData* conn_data) {
 
     // Stop any dangling reconnect
     {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        const std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         this->reconnect_timer_tpm.stop();
     }
 
@@ -1547,7 +1547,7 @@ void WebsocketLibwebsockets::on_conn_close(ConnectionData* conn_data) {
     }
 
     {
-        std::lock_guard<std::mutex> lk(this->reconnect_mutex);
+        const std::lock_guard<std::mutex> lk(this->reconnect_mutex);
         this->reconnect_timer_tpm.stop();
     }
 
@@ -1617,7 +1617,7 @@ void WebsocketLibwebsockets::on_conn_writable() {
         return;
     }
 
-    std::shared_ptr<ConnectionData> local_data = conn_data;
+    const std::shared_ptr<ConnectionData> local_data = conn_data;
 
     if (local_data == nullptr) {
         EVLOG_error << "Message sending TLS websocket with null connection data!";
@@ -1673,7 +1673,7 @@ void WebsocketLibwebsockets::on_conn_writable() {
         }
 
         // Continue sending message part, for a single message only
-        bool sent = send_internal(local_data->get_conn(), message.get());
+        const bool sent = send_internal(local_data->get_conn(), message.get());
 
         // If we failed, attempt again later
         if (!sent) {

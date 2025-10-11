@@ -77,7 +77,7 @@ void Diagnostics::notify_event_req(const std::vector<EventData>& events) {
     req.generatedAt = DateTime();
     req.seqNo = 0;
 
-    ocpp::Call<NotifyEventRequest> call(req);
+    const ocpp::Call<NotifyEventRequest> call(req);
     this->context.message_dispatcher.dispatch_call(call);
 }
 
@@ -107,7 +107,7 @@ void Diagnostics::notify_customer_information_req(const std::string& data, const
             return req;
         }();
 
-        ocpp::Call<NotifyCustomerInformationRequest> call(req);
+        const ocpp::Call<NotifyCustomerInformationRequest> call(req);
         this->context.message_dispatcher.dispatch_call(call);
 
         pos += 512;
@@ -136,7 +136,7 @@ void Diagnostics::notify_monitoring_report_req(const int request_id, std::vector
         req.monitor.emplace(montoring_data);
         req.tbc = false;
 
-        ocpp::Call<NotifyMonitoringReportRequest> call(req);
+        const ocpp::Call<NotifyMonitoringReportRequest> call(req);
         this->context.message_dispatcher.dispatch_call(call);
     } else {
         // Split for larger message sizes
@@ -145,7 +145,7 @@ void Diagnostics::notify_monitoring_report_req(const int request_id, std::vector
 
         for (int32_t i = 0; i < montoring_data.size(); i += MAXIMUM_VARIABLE_SEND) {
             // If our next index is >= than the last index then we're finished
-            bool last_part = ((i + MAXIMUM_VARIABLE_SEND) >= montoring_data.size());
+            const bool last_part = ((i + MAXIMUM_VARIABLE_SEND) >= montoring_data.size());
 
             NotifyMonitoringReportRequest req;
             req.requestId = request_id;
@@ -162,7 +162,7 @@ void Diagnostics::notify_monitoring_report_req(const int request_id, std::vector
 
             req.monitor = sub_data;
 
-            ocpp::Call<NotifyMonitoringReportRequest> call(req);
+            const ocpp::Call<NotifyMonitoringReportRequest> call(req);
             this->context.message_dispatcher.dispatch_call(call);
 
             sequence_num++;
@@ -173,7 +173,7 @@ void Diagnostics::notify_monitoring_report_req(const int request_id, std::vector
 void Diagnostics::handle_get_log_req(Call<GetLogRequest> call) {
     const GetLogResponse response = this->get_log_request_callback(call.msg);
 
-    ocpp::CallResult<GetLogResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetLogResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -193,11 +193,11 @@ void Diagnostics::handle_customer_information_req(Call<CustomerInformationReques
         response.status = CustomerInformationStatusEnum::Invalid;
     }
 
-    ocpp::CallResult<CustomerInformationResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<CustomerInformationResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     if (response.status == CustomerInformationStatusEnum::Accepted) {
-        std::string data = "";
+        std::string data;
         if (msg.report) {
             data += this->get_customer_information(msg.customerCertificate, msg.idToken, msg.customerIdentifier);
         }
@@ -246,7 +246,7 @@ void Diagnostics::handle_set_monitoring_base_req(Call<SetMonitoringBaseRequest> 
         }
     }
 
-    ocpp::CallResult<SetMonitoringBaseResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SetMonitoringBaseResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -270,12 +270,12 @@ void Diagnostics::handle_set_monitoring_level_req(Call<SetMonitoringLevelRequest
         }
     }
 
-    ocpp::CallResult<SetMonitoringLevelResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SetMonitoringLevelResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
 void Diagnostics::handle_set_variable_monitoring_req(const EnhancedMessage<MessageType>& message) {
-    Call<SetVariableMonitoringRequest> call = message.call_message;
+    const Call<SetVariableMonitoringRequest> call = message.call_message;
     SetVariableMonitoringResponse response;
     const auto& msg = call.msg;
 
@@ -303,7 +303,7 @@ void Diagnostics::handle_set_variable_monitoring_req(const EnhancedMessage<Messa
         EVLOG_error << "Set monitors failed:" << e.what();
     }
 
-    ocpp::CallResult<SetVariableMonitoringResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SetVariableMonitoringResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -338,7 +338,7 @@ void Diagnostics::handle_get_monitoring_report_req(Call<GetMonitoringReportReque
         response.status = GenericDeviceModelStatusEnum::Rejected;
     }
 
-    ocpp::CallResult<GetMonitoringReportResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetMonitoringReportResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     if (response.status == GenericDeviceModelStatusEnum::Accepted) {
@@ -357,7 +357,7 @@ void Diagnostics::handle_clear_variable_monitoring_req(Call<ClearVariableMonitor
         EVLOG_error << "Clear variable monitoring failed:" << e.what();
     }
 
-    ocpp::CallResult<ClearVariableMonitoringResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ClearVariableMonitoringResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -412,7 +412,7 @@ void Diagnostics::clear_customer_information(const std::optional<CertificateHash
     }
 }
 
-void Diagnostics::throw_when_monitoring_not_available(const MessageType type) {
+void Diagnostics::throw_when_monitoring_not_available(const MessageType type) const {
     if (!is_monitoring_available) {
         throw MessageTypeNotImplementedException(type);
     }

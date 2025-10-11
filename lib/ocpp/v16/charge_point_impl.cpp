@@ -65,14 +65,15 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     this->message_dispatcher =
         std::make_unique<MessageDispatcher>(*this->message_queue, *this->configuration, this->registration_status);
     auto log_formats = this->configuration->getLogMessagesFormat();
-    bool log_to_console = std::find(log_formats.begin(), log_formats.end(), "console") != log_formats.end();
-    bool detailed_log_to_console =
+    const bool log_to_console = std::find(log_formats.begin(), log_formats.end(), "console") != log_formats.end();
+    const bool detailed_log_to_console =
         std::find(log_formats.begin(), log_formats.end(), "console_detailed") != log_formats.end();
-    bool log_to_file = std::find(log_formats.begin(), log_formats.end(), "log") != log_formats.end();
-    bool log_to_html = std::find(log_formats.begin(), log_formats.end(), "html") != log_formats.end();
-    bool log_raw = this->configuration->getLogMessagesRaw();
-    bool log_security = std::find(log_formats.begin(), log_formats.end(), "security") != log_formats.end();
-    bool session_logging = std::find(log_formats.begin(), log_formats.end(), "session_logging") != log_formats.end();
+    const bool log_to_file = std::find(log_formats.begin(), log_formats.end(), "log") != log_formats.end();
+    const bool log_to_html = std::find(log_formats.begin(), log_formats.end(), "html") != log_formats.end();
+    const bool log_raw = this->configuration->getLogMessagesRaw();
+    const bool log_security = std::find(log_formats.begin(), log_formats.end(), "security") != log_formats.end();
+    const bool session_logging =
+        std::find(log_formats.begin(), log_formats.end(), "session_logging") != log_formats.end();
 
     if (this->configuration->getLogRotation()) {
         this->logging = std::make_shared<ocpp::MessageLogging>(
@@ -106,7 +107,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
 
     this->client_certificate_timer = std::make_unique<Everest::SteadyTimer>(&this->io_context, [this]() {
         EVLOG_info << "Checking if CSMS client certificate has expired";
-        int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(
+        const int expiry_days_count = this->evse_security->get_leaf_expiry_days_count(
             ocpp::CertificateSigningUseEnum::ChargingStationCertificate);
         if (expiry_days_count < 30) {
             EVLOG_info << "CSMS client certificate is invalid in " << expiry_days_count
@@ -120,7 +121,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
 
     this->v2g_certificate_timer = std::make_unique<Everest::SteadyTimer>(&this->io_context, [this]() {
         EVLOG_info << "Checking if V2GCertificate has expired";
-        int expiry_days_count =
+        const int expiry_days_count =
             this->evse_security->get_leaf_expiry_days_count(ocpp::CertificateSigningUseEnum::V2GCertificate);
         if (expiry_days_count < 30) {
             EVLOG_info << "V2GCertificate is invalid in " << expiry_days_count
@@ -427,9 +428,9 @@ void ChargePointImpl::call_set_connection_timeout() {
 
 void ChargePointImpl::heartbeat(bool initiated_by_trigger_message) {
     EVLOG_debug << "Sending heartbeat";
-    HeartbeatRequest req;
+    const HeartbeatRequest req;
 
-    ocpp::Call<HeartbeatRequest> call(req);
+    const ocpp::Call<HeartbeatRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -446,7 +447,7 @@ void ChargePointImpl::boot_notification(bool initiated_by_trigger_message) {
     req.meterSerialNumber = this->configuration->getMeterSerialNumber();
     req.meterType = this->configuration->getMeterType();
 
-    ocpp::Call<BootNotificationRequest> call(req);
+    const ocpp::Call<BootNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -473,7 +474,7 @@ void ChargePointImpl::update_heartbeat_interval() {
 
 void ChargePointImpl::update_meter_values_sample_interval() {
     // TODO(kai): should we update the meter values for continuous monitoring here too?
-    int32_t interval = this->configuration->getMeterValueSampleInterval();
+    const int32_t interval = this->configuration->getMeterValueSampleInterval();
     this->transaction_handler->change_meter_values_sample_intervals(interval);
 }
 
@@ -498,7 +499,7 @@ void ChargePointImpl::try_resume_transactions(const std::set<std::string>& resum
         return;
     }
     for (const auto& transaction_entry : transactions) {
-        std::shared_ptr<Transaction> transaction = std::make_shared<Transaction>(
+        const std::shared_ptr<Transaction> transaction = std::make_shared<Transaction>(
             this->transaction_handler->get_negative_random_transaction_id(), transaction_entry.connector,
             transaction_entry.session_id, CiString<20>(transaction_entry.id_tag_start), transaction_entry.meter_start,
             transaction_entry.reservation_id, ocpp::DateTime(transaction_entry.time_start), nullptr);
@@ -589,7 +590,7 @@ void ChargePointImpl::load_charging_profiles() {
 std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connector,
                                                                   std::vector<MeasurandWithPhase> values_of_interest,
                                                                   ReadingContext context) {
-    std::lock_guard<std::mutex> lock(measurement_mutex);
+    const std::lock_guard<std::mutex> lock(measurement_mutex);
     std::optional<MeterValue> filtered_meter_value_opt;
     // TODO(kai): also support readings from the charge point measurement at "connector 0"
     if (this->connectors.find(connector) != this->connectors.end() &&
@@ -901,7 +902,7 @@ std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connec
 
             case Measurand::Temperature: {
                 // temperature
-                for (const auto temperature : measurement.temperature_C) {
+                for (const auto& temperature : measurement.temperature_C) {
                     sample.unit.emplace(UnitOfMeasure::Celsius);
                     if (temperature.location.has_value()) {
                         try {
@@ -1004,7 +1005,7 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
 
     req.meterValue.push_back(meter_value);
 
-    ocpp::Call<MeterValuesRequest> call(req, message_id);
+    const ocpp::Call<MeterValuesRequest> call(req, message_id);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -1082,7 +1083,7 @@ void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connecto
 }
 
 void ChargePointImpl::reset_pricing_triggers(const int32_t connector_number) {
-    std::shared_ptr<Connector> c = this->connectors.at(connector_number);
+    const std::shared_ptr<Connector> c = this->connectors.at(connector_number);
     c->last_triggered_metervalue_power_kw = std::nullopt;
     c->trigger_metervalue_on_power_kw = std::nullopt;
     c->trigger_metervalue_on_energy_kwh = std::nullopt;
@@ -1193,14 +1194,14 @@ void ChargePointImpl::change_all_connectors_to_unavailable_for_firmware_update()
 
     bool transaction_running = false;
 
-    int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+    const int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
     for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
         if (this->transaction_handler->transaction_active(connector)) {
             EVLOG_debug << "change_all_connectors_to_unavailable_for_firmware_update: detected running Transaction on "
                            "connector "
                         << connector;
             transaction_running = true;
-            std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+            const std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
             this->change_availability_queue[connector] = {AvailabilityType::Inoperative, false};
         } else {
             connector_availability_status[connector] = AvailabilityStatus::Accepted;
@@ -1227,7 +1228,7 @@ void ChargePointImpl::stop_all_transactions() {
 }
 
 void ChargePointImpl::stop_all_transactions(Reason reason) {
-    int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+    const int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
     for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
         if (this->transaction_handler->transaction_active(connector)) {
             this->stop_transaction_callback(connector, reason);
@@ -1729,11 +1730,11 @@ void ChargePointImpl::preprocess_change_availability_request(
 
         if (request.connectorId == 0) {
             accepted_connector_availability_changes.push_back(0);
-            int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+            const int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
             for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
                 if (should_be_scheduled_func(connector)) {
                     should_be_scheduled = true;
-                    std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+                    const std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
                     this->change_availability_queue[connector] = {request.type, true};
                 } else {
                     accepted_connector_availability_changes.push_back(connector);
@@ -1742,7 +1743,7 @@ void ChargePointImpl::preprocess_change_availability_request(
         } else {
             if (should_be_scheduled_func(request.connectorId)) {
                 should_be_scheduled = true;
-                std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+                const std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
                 this->change_availability_queue[request.connectorId] = {request.type, true};
             } else {
                 accepted_connector_availability_changes.push_back(request.connectorId);
@@ -1801,7 +1802,7 @@ void ChargePointImpl::execute_queued_availability_change(const int32_t connector
     AvailabilityType connector_availability;
     bool persist = false;
     {
-        std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
+        const std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
         change_queued = this->change_availability_queue.count(connector) != 0;
         connector_availability = this->change_availability_queue[connector].availability;
         persist = this->change_availability_queue[connector].persist;
@@ -1825,7 +1826,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
     preprocess_change_availability_request(request, response, accepted_connector_availability_changes);
 
     // respond first
-    ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ChangeAvailabilityResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     // if scheduled: execute status transition for connector 0
@@ -1866,7 +1867,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                                this->configuration->getSecurityProfile() == 2) {
                         EVLOG_info
                             << "AuthorizationKey was changed while on security profile 1 or 2. Reconnect Websocket.";
-                        ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
+                        const ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
                         this->message_dispatcher->dispatch_call_result(call_result);
                         responded = true;
                         this->websocket->reconnect(1000);
@@ -1901,9 +1902,9 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
                             response.status = ConfigurationStatus::Rejected;
                         } else {
                             // valid set of security profile
-                            ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
+                            const ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
                             this->message_dispatcher->dispatch_call_result(call_result);
-                            int32_t security_profile = std::stoi(call.msg.value);
+                            const int32_t security_profile = std::stoi(call.msg.value);
                             responded = true;
                             this->switch_security_profile_callback = [this, security_profile]() {
                                 this->switchSecurityProfile(security_profile, 1);
@@ -1959,7 +1960,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
     }
 
     if (!responded) {
-        ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<ChangeConfigurationResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
     }
 
@@ -2017,7 +2018,7 @@ void ChargePointImpl::handleClearCacheRequest(ocpp::Call<ClearCacheRequest> call
         response.status = ClearCacheStatus::Rejected;
     }
 
-    ocpp::CallResult<ClearCacheResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ClearCacheResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2031,7 +2032,7 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
 
     // first try the callbacks that are explicitly registered for a vendorId or messageId
     {
-        std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
+        const std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
         if (vendorId == ISO15118_PNC_VENDOR_ID and !this->is_iso15118_certificate_management_enabled()) {
             response.status = DataTransferStatus::UnknownVendorId;
         } else if (vendorId == ISO15118_PNC_VENDOR_ID and this->is_iso15118_certificate_management_enabled()) {
@@ -2065,7 +2066,7 @@ void ChargePointImpl::handleDataTransferRequest(ocpp::Call<DataTransferRequest> 
         }
     }
 
-    ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2073,7 +2074,7 @@ void ChargePointImpl::handleGetConfigurationRequest(ocpp::Call<GetConfigurationR
     EVLOG_debug << "Received GetConfigurationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
     const auto response = this->get_configuration_key(call.msg);
-    ocpp::CallResult<GetConfigurationResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetConfigurationResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2091,7 +2092,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
             EVLOG_warning << "Received RemoteStartTransactionRequest with connector id <= 0 or > "
                           << this->configuration->getNumberOfConnectors();
             response.status = RemoteStartStopStatus::Rejected;
-            ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
+            const ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
             this->message_dispatcher->dispatch_call_result(call_result);
             return;
         }
@@ -2140,7 +2141,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
     if (!obtainable) {
         EVLOG_debug << "Received RemoteStartTransactionRequest for reserved connector and rejected";
         response.status = RemoteStartStopStatus::Rejected;
-        ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
         return;
     }
@@ -2159,7 +2160,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
                                                          call.msg.connectorId.value());
         } else {
             response.status = RemoteStartStopStatus::Rejected;
-            ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
+            const ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
             this->message_dispatcher->dispatch_call_result(call_result);
             return;
         }
@@ -2177,7 +2178,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
         }
 
         response.status = RemoteStartStopStatus::Accepted;
-        ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<RemoteStartTransactionResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
 
         if (this->configuration->getAuthorizeRemoteTxRequests()) {
@@ -2230,7 +2231,7 @@ void ChargePointImpl::handleRemoteStopTransactionRequest(ocpp::Call<RemoteStopTr
         response.status = RemoteStartStopStatus::Accepted;
     }
 
-    ocpp::CallResult<RemoteStopTransactionResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<RemoteStopTransactionResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (connector > 0) {
@@ -2253,7 +2254,7 @@ void ChargePointImpl::handleResetRequest(ocpp::Call<ResetRequest> call) {
     }
 
     // send response
-    ocpp::CallResult<ResetResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ResetResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == ResetStatus::Accepted) {
@@ -2286,7 +2287,7 @@ void ChargePointImpl::handleResetRequest(ocpp::Call<ResetRequest> call) {
 
 void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTransactionResponse> call_result) {
 
-    StartTransactionResponse start_transaction_response = call_result.msg;
+    const StartTransactionResponse start_transaction_response = call_result.msg;
 
     const auto transaction = this->transaction_handler->get_transaction(call_result.uniqueId);
 
@@ -2298,7 +2299,7 @@ void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTrans
         }
         this->message_queue->notify_start_transaction_handled(call_result.uniqueId.get(),
                                                               start_transaction_response.transactionId);
-        int32_t connector = transaction->get_connector();
+        const int32_t connector = transaction->get_connector();
         transaction->set_transaction_id(start_transaction_response.transactionId);
         auto idTag = transaction->get_id_tag();
 
@@ -2337,14 +2338,14 @@ void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTrans
 
 void ChargePointImpl::handleStopTransactionResponse(const EnhancedMessage<v16::MessageType>& message) {
 
-    CallResult<StopTransactionResponse> call_result = message.message;
+    const CallResult<StopTransactionResponse> call_result = message.message;
     const Call<StopTransactionRequest>& original_call = message.call_message;
 
     StopTransactionResponse stop_transaction_response = call_result.msg;
     const auto transaction = this->transaction_handler->get_transaction(call_result.uniqueId);
 
     if (transaction != nullptr) {
-        int32_t connector = transaction->get_connector();
+        const int32_t connector = transaction->get_connector();
 
         if (stop_transaction_response.idTagInfo) {
             auto id_tag = this->transaction_handler->get_authorized_id_tag(call_result.uniqueId.get());
@@ -2382,7 +2383,7 @@ void ChargePointImpl::handleStopTransactionResponse(const EnhancedMessage<v16::M
 
 void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorRequest> call) {
     EVLOG_debug << "Received UnlockConnectorRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
-    std::lock_guard<std::mutex> lock(this->stop_transaction_mutex);
+    const std::lock_guard<std::mutex> lock(this->stop_transaction_mutex);
 
     UnlockConnectorResponse response;
     auto connector = call.msg.connectorId;
@@ -2397,7 +2398,7 @@ void ChargePointImpl::handleUnlockConnectorRequest(ocpp::Call<UnlockConnectorReq
         }
     }
 
-    ocpp::CallResult<UnlockConnectorResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<UnlockConnectorResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == UnlockStatus::NotSupported and this->transaction_handler->transaction_active(connector) and
@@ -2454,7 +2455,7 @@ void ChargePointImpl::handleSetChargingProfileRequest(ocpp::Call<SetChargingProf
         response.status = ChargingProfileStatus::Rejected;
     }
 
-    ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SetChargingProfileResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == ChargingProfileStatus::Accepted) {
@@ -2502,7 +2503,7 @@ void ChargePointImpl::handleGetCompositeScheduleRequest(ocpp::Call<GetCompositeS
         response.chargingSchedule = composite_schedule;
     }
 
-    ocpp::CallResult<GetCompositeScheduleResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetCompositeScheduleResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2526,7 +2527,7 @@ void ChargePointImpl::handleClearChargingProfileRequest(ocpp::Call<ClearCharging
         response.status = ClearChargingProfileStatus::Accepted;
     }
 
-    ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ClearChargingProfileResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == ClearChargingProfileStatus::Accepted and
@@ -2581,7 +2582,7 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         }
     }
 
-    ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<TriggerMessageResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (not trigger_message) {
@@ -2627,13 +2628,13 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         if (!call.msg.connectorId.has_value()) {
             // send a status notification for every connector
             for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
-                ErrorInfo error_info =
+                const ErrorInfo error_info =
                     this->status->get_latest_error(c).value_or(ErrorInfo("", ChargePointErrorCode::NoError, false));
                 this->status_notification(c, error_info.error_code, this->status->get_state(c), ocpp::DateTime(),
                                           error_info.info, error_info.vendor_id, error_info.vendor_error_code, true);
             }
         } else {
-            ErrorInfo error_info =
+            const ErrorInfo error_info =
                 this->status->get_latest_error(connector).value_or(ErrorInfo("", ChargePointErrorCode::NoError, false));
             this->status_notification(connector, error_info.error_code, this->status->get_state(connector),
                                       ocpp::DateTime(), error_info.info, error_info.vendor_id,
@@ -2652,17 +2653,17 @@ void ChargePointImpl::handleGetDiagnosticsRequest(ocpp::Call<GetDiagnosticsReque
             response.fileName = get_log_response.filename.value();
         }
     }
-    ocpp::CallResult<GetDiagnosticsResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetDiagnosticsResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
 void ChargePointImpl::handleUpdateFirmwareRequest(ocpp::Call<UpdateFirmwareRequest> call) {
     EVLOG_debug << "Received UpdateFirmwareRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
-    UpdateFirmwareResponse response;
+    const UpdateFirmwareResponse response;
     if (this->update_firmware_callback) {
         this->update_firmware_callback(call.msg);
     }
-    ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<UpdateFirmwareResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2708,7 +2709,7 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
         valid = false;
     }
 
-    ocpp::CallResult<ExtendedTriggerMessageResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ExtendedTriggerMessageResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (!valid) {
@@ -2747,13 +2748,13 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
         if (!call.msg.connectorId.has_value()) {
             // send a status notification for every connector
             for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
-                ErrorInfo error_info =
+                const ErrorInfo error_info =
                     this->status->get_latest_error(c).value_or(ErrorInfo("", ChargePointErrorCode::NoError, false));
                 this->status_notification(c, error_info.error_code, this->status->get_state(c), ocpp::DateTime(),
                                           error_info.info, error_info.vendor_id, error_info.vendor_error_code, true);
             }
         } else {
-            ErrorInfo error_info =
+            const ErrorInfo error_info =
                 this->status->get_latest_error(connector).value_or(ErrorInfo("", ChargePointErrorCode::NoError, false));
             this->status_notification(connector, error_info.error_code, this->status->get_state(connector),
                                       ocpp::DateTime(), error_info.info, error_info.vendor_id,
@@ -2797,7 +2798,7 @@ void ChargePointImpl::sign_certificate(const ocpp::CertificateSigningUseEnum& ce
 
     req.csr = response.csr.value();
 
-    ocpp::Call<SignCertificateRequest> call(req);
+    const ocpp::Call<SignCertificateRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -2806,7 +2807,8 @@ void ChargePointImpl::update_ocsp_cache() {
         EVLOG_info << "Updating OCSP cache for V2G leaf certificates";
         const auto ocsp_request_data = this->evse_security->get_v2g_ocsp_request_data();
         for (const auto& ocsp_request_entry : ocsp_request_data) {
-            ocpp::v2::OCSPRequestData ocsp_request = ocpp::evse_security_conversions::to_ocpp_v2(ocsp_request_entry);
+            const ocpp::v2::OCSPRequestData ocsp_request =
+                ocpp::evse_security_conversions::to_ocpp_v2(ocsp_request_entry);
             this->data_transfer_pnc_get_certificate_status(ocsp_request);
         }
     } catch (const std::exception& e) {
@@ -2829,7 +2831,7 @@ void ChargePointImpl::handleCertificateSignedRequest(ocpp::Call<CertificateSigne
         response.status = CertificateSignedStatusEnumType::Accepted;
     }
 
-    ocpp::CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<CertificateSignedResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == CertificateSignedStatusEnumType::Rejected) {
@@ -2875,7 +2877,7 @@ void ChargePointImpl::handleGetInstalledCertificateIdsRequest(ocpp::Call<GetInst
         response.status = GetInstalledCertificateStatusEnumType::Accepted;
     }
 
-    ocpp::CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetInstalledCertificateIdsResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2883,14 +2885,14 @@ void ChargePointImpl::handleDeleteCertificateRequest(ocpp::Call<DeleteCertificat
     DeleteCertificateResponse response;
 
     // convert 1.6 CertificateHashData to common CertificateHashData
-    ocpp::CertificateHashDataType certificate_hash_data(json(call.msg.certificateHashData));
+    const ocpp::CertificateHashDataType certificate_hash_data(json(call.msg.certificateHashData));
 
     const auto result = this->evse_security->delete_certificate(certificate_hash_data);
 
     response.status = conversions::string_to_delete_certificate_status_enum_type(
         ocpp::conversions::delete_certificate_result_to_string(result));
 
-    ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<DeleteCertificateResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2915,7 +2917,7 @@ void ChargePointImpl::handleInstallCertificateRequest(ocpp::Call<InstallCertific
         response.status = InstallCertificateStatusEnumType::Rejected;
     }
 
-    ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<InstallCertificateResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == InstallCertificateStatusEnumType::Rejected) {
@@ -2935,7 +2937,7 @@ void ChargePointImpl::handleGetLogRequest(ocpp::Call<GetLogRequest> call) {
         response.filename = get_log_response.filename;
     }
 
-    ocpp::CallResult<GetLogResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetLogResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -2947,11 +2949,11 @@ void ChargePointImpl::handleSignedUpdateFirmware(ocpp::Call<SignedUpdateFirmware
                                                 ocpp::LeafCertificateType::MF) !=
         ocpp::CertificateValidationResult::Valid) {
         response.status = UpdateFirmwareStatusEnumType::InvalidCertificate;
-        ocpp::CallResult<SignedUpdateFirmwareResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<SignedUpdateFirmwareResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
     } else {
         response.status = this->signed_update_firmware_callback(call.msg);
-        ocpp::CallResult<SignedUpdateFirmwareResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<SignedUpdateFirmwareResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
     }
 
@@ -2984,7 +2986,7 @@ void ChargePointImpl::securityEventNotification(const CiString<50>& event_type,
     }
 
     if (critical_security_event and !this->configuration->getDisableSecurityEventNotifications()) {
-        ocpp::Call<SecurityEventNotificationRequest> call(req);
+        const ocpp::Call<SecurityEventNotificationRequest> call(req);
         this->message_dispatcher->dispatch_call(call);
     }
 
@@ -3005,7 +3007,7 @@ void ChargePointImpl::log_status_notification(UploadLogStatusEnumType status, in
     this->log_status = status;
     this->log_status_request_id = requestId;
 
-    ocpp::Call<LogStatusNotificationRequest> call(req);
+    const ocpp::Call<LogStatusNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
     if (status != UploadLogStatusEnumType::Uploading) {
         // Reset status to idle to avoid on trigger message sending an incorrect status
@@ -3038,7 +3040,7 @@ void ChargePointImpl::signed_firmware_update_status_notification(FirmwareStatusE
     this->signed_firmware_status = status;
     this->signed_firmware_status_request_id = requestId;
 
-    ocpp::Call<SignedFirmwareStatusNotificationRequest> call(req);
+    const ocpp::Call<SignedFirmwareStatusNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 
     if (status == FirmwareStatusEnumType::InvalidSignature) {
@@ -3067,7 +3069,7 @@ void ChargePointImpl::handleReserveNowRequest(ocpp::Call<ReserveNowRequest> call
         }
     }
 
-    ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ReserveNowResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -3080,7 +3082,7 @@ void ChargePointImpl::handleCancelReservationRequest(ocpp::Call<CancelReservatio
             response.status = CancelReservationStatus::Accepted;
         }
     }
-    ocpp::CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<CancelReservationResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -3134,7 +3136,7 @@ void ChargePointImpl::handleSendLocalListRequest(ocpp::Call<SendLocalListRequest
         response.status = UpdateStatus::Failed;
     }
 
-    ocpp::CallResult<SendLocalListResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SendLocalListResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -3173,7 +3175,7 @@ void ChargePointImpl::handleGetLocalListVersionRequest(ocpp::Call<GetLocalListVe
         }
     }
 
-    ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -3248,7 +3250,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     }
 
     {
-        std::lock_guard<std::mutex> lock(this->user_price_map_mutex);
+        const std::lock_guard<std::mutex> lock(this->user_price_map_mutex);
 
         if (this->user_price_cvs.find(id_token.value()) != this->user_price_cvs.end()) {
             this->tariff_messages_by_id_token[id_token.value()] = tariff_message;
@@ -3294,7 +3296,8 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const RunningCostS
         return response;
     }
 
-    int32_t connector_id = this->transaction_handler->get_connector_from_transaction_id(std::stoi(cost.transaction_id));
+    const int32_t connector_id =
+        this->transaction_handler->get_connector_from_transaction_id(std::stoi(cost.transaction_id));
     std::string session_id = cost.transaction_id;
     if (connector_id == -1) {
         EVLOG_warning << "Set session cost failed: Could not set session id because transaction with transaction id "
@@ -3302,8 +3305,8 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const RunningCostS
         return response;
     }
 
-    std::shared_ptr<Connector> connector = this->connectors.at(connector_id);
-    std::shared_ptr<Transaction> transaction = this->transaction_handler->get_transaction(connector_id);
+    const std::shared_ptr<Connector> connector = this->connectors.at(connector_id);
+    const std::shared_ptr<Transaction> transaction = this->transaction_handler->get_transaction(connector_id);
     if (transaction == nullptr) {
         EVLOG_warning << "Set session cost failed: Could not set session id because transaction with transaction id "
                       << cost.transaction_id << " for connector " << connector_id << " is not found.";
@@ -3365,8 +3368,8 @@ void ChargePointImpl::set_connector_trigger_metervalue_timer(const DateTime& dat
         }
     }
 
-    DateTime d(now);
-    int32_t connector_id = connector->id;
+    const DateTime d(now);
+    const int32_t connector_id = connector->id;
 
     connector->trigger_metervalue_at_time_timer =
         std::make_unique<Everest::SystemTimer>(&this->io_context, [this, connector_id]() {
@@ -3387,7 +3390,7 @@ void ChargePointImpl::set_time_offset_timer(const std::string& date_time) {
         this->change_time_offset_timer = nullptr;
     }
 
-    DateTime d(date_time);
+    const DateTime d(date_time);
     if (d.to_time_point() < date::utc_clock::now()) {
         // Not setting offset timer, because the date is in the past.
         return;
@@ -3417,7 +3420,7 @@ void ChargePointImpl::status_notification(const int32_t connector, const ChargeP
     request.info = info;
     request.vendorId = vendor_id;
     request.vendorErrorCode = vendor_error_code;
-    ocpp::Call<StatusNotificationRequest> call(request);
+    const ocpp::Call<StatusNotificationRequest> call(request);
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -3498,7 +3501,7 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> idTag, const 
 
     if (enhanced_message.messageType == MessageType::AuthorizeResponse) {
         try {
-            ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+            const ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
             this->database_handler->insert_or_update_authorization_cache_entry(idTag, call_result.msg.idTagInfo);
             enhanced_id_tag_info.id_tag_info = call_result.msg.idTagInfo;
 
@@ -3639,7 +3642,7 @@ ocpp::v2::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
         forward_to_csms = true;
     } else if (certificate.has_value()) {
         // First try to validate the contract certificate locally
-        CertificateValidationResult local_verify_result = this->evse_security->verify_certificate(
+        const CertificateValidationResult local_verify_result = this->evse_security->verify_certificate(
             certificate.value(), {ocpp::LeafCertificateType::MO, ocpp::LeafCertificateType::V2G});
         EVLOG_info << "Local contract validation result: " << local_verify_result;
         const auto central_contract_validation_allowed =
@@ -3730,7 +3733,7 @@ ocpp::v2::AuthorizeResponse ChargePointImpl::data_transfer_pnc_authorize(
         req.data.emplace(json(authorize_req).dump());
 
         // Send the DataTransfer(Authorize) to the CSMS
-        Call<DataTransferRequest> call(req);
+        const Call<DataTransferRequest> call(req);
         auto authorize_future = this->message_dispatcher->dispatch_call_async(call);
 
         if (authorize_future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
@@ -3813,7 +3816,7 @@ void ChargePointImpl::data_transfer_pnc_sign_certificate() {
     csr_req.certificateType = ocpp::v2::CertificateSigningUseEnum::V2GCertificate;
     req.data.emplace(json(csr_req).dump());
 
-    Call<DataTransferRequest> call(req);
+    const Call<DataTransferRequest> call(req);
     this->message_dispatcher->dispatch_call(call);
 }
 
@@ -3839,7 +3842,7 @@ void ChargePointImpl::data_transfer_pnc_get_15118_ev_certificate(
 
     req.data.emplace(json(cert_req).dump());
 
-    Call<DataTransferRequest> call(req);
+    const Call<DataTransferRequest> call(req);
     auto future = this->message_dispatcher->dispatch_call_async(call);
 
     if (future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
@@ -3854,7 +3857,7 @@ void ChargePointImpl::data_transfer_pnc_get_15118_ev_certificate(
         try {
             ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
             if (call_result.msg.data.has_value() and call_result.msg.status == DataTransferStatus::Accepted) {
-                ocpp::v2::Get15118EVCertificateResponse ev_certificate_response =
+                const ocpp::v2::Get15118EVCertificateResponse ev_certificate_response =
                     json::parse(call_result.msg.data.value());
                 this->get_15118_ev_certificate_response_callback(connector_id, ev_certificate_response,
                                                                  certificate_action);
@@ -3889,7 +3892,7 @@ void ChargePointImpl::data_transfer_pnc_get_certificate_status(const ocpp::v2::O
 
     req.data.emplace(json(cert_status_req).dump());
 
-    Call<DataTransferRequest> call(req);
+    const Call<DataTransferRequest> call(req);
     auto future = this->message_dispatcher->dispatch_call_async(call);
 
     if (future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
@@ -3958,7 +3961,7 @@ void ChargePointImpl::handle_data_transfer_pnc_trigger_message(Call<DataTransfer
         response.data.emplace("No CpoName or SeccLeafSubjectOrganization is set. Cannot trigger CSR");
     }
 
-    CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    const CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 
     if (response.status == DataTransferStatus::Accepted) {
@@ -4008,7 +4011,7 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
 
         response.data.emplace(json(certificate_response).dump());
 
-        CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+        const CallResult<DataTransferResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
 
         if (certificate_response.status == CertificateSignedStatusEnumType::Rejected) {
@@ -4021,11 +4024,11 @@ void ChargePointImpl::handle_data_transfer_pnc_certificate_signed(Call<DataTrans
         }
     } catch (const json::exception& e) {
         EVLOG_warning << "Could not parse data of DataTransfer message CertificateSigned.req: " << e.what();
-        CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+        const CallResult<DataTransferResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
     } catch (const std::exception& e) {
         EVLOG_error << "Unknown Error while handling DataTransfer message CertificateSigned.req: " << e.what();
-        CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+        const CallResult<DataTransferResponse> call_result(response, call.uniqueId);
         this->message_dispatcher->dispatch_call_result(call_result);
     }
 }
@@ -4078,7 +4081,7 @@ void ChargePointImpl::handle_data_transfer_pnc_get_installed_certificates(Call<D
         response.status = DataTransferStatus::Rejected;
     }
 
-    CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    const CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -4108,7 +4111,7 @@ void ChargePointImpl::handle_data_transfer_delete_certificate(Call<DataTransferR
         response.status = DataTransferStatus::Rejected;
     }
 
-    CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    const CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -4119,7 +4122,8 @@ void ChargePointImpl::handle_data_transfer_install_certificate(Call<DataTransfer
         try {
             const ocpp::v2::InstallCertificateRequest req = json::parse(call.msg.data.value());
             response.status = DataTransferStatus::Accepted;
-            ocpp::CaCertificateType ca_certificate_type = evse_security_conversions::from_ocpp_v2(req.certificateType);
+            const ocpp::CaCertificateType ca_certificate_type =
+                evse_security_conversions::from_ocpp_v2(req.certificateType);
             const auto result = this->evse_security->install_ca_certificate(req.certificate.get(), ca_certificate_type);
             ocpp::v2::InstallCertificateResponse install_cert_response;
             install_cert_response.status = ocpp::evse_security_conversions::to_ocpp_v2(result);
@@ -4135,7 +4139,7 @@ void ChargePointImpl::handle_data_transfer_install_certificate(Call<DataTransfer
         response.status = DataTransferStatus::Rejected;
     }
 
-    CallResult<DataTransferResponse> call_result(response, call.uniqueId);
+    const CallResult<DataTransferResponse> call_result(response, call.uniqueId);
     this->message_dispatcher->dispatch_call_result(call_result);
 }
 
@@ -4149,7 +4153,7 @@ std::optional<DataTransferResponse> ChargePointImpl::data_transfer(const CiStrin
 
     DataTransferResponse response;
     response.status = DataTransferStatus::Rejected;
-    ocpp::Call<DataTransferRequest> call(req);
+    const ocpp::Call<DataTransferRequest> call(req);
     auto data_transfer_future = this->message_dispatcher->dispatch_call_async(call);
 
     if (this->websocket == nullptr or !this->websocket->is_connected()) {
@@ -4165,7 +4169,7 @@ std::optional<DataTransferResponse> ChargePointImpl::data_transfer(const CiStrin
     auto enhanced_message = data_transfer_future.get();
     if (enhanced_message.messageType == MessageType::DataTransferResponse) {
         try {
-            ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
+            const ocpp::CallResult<DataTransferResponse> call_result = enhanced_message.message;
             response = call_result.msg;
         } catch (json::exception& e) {
             EVLOG_warning << "Could not parse DataTransfer.conf message from CSMS";
@@ -4186,7 +4190,7 @@ std::optional<DataTransferResponse> ChargePointImpl::data_transfer(const CiStrin
 void ChargePointImpl::register_data_transfer_callback(
     const CiString<255>& vendorId, const CiString<50>& messageId,
     const std::function<DataTransferResponse(const std::optional<std::string>& msg)>& callback) {
-    std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
+    const std::lock_guard<std::mutex> lock(data_transfer_callbacks_mutex);
     this->data_transfer_callbacks[vendorId.get()][messageId.get()] = callback;
 }
 
@@ -4200,7 +4204,7 @@ void ChargePointImpl::on_meter_values(int32_t connector, const Measurement& meas
     std::shared_ptr<Connector> c;
     {
         EVLOG_debug << "updating measurement for connector: " << connector;
-        std::lock_guard<std::mutex> lock(measurement_mutex);
+        const std::lock_guard<std::mutex> lock(measurement_mutex);
         c = this->connectors.at(connector);
         c->measurement.emplace(measurement);
     }
@@ -4209,14 +4213,14 @@ void ChargePointImpl::on_meter_values(int32_t connector, const Measurement& meas
 }
 
 void ChargePointImpl::on_max_current_offered(int32_t connector, int32_t max_current) {
-    std::lock_guard<std::mutex> lock(measurement_mutex);
+    const std::lock_guard<std::mutex> lock(measurement_mutex);
     // TODO(kai): uses power meter mutex because the reading context is similar, think about storing
     // this information in a unified struct
     this->connectors.at(connector)->max_current_offered = max_current;
 }
 
 void ChargePointImpl::on_max_power_offered(int32_t connector, int32_t max_power) {
-    std::lock_guard<std::mutex> lock(measurement_mutex);
+    const std::lock_guard<std::mutex> lock(measurement_mutex);
     // TODO(kai): uses power meter mutex because the reading context is similar, think about storing
     // this information in a unified struct
     this->connectors.at(connector)->max_power_offered = max_power;
@@ -4333,7 +4337,7 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
         }
     });
     meter_values_sample_timer->interval(std::chrono::seconds(this->configuration->getMeterValueSampleInterval()));
-    std::shared_ptr<Transaction> transaction = std::make_shared<Transaction>(
+    const std::shared_ptr<Transaction> transaction = std::make_shared<Transaction>(
         this->transaction_handler->get_negative_random_transaction_id(), connector, session_id, CiString<20>(id_token),
         meter_start, reservation_id, timestamp, std::move(meter_values_sample_timer));
     if (signed_meter_value) {
@@ -4422,7 +4426,7 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
     }
 
     {
-        std::lock_guard<std::mutex> lock(this->stop_transaction_mutex);
+        const std::lock_guard<std::mutex> lock(this->stop_transaction_mutex);
         this->message_dispatcher->dispatch_call(call);
     }
 
@@ -4470,7 +4474,7 @@ ChargePointImpl::get_filtered_transaction_data(const std::shared_ptr<Transaction
 
     if (!stop_txn_sampled_data_measurands.empty() or !stop_txn_aligned_data_measurands.empty() or
         transaction->get_has_signed_meter_values()) {
-        std::vector<TransactionData> transaction_data_vec = transaction->get_transaction_data();
+        const std::vector<TransactionData> transaction_data_vec = transaction->get_transaction_data();
         for (const auto& entry : transaction_data_vec) {
             std::vector<SampledValue> sampled_values;
             for (const auto& meter_value : entry.sampledValue) {
@@ -4598,7 +4602,7 @@ void ChargePointImpl::diagnostic_status_notification(DiagnosticsStatus status, b
     req.status = status;
     this->diagnostics_status = status;
 
-    ocpp::Call<DiagnosticsStatusNotificationRequest> call(req);
+    const ocpp::Call<DiagnosticsStatusNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call_async(call, true);
     if (status != DiagnosticsStatus::Uploading) {
         // Reset status to idle to avoid on trigger message sending an incorrect status
@@ -4626,7 +4630,7 @@ void ChargePointImpl::firmware_status_notification(FirmwareStatus status, bool i
 
     this->firmware_status = status;
 
-    ocpp::Call<FirmwareStatusNotificationRequest> call(req);
+    const ocpp::Call<FirmwareStatusNotificationRequest> call(req);
     this->message_dispatcher->dispatch_call_async(call, initiated_by_trigger_message);
 
     if (this->firmware_update_is_pending) {
@@ -4883,7 +4887,7 @@ ConfigurationStatus ChargePointImpl::set_custom_configuration_key(CiString<50> k
     // notify callback if registered and change was accepted
     if (this->configuration_key_changed_callbacks.count(key) and
         this->configuration_key_changed_callbacks[key] != nullptr and result == ConfigurationStatus::Accepted) {
-        KeyValue kv = {key, false, value};
+        const KeyValue kv = {key, false, value};
         this->configuration_key_changed_callbacks[key](kv);
     }
 

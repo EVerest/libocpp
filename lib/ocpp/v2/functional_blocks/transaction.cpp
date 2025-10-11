@@ -153,7 +153,7 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
             // No evse id is given, whole charging station needs a reset. Wait
             // for last evse id to stop charging.
             bool is_charging = false;
-            for (auto const& evse : this->context.evse_manager) {
+            for (const auto& evse : this->context.evse_manager) {
                 if (evse.has_active_transaction()) {
                     is_charging = true;
                     break;
@@ -266,7 +266,7 @@ void TransactionBlock::schedule_reset(const std::optional<int32_t> reset_schedul
 }
 
 void TransactionBlock::handle_transaction_event_response(const EnhancedMessage<MessageType>& message) {
-    CallResult<TransactionEventResponse> call_result = message.message;
+    const CallResult<TransactionEventResponse> call_result = message.message;
     const Call<TransactionEventRequest>& original_call = message.call_message;
     const auto& original_msg = original_call.msg;
 
@@ -355,7 +355,7 @@ void TransactionBlock::handle_get_transaction_status(const Call<GetTransactionSt
         response.messagesInQueue = true;
     }
 
-    ocpp::CallResult<GetTransactionStatusResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetTransactionStatusResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 } // namespace ocpp::v2

@@ -108,9 +108,9 @@ void SmartChargingHandler::clear_expired_profiles(const date::utc_clock::time_po
     EVLOG_debug << "Scanning all installed profiles and clearing expired profiles";
 
     // obtain locks - note the order needs to be consistent with other uses
-    std::lock_guard<std::mutex> lk_cp(charge_point_max_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_cp(charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
 
     // check all profile types for expired entries
     ::clear_expired_profiles(now, *database_handler, stack_level_charge_point_max_profiles_map);
@@ -123,9 +123,9 @@ void SmartChargingHandler::clear_expired_profiles(const date::utc_clock::time_po
 int SmartChargingHandler::get_number_installed_profiles() {
     int number = 0;
 
-    std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
 
     number += this->stack_level_charge_point_max_profiles_map.size();
     for (const auto& [connector_id, connector] : this->connectors) {
@@ -396,7 +396,7 @@ bool SmartChargingHandler::validate_profile(
 }
 
 void SmartChargingHandler::add_charge_point_max_profile(const ChargingProfile& profile) {
-    std::lock_guard<std::mutex> lk(this->charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk(this->charge_point_max_profiles_map_mutex);
     this->stack_level_charge_point_max_profiles_map[profile.stackLevel] = profile;
     try {
         this->database_handler->insert_or_update_charging_profile(0, profile);
@@ -406,7 +406,7 @@ void SmartChargingHandler::add_charge_point_max_profile(const ChargingProfile& p
 }
 
 void SmartChargingHandler::add_tx_default_profile(const ChargingProfile& profile, const int connector_id) {
-    std::lock_guard<std::mutex> lk(this->tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk(this->tx_default_profiles_map_mutex);
     if (connector_id == 0) {
         for (size_t id = 1; id <= this->connectors.size() - 1; id++) {
             this->connectors.at(id)->stack_level_tx_default_profiles_map[profile.stackLevel] = profile;
@@ -423,7 +423,7 @@ void SmartChargingHandler::add_tx_default_profile(const ChargingProfile& profile
 }
 
 void SmartChargingHandler::add_tx_profile(const ChargingProfile& profile, const int connector_id) {
-    std::lock_guard<std::mutex> lk(this->tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk(this->tx_profiles_map_mutex);
     this->connectors.at(connector_id)->stack_level_tx_profiles_map[profile.stackLevel] = profile;
     try {
         this->database_handler->insert_or_update_charging_profile(connector_id, profile);
@@ -498,9 +498,9 @@ bool SmartChargingHandler::clear_all_profiles_with_filter(
 
 void SmartChargingHandler::clear_all_profiles() {
     EVLOG_info << "Clearing all charging profiles";
-    std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
     this->stack_level_charge_point_max_profiles_map.clear();
 
     for (auto& [connector_id, connector] : this->connectors) {
@@ -522,7 +522,7 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const
     std::vector<ChargingProfile> valid_profiles;
 
     {
-        std::lock_guard<std::mutex> lk(charge_point_max_profiles_map_mutex);
+        const std::lock_guard<std::mutex> lk(charge_point_max_profiles_map_mutex);
 
         if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
                       ChargingProfilePurposeType::ChargePointMaxProfile) == std::end(purposes_to_ignore)) {
@@ -544,8 +544,8 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const
                 transactionId = itt->second->transaction->get_transaction_id();
             }
 
-            std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
-            std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
+            const std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
+            const std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
 
             if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
                           ChargingProfilePurposeType::TxProfile) == std::end(purposes_to_ignore)) {

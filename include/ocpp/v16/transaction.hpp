@@ -69,7 +69,7 @@ public:
 
     /// \brief Provides the connector of this transaction
     /// \returns the connector
-    int32_t get_connector();
+    int32_t get_connector() const;
 
     /// \brief Provides the authorized id tag of this Transaction
     /// \returns the authorized id tag
@@ -94,7 +94,7 @@ public:
     std::optional<int32_t> get_transaction_id();
 
     /// \brief Returns the internal transaction id
-    int32_t get_internal_transaction_id();
+    int32_t get_internal_transaction_id() const;
 
     /// \brief Provides the id of this session
     /// \returns the session_id
@@ -124,10 +124,10 @@ public:
 
     /// \brief Indicates if the transaction is active. Active means that the transaction for this session is not null
     /// and no StopTransaction.req has been pushed to the message queue yet
-    bool is_active();
+    bool is_active() const;
 
     /// \brief Indicates if a StopTransaction.req for this transaction has already been pushed to the message queue
-    bool is_finished();
+    bool is_finished() const;
 
     /// \brief Sets the finished flag for this transaction. This is done when a StopTransaction.req has been pushed to
     /// the message queue

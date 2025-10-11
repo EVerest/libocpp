@@ -16,7 +16,7 @@ namespace utils {
 
 std::vector<MeasurandEnum> get_measurands_vec(const std::string& measurands_csv) {
     std::vector<MeasurandEnum> measurands;
-    std::vector<std::string> measurands_strings = ocpp::split_string(measurands_csv, ',');
+    const std::vector<std::string> measurands_strings = ocpp::split_string(measurands_csv, ',');
 
     for (const auto& measurand_string : measurands_strings) {
         try {
@@ -221,7 +221,7 @@ std::vector<OcppProtocolVersion> get_ocpp_protocol_versions(const std::string& c
 
     std::vector<OcppProtocolVersion> ocpp_versions;
     const auto ocpp_versions_str = ocpp::split_string(csl, ',');
-    for (const auto ocpp_version_str : ocpp_versions_str) {
+    for (const auto& ocpp_version_str : ocpp_versions_str) {
         try {
             ocpp_versions.push_back(ocpp::conversions::string_to_ocpp_protocol_version(ocpp_version_str));
         } catch (std::out_of_range& e) {

@@ -132,8 +132,7 @@ std::vector<DeviceModelVariable> get_all_component_properties(const json& compon
     std::vector<DeviceModelVariable> variables;
     variables.reserve(component_properties.size());
     for (const auto& variable : component_properties.items()) {
-        DeviceModelVariable v = variable.value();
-        const std::string variable_key_name = variable.key();
+        const DeviceModelVariable v = variable.value();
 
         variables.push_back(v);
     }
@@ -153,9 +152,9 @@ read_component_config(const std::vector<std::filesystem::path>& components_confi
         std::ifstream config_file(path);
         try {
             json data = json::parse(config_file);
-            ComponentKey p = data;
+            const ComponentKey p = data;
             if (data.contains("properties")) {
-                std::vector<DeviceModelVariable> variables = get_all_component_properties(data.at("properties"));
+                const std::vector<DeviceModelVariable> variables = get_all_component_properties(data.at("properties"));
                 components.insert({p, variables});
             } else {
                 EVLOG_warning << "Component " << data.at("name") << " does not contain any properties";
@@ -695,7 +694,7 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_
 }
 
 void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
-    std::string insert_statement =
+    const std::string insert_statement =
         "INSERT OR REPLACE INTO VARIABLE_MONITORING (VARIABLE_ID, SEVERITY, 'TRANSACTION', TYPE_ID, "
         "CONFIG_TYPE_ID, VALUE, REFERENCE_VALUE) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -800,7 +799,7 @@ void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonit
 
 void InitDeviceModelDb::delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
     try {
-        std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
+        const std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
         auto delete_stmt = this->database->new_statement(delete_query);
         delete_stmt->bind_int(1, monitor.monitor.id);
 
@@ -923,10 +922,11 @@ std::map<ComponentKey, std::vector<DeviceModelVariable>> InitDeviceModelDb::get_
 
             for (auto& monitor_meta : monitors) {
                 // If monitor is not already contained in the list
-                bool contained = std::find_if(std::begin(variable->monitors), std::end(variable->monitors),
-                                              [&monitor_meta](const auto& contained_monitor) {
-                                                  return (contained_monitor.monitor.id == monitor_meta.monitor.id);
-                                              }) != std::end(variable->monitors);
+                const bool contained =
+                    std::find_if(std::begin(variable->monitors), std::end(variable->monitors),
+                                 [&monitor_meta](const auto& contained_monitor) {
+                                     return (contained_monitor.monitor.id == monitor_meta.monitor.id);
+                                 }) != std::end(variable->monitors);
 
                 if (!contained) {
                     variable->monitors.push_back(std::move(monitor_meta));
@@ -1095,7 +1095,7 @@ std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from
 std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_from_db(const uint64_t& variable_id) {
     std::vector<VariableMonitoringMeta> monitors{};
 
-    std::string select_query =
+    const std::string select_query =
         "SELECT vm.TYPE_ID, vm.ID, vm.SEVERITY, vm.'TRANSACTION', vm.VALUE, vm.CONFIG_TYPE_ID, vm.REFERENCE_VALUE "
         "FROM VARIABLE_MONITORING vm "
         "WHERE vm.VARIABLE_ID = @variable_id";
@@ -1108,7 +1108,7 @@ std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_fro
         VariableMonitoringMeta monitor_meta;
         VariableMonitoring monitor;
 
-        VariableMonitorType type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
+        const auto type = static_cast<VariableMonitorType>(select_stmt->column_int(5));
 
         // Ignore database custom monitors, since those don't have
         // to be in sync with our configuration file
@@ -1230,7 +1230,7 @@ void from_json(const json& j, DeviceModelVariable& c) {
         }
 
         for (const auto& config_monitor : j.at("monitors").items()) {
-            VariableMonitoringMeta monitor = config_monitor.value();
+            const VariableMonitoringMeta monitor = config_monitor.value();
             c.monitors.push_back(monitor);
         }
     }
@@ -1257,7 +1257,7 @@ static void check_integrity(const std::map<ComponentKey, std::vector<DeviceModel
         for (const DeviceModelVariable& variable : variables) {
             std::vector<std::string> error_messages;
 
-            std::vector<std::string> value_type_errors = check_integrity_value_type(variable);
+            const std::vector<std::string> value_type_errors = check_integrity_value_type(variable);
             for (const std::string& error : value_type_errors) {
                 error_messages.push_back(error);
             }
@@ -1445,7 +1445,8 @@ static bool is_monitor_different(const VariableMonitoringMeta& meta1, const Vari
         return true;
     }
 
-    bool value_differs = std::abs(meta1.monitor.value - meta2.monitor.value) > std::numeric_limits<float>::epsilon();
+    const bool value_differs =
+        std::abs(meta1.monitor.value - meta2.monitor.value) > std::numeric_limits<float>::epsilon();
 
     if (value_differs) {
         return true;
