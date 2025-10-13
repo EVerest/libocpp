@@ -4613,8 +4613,7 @@ void ChargePointImpl::on_firmware_update_status_notification(int32_t request_id,
         firmware_update_status == FirmwareStatusNotification::Installed or
         firmware_update_status == FirmwareStatusNotification::InvalidSignature or
         firmware_update_status == FirmwareStatusNotification::InstallVerificationFailed or
-        firmware_update_status == FirmwareStatusNotification::DownloadFailed or
-        firmware_update_status == FirmwareStatusNotification::InvalidSignature) {
+        firmware_update_status == FirmwareStatusNotification::DownloadFailed) {
         // Reset status to idle to avoid on trigger message sending an incorrect status
         // Even if we have to retry the firmware update resetting to Idle won't cause an issue since we do not trigger a
         // status notification and we don't have a state machine to block certain state transitions
