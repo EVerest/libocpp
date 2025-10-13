@@ -236,10 +236,9 @@ void ConnectivityManager::try_connect_websocket() {
 
         this->websocket->register_connected_callback(
             [this](OcppProtocolVersion protocol) { this->on_websocket_connected(protocol); });
-        this->websocket->register_disconnected_callback(
-            std::bind(&ConnectivityManager::on_websocket_disconnected, this));
+        this->websocket->register_disconnected_callback([this]() { this->on_websocket_disconnected(); });
         this->websocket->register_stopped_connecting_callback(
-            std::bind(&ConnectivityManager::on_websocket_stopped_connecting, this, std::placeholders::_1));
+            [this](ocpp::WebsocketCloseReason reason) { this->on_websocket_stopped_connecting(reason); });
     } else {
         this->websocket->set_connection_options(connection_options.value());
     }

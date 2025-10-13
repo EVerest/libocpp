@@ -153,14 +153,20 @@ MonitoringUpdater::~MonitoringUpdater() {
 
 void MonitoringUpdater::start_monitoring() {
     // Bind function to this instance
-    auto fn = std::bind(&MonitoringUpdater::on_variable_changed, this, std::placeholders::_1, std::placeholders::_2,
-                        std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6,
-                        std::placeholders::_7);
+    auto fn = [this](const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors, const Component& component,
+                     const Variable& variable, const VariableCharacteristics& characteristics,
+                     const VariableAttribute& attribute, const std::string& value_previous,
+                     const std::string& value_current) {
+        this->on_variable_changed(monitors, component, variable, characteristics, attribute, value_previous,
+                                  value_current);
+    };
     device_model.register_variable_listener(std::move(fn));
 
-    auto fn_monitor =
-        std::bind(&MonitoringUpdater::on_monitor_updated, this, std::placeholders::_1, std::placeholders::_2,
-                  std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+    auto fn_monitor = [this](const VariableMonitoringMeta& updated_monitor, const Component& component,
+                             const Variable& variable, const VariableCharacteristics& characteristics,
+                             const VariableAttribute& attribute, const std::string& current_value) {
+        this->on_monitor_updated(updated_monitor, component, variable, characteristics, attribute, current_value);
+    };
     device_model.register_monitor_listener(std::move(fn_monitor));
 
     // No point in starting the monitor if this variable does not exist. It will never start to exist later on.

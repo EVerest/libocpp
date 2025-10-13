@@ -475,7 +475,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     this->connectivity_manager =
         std::make_unique<ConnectivityManager>(*this->device_model, this->evse_security, this->logging,
-                                              std::bind(&ChargePoint::message_callback, this, std::placeholders::_1));
+                                              [this](const std::string& message) { this->message_callback(message); });
 
     this->connectivity_manager->set_websocket_connected_callback(
         [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile,
@@ -487,7 +487,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
             this->websocket_disconnected_callback(configuration_slot, network_connection_profile);
         });
     this->connectivity_manager->set_websocket_connection_failed_callback(
-        std::bind(&ChargePoint::websocket_connection_failed, this, std::placeholders::_1));
+        [this](ConnectionFailedReason reason) { this->websocket_connection_failed(reason); });
 
     if (this->message_queue == nullptr) {
         std::set<v2::MessageType> message_types_discard_for_queueing;

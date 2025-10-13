@@ -315,7 +315,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
         return;
     }
 
-    auto send_evse_message = [&](std::function<void(int32_t evse_id, EvseInterface & evse)> send) {
+    auto send_evse_message = [&](std::function<void(int32_t evse_id, EvseInterface& evse)> send) {
         if (evse_ptr != nullptr) {
             send(msg.evse.value().id, *evse_ptr);
         } else {
