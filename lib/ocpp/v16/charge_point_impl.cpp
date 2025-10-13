@@ -534,8 +534,7 @@ void ChargePointImpl::try_resume_transactions(const std::set<std::string>& resum
             transaction->set_finished();
             this->transaction_handler->add_stopped_transaction(transaction->get_connector());
         } else {
-            if (std::find(resuming_session_ids.begin(), resuming_session_ids.end(), transaction_entry.session_id) ==
-                resuming_session_ids.end()) {
+            if (resuming_session_ids.find(transaction_entry.session_id) == resuming_session_ids.end()) {
                 EVLOG_info << "Queuing StopTransaction.req for transaction with id: "
                            << transaction_entry.transaction_id
                            << " because it hasn't been acknowledged by CSMS and shall not be resumed.";
