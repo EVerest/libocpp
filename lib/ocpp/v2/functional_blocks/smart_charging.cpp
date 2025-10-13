@@ -472,20 +472,20 @@ struct CompositeScheduleConfig {
                 .value_or(""),
             is_offline)} {
 
-        this->current_limit =
+        this->current_limit = static_cast<float>(
             device_model.get_optional_value<int>(ControllerComponentVariables::CompositeScheduleDefaultLimitAmps)
-                .value_or(DEFAULT_LIMIT_AMPS);
+                .value_or(DEFAULT_LIMIT_AMPS));
 
-        this->power_limit =
+        this->power_limit = static_cast<float>(
             device_model.get_optional_value<int>(ControllerComponentVariables::CompositeScheduleDefaultLimitWatts)
-                .value_or(DEFAULT_LIMIT_WATTS);
+                .value_or(DEFAULT_LIMIT_WATTS));
 
         this->default_number_phases =
             device_model.get_optional_value<int>(ControllerComponentVariables::CompositeScheduleDefaultNumberPhases)
                 .value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
 
-        this->supply_voltage =
-            device_model.get_optional_value<int>(ControllerComponentVariables::SupplyVoltage).value_or(LOW_VOLTAGE);
+        this->supply_voltage = static_cast<float>(
+            device_model.get_optional_value<int>(ControllerComponentVariables::SupplyVoltage).value_or(LOW_VOLTAGE));
     }
 };
 
@@ -1468,12 +1468,12 @@ bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_
 bool all_setpoints_signs_equal(const ChargingSchedulePeriod& charging_schedule_period) {
     if (charging_schedule_period.setpoint != std::nullopt && (charging_schedule_period.setpoint_L2 != std::nullopt ||
                                                               (charging_schedule_period.setpoint_L3 != std::nullopt))) {
-        if ((charging_schedule_period.setpoint.value() > 0.0f &&
+        if ((charging_schedule_period.setpoint.value() > 0.0F &&
              ((charging_schedule_period.setpoint_L2.has_value() &&
                charging_schedule_period.setpoint_L2.value() < 0.0F) ||
               (charging_schedule_period.setpoint_L3.has_value() &&
                charging_schedule_period.setpoint_L3.value() < 0.0F))) ||
-            (charging_schedule_period.setpoint.value() < 0.0f &&
+            (charging_schedule_period.setpoint.value() < 0.0F &&
              ((charging_schedule_period.setpoint_L2.has_value() &&
                charging_schedule_period.setpoint_L2.value() > 0.0F) ||
               (charging_schedule_period.setpoint_L3.has_value() &&

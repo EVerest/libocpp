@@ -157,14 +157,16 @@ struct CompositeScheduleConfig {
             }
         }
 
-        this->current_limit = configuration.getCompositeScheduleDefaultLimitAmps().value_or(DEFAULT_LIMIT_AMPS);
+        this->current_limit =
+            static_cast<float>(configuration.getCompositeScheduleDefaultLimitAmps().value_or(DEFAULT_LIMIT_AMPS));
 
-        this->power_limit = configuration.getCompositeScheduleDefaultLimitWatts().value_or(DEFAULT_LIMIT_WATTS);
+        this->power_limit =
+            static_cast<float>(configuration.getCompositeScheduleDefaultLimitWatts().value_or(DEFAULT_LIMIT_WATTS));
 
         this->default_number_phases =
             configuration.getCompositeScheduleDefaultNumberPhases().value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
 
-        this->supply_voltage = configuration.getSupplyVoltage().value_or(LOW_VOLTAGE);
+        this->supply_voltage = static_cast<float>(configuration.getSupplyVoltage().value_or(LOW_VOLTAGE));
     }
 };
 

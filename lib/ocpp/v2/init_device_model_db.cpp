@@ -726,7 +726,7 @@ void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& mo
 
     insert_stmt->bind_int(1, clamp_to<int>(variable_id));
     insert_stmt->bind_int(2, monitor.monitor.severity);
-    insert_stmt->bind_int(3, monitor.monitor.transaction);
+    insert_stmt->bind_int(3, static_cast<int>(monitor.monitor.transaction));
     insert_stmt->bind_int(4, static_cast<int>(monitor.monitor.type));
     insert_stmt->bind_int(5, static_cast<int>(monitor.type));
     insert_stmt->bind_double(6, monitor.monitor.value);
@@ -764,7 +764,7 @@ void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& ne
     auto update_stmt = this->database->new_statement(update_monitor);
 
     update_stmt->bind_int(1, new_monitor.monitor.severity);
-    update_stmt->bind_int(2, new_monitor.monitor.transaction);
+    update_stmt->bind_int(2, static_cast<int>(new_monitor.monitor.transaction));
     update_stmt->bind_int(3, static_cast<int>(new_monitor.monitor.type));
     update_stmt->bind_int(4, static_cast<int>(new_monitor.type));
     update_stmt->bind_double(5, new_monitor.monitor.value);

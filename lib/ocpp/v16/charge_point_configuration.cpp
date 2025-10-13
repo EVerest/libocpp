@@ -2675,7 +2675,7 @@ std::optional<KeyValue> ChargePointConfiguration::getAllowChargingProfileWithout
         KeyValue kv;
         kv.key = "AllowChargingProfileWithoutStartSchedule";
         kv.readonly = false;
-        kv.value.emplace(std::to_string(allow.value()));
+        kv.value.emplace(std::to_string(static_cast<int>(allow.value())));
         allow_opt.emplace(kv);
     }
     return allow_opt;

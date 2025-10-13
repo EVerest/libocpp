@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-
-#include "ocpp/v2/init_device_model_db.hpp"
-#include <ocpp/v2/device_model_storage_sqlite.hpp>
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 
 #include <everest/database/sqlite/statement.hpp>
 #include <everest/logging.hpp>
+#include <limits>
 #include <ocpp/v2/charge_point.hpp>
 #include <ocpp/v2/device_model_storage_sqlite.hpp>
 #include <ocpp/v2/init_device_model_db.hpp>
@@ -319,7 +317,7 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
 
     insert_stmt->bind_int(1, _variable_id);
     insert_stmt->bind_int(2, data.severity);
-    insert_stmt->bind_int(3, data.transaction.value_or(false));
+    insert_stmt->bind_int(3, static_cast<int>(data.transaction.value_or(false)));
     insert_stmt->bind_int(4, static_cast<int>(data.type));
     insert_stmt->bind_int(5, static_cast<int>(type));
     insert_stmt->bind_double(6, data.value);
