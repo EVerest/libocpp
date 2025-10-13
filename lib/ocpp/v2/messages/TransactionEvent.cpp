@@ -32,7 +32,7 @@ void to_json(json& j, const TransactionEventRequest& k) {
     }
     if (k.meterValue) {
         j["meterValue"] = json::array();
-        for (auto val : k.meterValue.value()) {
+        for (const auto& val : k.meterValue.value()) {
             j["meterValue"].push_back(val);
         }
     }
@@ -79,9 +79,9 @@ void from_json(const json& j, TransactionEventRequest& k) {
         k.costDetails.emplace(j.at("costDetails"));
     }
     if (j.contains("meterValue")) {
-        json arr = j.at("meterValue");
+        const json& arr = j.at("meterValue");
         std::vector<MeterValue> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.meterValue.emplace(vec);
@@ -147,12 +147,12 @@ void to_json(json& j, const TransactionEventResponse& k) {
         j["updatedPersonalMessage"] = k.updatedPersonalMessage.value();
     }
     if (k.updatedPersonalMessageExtra) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"updatedPersonalMessageExtra", json::array()}};
         } else {
             j["updatedPersonalMessageExtra"] = json::array();
         }
-        for (auto val : k.updatedPersonalMessageExtra.value()) {
+        for (const auto& val : k.updatedPersonalMessageExtra.value()) {
             j["updatedPersonalMessageExtra"].push_back(val);
         }
     }
@@ -181,9 +181,9 @@ void from_json(const json& j, TransactionEventResponse& k) {
         k.updatedPersonalMessage.emplace(j.at("updatedPersonalMessage"));
     }
     if (j.contains("updatedPersonalMessageExtra")) {
-        json arr = j.at("updatedPersonalMessageExtra");
+        const json& arr = j.at("updatedPersonalMessageExtra");
         std::vector<MessageContent> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.updatedPersonalMessageExtra.emplace(vec);

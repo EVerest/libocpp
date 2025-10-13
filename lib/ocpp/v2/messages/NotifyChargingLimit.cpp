@@ -25,7 +25,7 @@ void to_json(json& j, const NotifyChargingLimitRequest& k) {
     // the optional parts of the message
     if (k.chargingSchedule) {
         j["chargingSchedule"] = json::array();
-        for (auto val : k.chargingSchedule.value()) {
+        for (const auto& val : k.chargingSchedule.value()) {
             j["chargingSchedule"].push_back(val);
         }
     }
@@ -43,9 +43,9 @@ void from_json(const json& j, NotifyChargingLimitRequest& k) {
 
     // the optional parts of the message
     if (j.contains("chargingSchedule")) {
-        json arr = j.at("chargingSchedule");
+        const json& arr = j.at("chargingSchedule");
         std::vector<ChargingSchedule> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.chargingSchedule.emplace(vec);
@@ -59,7 +59,8 @@ void from_json(const json& j, NotifyChargingLimitRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyChargingLimitRequest \p k to the given output stream \p
-/// os \returns an output stream with the NotifyChargingLimitRequest written to
+/// os
+/// \returns an output stream with the NotifyChargingLimitRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyChargingLimitRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -88,7 +89,8 @@ void from_json(const json& j, NotifyChargingLimitResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyChargingLimitResponse \p k to the given output stream \p
-/// os \returns an output stream with the NotifyChargingLimitResponse written to
+/// os
+/// \returns an output stream with the NotifyChargingLimitResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyChargingLimitResponse& k) {
     os << json(k).dump(4);
     return os;

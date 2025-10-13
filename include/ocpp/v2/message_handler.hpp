@@ -13,8 +13,7 @@ namespace v2 {
 class MessageHandlerInterface {
 
 public:
-    virtual ~MessageHandlerInterface() {
-    }
+    virtual ~MessageHandlerInterface() = default;
     /// \brief Handles the given \p message from the CSMS. This includes dispatching a CALLRESULT as a response to the
     /// incoming \p message .
     /// @param message

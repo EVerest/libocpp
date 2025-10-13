@@ -10,7 +10,6 @@
 
 #include <chrono>
 #include <cstddef>
-#include <iostream>
 #include <string>
 
 #include <ocpp/common/cistring.hpp>
@@ -49,7 +48,7 @@ enum class MessageTypeId {
     CALL = 2,
     CALLRESULT = 3,
     CALLERROR = 4,
-    UNKNOWN,
+    UNKNOWN = 5,
 };
 
 /// \brief Creates a unique message ID
@@ -62,19 +61,15 @@ template <class T> struct Call {
     MessageId uniqueId;
 
     /// \brief Creates a new Call message object
-    Call() {
-    }
+    Call() = default;
 
     /// \brief Creates a new Call message object with the given OCPP message \p msg
-    explicit Call(T msg) {
-        this->msg = msg;
+    explicit Call(T msg) : msg(msg) {
         this->uniqueId = create_message_id();
     }
 
     /// \brief Creates a new Call message object with the given OCPP message \p msg and \p uniqueId
-    Call(T msg, MessageId uniqueId) {
-        this->msg = msg;
-        this->uniqueId = uniqueId;
+    Call(T msg, MessageId uniqueId) : msg(msg), uniqueId(uniqueId) {
     }
 
     /// \brief Conversion from a given Call message \p c to a given json object \p j
@@ -107,13 +102,10 @@ template <class T> struct CallResult {
     MessageId uniqueId;
 
     /// \brief Creates a new CallResult message object
-    CallResult() {
-    }
+    CallResult() = default;
 
     /// \brief Creates a new CallResult message object with the given OCPP message \p msg and \p uniqueID
-    CallResult(T msg, MessageId uniqueId) {
-        this->msg = msg;
-        this->uniqueId = uniqueId;
+    CallResult(T msg, MessageId uniqueId) : msg(msg), uniqueId(uniqueId) {
     }
 
     /// \brief Conversion from a given CallResult message \p c to a given json object \p j

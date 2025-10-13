@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #include <ocpp/v16/ocpp_types.hpp>
@@ -136,7 +136,7 @@ void to_json(json& j, const ChargingSchedule& k) {
 void from_json(const json& j, ChargingSchedule& k) {
     // the required parts of the message
     k.chargingRateUnit = conversions::string_to_charging_rate_unit(j.at("chargingRateUnit"));
-    for (auto val : j.at("chargingSchedulePeriod")) {
+    for (const auto& val : j.at("chargingSchedulePeriod")) {
         k.chargingSchedulePeriod.push_back(val);
     }
 
@@ -301,7 +301,7 @@ void to_json(json& j, const MeterValue& k) {
 void from_json(const json& j, MeterValue& k) {
     // the required parts of the message
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
-    for (auto val : j.at("sampledValue")) {
+    for (const auto& val : j.at("sampledValue")) {
         k.sampledValue.push_back(val);
     }
 
@@ -451,7 +451,7 @@ void to_json(json& j, const TransactionData& k) {
 void from_json(const json& j, TransactionData& k) {
     // the required parts of the message
     k.timestamp = ocpp::DateTime(std::string(j.at("timestamp")));
-    for (auto val : j.at("sampledValue")) {
+    for (const auto& val : j.at("sampledValue")) {
         k.sampledValue.push_back(val);
     }
 

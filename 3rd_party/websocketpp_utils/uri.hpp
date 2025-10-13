@@ -29,6 +29,7 @@
 #define WEBSOCKETPP_URI_EVEREST_HPP
 
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -38,20 +39,20 @@ namespace ocpp {
 // TODO: figure out why this fixes horrible linking errors.
 
 /// Default port for ws://
-static uint16_t const uri_default_port = 80;
+static const uint16_t uri_default_port = 80;
 /// Default port for wss://
-static uint16_t const uri_default_secure_port = 443;
+static const uint16_t uri_default_secure_port = 443;
 
 class uri {
 public:
-    explicit uri(std::string const& uri_string) : m_valid(false) {
+    explicit uri(const std::string& uri_string) : m_valid(false) {
         std::string::const_iterator it;
         std::string::const_iterator temp;
 
         int state = 0;
 
         it = uri_string.begin();
-        size_t uri_len = uri_string.length();
+        const size_t uri_len = uri_string.length();
 
         if (uri_len >= 7 && std::equal(it, it + 6, "wss://")) {
             m_secure = true;
@@ -95,11 +96,11 @@ public:
 
             if (temp == uri_string.end()) {
                 return;
-            } else {
-                // validate IPv6 literal parts
-                // can contain numbers, a-f and A-F
-                m_host.append(it, temp);
             }
+            // validate IPv6 literal parts
+            // can contain numbers, a-f and A-F
+            m_host.append(it, temp);
+
             it = temp + 1;
             if (it == uri_string.end()) {
                 state = 2;
@@ -120,7 +121,8 @@ public:
                 if (it == uri_string.end()) {
                     state = 2;
                     break;
-                } else if (*it == '/') {
+                }
+                if (*it == '/') {
                     state = 2;
                 } else if (*it == ':') {
                     // end hostname start port
@@ -141,7 +143,8 @@ public:
                 // refactoring
                 // state = 3;
                 break;
-            } else if (*it == '/') {
+            }
+            if (*it == '/') {
                 state = 3;
             } else {
                 port += *it;
@@ -155,7 +158,7 @@ public:
         m_resource.append(it, uri_string.end());
     }
 
-    uri(bool secure, std::string const& host, uint16_t port, std::string const& resource) :
+    uri(bool secure, const std::string& host, uint16_t port, const std::string& resource) :
         m_scheme(secure ? "wss" : "ws"),
         m_host(host),
         m_resource(resource.empty() ? "/" : resource),
@@ -164,7 +167,7 @@ public:
         m_valid(true) {
     }
 
-    uri(bool secure, std::string const& host, std::string const& resource) :
+    uri(bool secure, const std::string& host, const std::string& resource) :
         m_scheme(secure ? "wss" : "ws"),
         m_host(host),
         m_resource(resource.empty() ? "/" : resource),
@@ -173,12 +176,12 @@ public:
         m_valid(true) {
     }
 
-    uri(bool secure, std::string const& host, std::string const& port, std::string const& resource) :
+    uri(bool secure, const std::string& host, const std::string& port, const std::string& resource) :
         m_scheme(secure ? "wss" : "ws"), m_host(host), m_resource(resource.empty() ? "/" : resource), m_secure(secure) {
         m_port = get_port_from_string(port, m_valid);
     }
 
-    uri(std::string const& scheme, std::string const& host, uint16_t port, std::string const& resource) :
+    uri(const std::string& scheme, const std::string& host, uint16_t port, const std::string& resource) :
         m_scheme(scheme),
         m_host(host),
         m_resource(resource.empty() ? "/" : resource),
@@ -187,7 +190,7 @@ public:
         m_valid(true) {
     }
 
-    uri(std::string scheme, std::string const& host, std::string const& resource) :
+    uri(std::string scheme, const std::string& host, const std::string& resource) :
         m_scheme(scheme),
         m_host(host),
         m_resource(resource.empty() ? "/" : resource),
@@ -196,7 +199,7 @@ public:
         m_valid(true) {
     }
 
-    uri(std::string const& scheme, std::string const& host, std::string const& port, std::string const& resource) :
+    uri(const std::string& scheme, const std::string& host, const std::string& port, const std::string& resource) :
         m_scheme(scheme),
         m_host(host),
         m_resource(resource.empty() ? "/" : resource),
@@ -212,22 +215,21 @@ public:
         return m_secure;
     }
 
-    std::string const& get_scheme() const {
+    const std::string& get_scheme() const {
         return m_scheme;
     }
 
-    std::string const& get_host() const {
+    const std::string& get_host() const {
         return m_host;
     }
 
     std::string get_host_port() const {
         if (m_port == (m_secure ? uri_default_secure_port : uri_default_port)) {
             return m_host;
-        } else {
-            std::stringstream p;
-            p << m_host << ":" << m_port;
-            return p.str();
         }
+        std::stringstream p;
+        p << m_host << ":" << m_port;
+        return p.str();
     }
 
     std::string get_authority() const {
@@ -246,7 +248,7 @@ public:
         return p.str();
     }
 
-    std::string const& get_resource() const {
+    const std::string& get_resource() const {
         return m_resource;
     }
 
@@ -271,22 +273,21 @@ public:
      * @return query portion of the URI.
      */
     std::string get_query() const {
-        std::size_t found = m_resource.find('?');
+        const std::size_t found = m_resource.find('?');
         if (found != std::string::npos) {
             return m_resource.substr(found + 1);
-        } else {
-            return "";
         }
+        return "";
     }
 
 private:
-    uint16_t get_port_from_string(std::string const& port, bool& out_valid) const {
+    uint16_t get_port_from_string(const std::string& port, bool& out_valid) const {
         out_valid = true;
         if (port.empty()) {
             return (m_secure ? uri_default_secure_port : uri_default_port);
         }
 
-        unsigned int t_port = static_cast<unsigned int>(atoi(port.c_str()));
+        const auto t_port = std::stoul(port);
 
         if (t_port > 65535) {
             out_valid = false;
@@ -302,9 +303,9 @@ private:
     std::string m_scheme;
     std::string m_host;
     std::string m_resource;
-    uint16_t m_port;
-    bool m_secure;
-    bool m_valid;
+    uint16_t m_port = 0;
+    bool m_secure = false;
+    bool m_valid = false;
 };
 
 } // namespace ocpp

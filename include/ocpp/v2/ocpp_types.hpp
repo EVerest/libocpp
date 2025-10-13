@@ -478,7 +478,8 @@ void to_json(json& j, const CertificateStatusRequestInfo& k);
 void from_json(const json& j, CertificateStatusRequestInfo& k);
 
 /// \brief Writes the string representation of the given CertificateStatusRequestInfo \p k to the given output stream \p
-/// os \returns an output stream with the CertificateStatusRequestInfo written to
+/// os
+/// \returns an output stream with the CertificateStatusRequestInfo written to
 std::ostream& operator<<(std::ostream& os, const CertificateStatusRequestInfo& k);
 
 struct CertificateStatus {
@@ -1020,7 +1021,8 @@ void to_json(json& j, const AdditionalSelectedServices& k);
 void from_json(const json& j, AdditionalSelectedServices& k);
 
 /// \brief Writes the string representation of the given AdditionalSelectedServices \p k to the given output stream \p
-/// os \returns an output stream with the AdditionalSelectedServices written to
+/// os
+/// \returns an output stream with the AdditionalSelectedServices written to
 std::ostream& operator<<(std::ostream& os, const AdditionalSelectedServices& k);
 
 struct AbsolutePriceSchedule {
@@ -1245,7 +1247,8 @@ void to_json(json& j, const EVAbsolutePriceScheduleEntry& k);
 void from_json(const json& j, EVAbsolutePriceScheduleEntry& k);
 
 /// \brief Writes the string representation of the given EVAbsolutePriceScheduleEntry \p k to the given output stream \p
-/// os \returns an output stream with the EVAbsolutePriceScheduleEntry written to
+/// os
+/// \returns an output stream with the EVAbsolutePriceScheduleEntry written to
 std::ostream& operator<<(std::ostream& os, const EVAbsolutePriceScheduleEntry& k);
 
 struct EVAbsolutePriceSchedule {

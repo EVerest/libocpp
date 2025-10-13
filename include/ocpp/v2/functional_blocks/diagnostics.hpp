@@ -19,19 +19,17 @@ struct SetMonitoringLevelRequest;
 struct GetMonitoringReportRequest;
 struct ClearVariableMonitoringRequest;
 
-typedef std::function<GetLogResponse(const GetLogRequest& request)> GetLogRequestCallback;
-typedef std::function<std::string(const std::optional<CertificateHashDataType> customer_certificate,
-                                  const std::optional<IdToken> id_token,
-                                  const std::optional<CiString<64>> customer_identifier)>
-    GetCustomerInformationCallback;
-typedef std::function<void(const std::optional<CertificateHashDataType> customer_certificate,
-                           const std::optional<IdToken> id_token,
-                           const std::optional<CiString<64>> customer_identifier)>
-    ClearCustomerInformationCallback;
+using GetLogRequestCallback = std::function<GetLogResponse(const GetLogRequest& request)>;
+using GetCustomerInformationCallback = std::function<std::string(
+    const std::optional<CertificateHashDataType> customer_certificate, const std::optional<IdToken> id_token,
+    const std::optional<CiString<64>> customer_identifier)>;
+using ClearCustomerInformationCallback =
+    std::function<void(const std::optional<CertificateHashDataType> customer_certificate,
+                       const std::optional<IdToken> id_token, const std::optional<CiString<64>> customer_identifier)>;
 
 class DiagnosticsInterface : public MessageHandlerInterface {
 public:
-    virtual ~DiagnosticsInterface() = default;
+    ~DiagnosticsInterface() override = default;
 
     /* OCPP message requests */
     virtual void notify_event_req(const std::vector<EventData>& events) = 0;
@@ -54,7 +52,8 @@ public:
     void start_monitoring() override;
     void process_triggered_monitors() override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     AuthorizationInterface& authorization;
     /// \brief Updater for triggered monitors
@@ -68,7 +67,7 @@ private: // Members
     std::optional<ClearCustomerInformationCallback> clear_customer_information_callback;
     const bool is_monitoring_available;
 
-private: // Functions
+    // Functions
     /* OCPP message requests */
     void notify_customer_information_req(const std::string& data, const int32_t request_id);
     void notify_monitoring_report_req(const int request_id, std::vector<MonitoringData>& montoring_data);
@@ -108,6 +107,6 @@ private: // Functions
 
     /// \brief Check if monitoring is available and if not, throw.
     /// \param type Message type to include in MessageTypeNotImplementedException when thrown.
-    void throw_when_monitoring_not_available(const MessageType type);
+    void throw_when_monitoring_not_available(const MessageType type) const;
 };
 } // namespace ocpp::v2

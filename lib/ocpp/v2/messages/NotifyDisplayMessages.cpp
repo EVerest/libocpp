@@ -25,7 +25,7 @@ void to_json(json& j, const NotifyDisplayMessagesRequest& k) {
     // the optional parts of the message
     if (k.messageInfo) {
         j["messageInfo"] = json::array();
-        for (auto val : k.messageInfo.value()) {
+        for (const auto& val : k.messageInfo.value()) {
             j["messageInfo"].push_back(val);
         }
     }
@@ -43,9 +43,9 @@ void from_json(const json& j, NotifyDisplayMessagesRequest& k) {
 
     // the optional parts of the message
     if (j.contains("messageInfo")) {
-        json arr = j.at("messageInfo");
+        const json& arr = j.at("messageInfo");
         std::vector<MessageInfo> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.messageInfo.emplace(vec);
@@ -59,7 +59,8 @@ void from_json(const json& j, NotifyDisplayMessagesRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyDisplayMessagesRequest \p k to the given output stream \p
-/// os \returns an output stream with the NotifyDisplayMessagesRequest written to
+/// os
+/// \returns an output stream with the NotifyDisplayMessagesRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyDisplayMessagesRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -88,7 +89,8 @@ void from_json(const json& j, NotifyDisplayMessagesResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyDisplayMessagesResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyDisplayMessagesResponse written to
+/// \p os
+/// \returns an output stream with the NotifyDisplayMessagesResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyDisplayMessagesResponse& k) {
     os << json(k).dump(4);
     return os;

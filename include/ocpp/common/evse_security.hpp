@@ -17,6 +17,8 @@ namespace ocpp {
 class EvseSecurity {
 
 public:
+    virtual ~EvseSecurity() = default;
+
     /// \brief Installs the CA \p certificate for the given \p certificate_type . This function respects the
     /// requirements of OCPP specified for the CSMS initiated message InstallCertificate.req .
     /// \param certificate PEM formatted CA certificate

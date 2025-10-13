@@ -3,8 +3,8 @@
 #include <ocpp/v16/charge_point_state_machine.hpp>
 #include <ocpp/v16/ocpp_enums.hpp>
 
+#include <cstddef>
 #include <everest/logging.hpp>
-#include <stddef.h>
 #include <stdexcept>
 #include <utility>
 
@@ -103,7 +103,7 @@ static const FSMDefinition FSM_DEF_CONNECTOR_ZERO = {
 };
 
 ErrorInfo::ErrorInfo(const std::string uuid, const ChargePointErrorCode error_code, const bool is_fault) :
-    uuid(uuid), timestamp(DateTime()), error_code(error_code), is_fault(is_fault) {
+    uuid(uuid), error_code(error_code), is_fault(is_fault) {
 }
 
 ErrorInfo::ErrorInfo(const std::string uuid, const ChargePointErrorCode error_code, const bool is_fault,
@@ -209,7 +209,7 @@ bool ChargePointFSM::handle_event(FSMEvent event, const ocpp::DateTime timestamp
 }
 
 bool ChargePointFSM::handle_error(const ErrorInfo& error_info) {
-    if (this->active_errors.count(error_info.uuid)) {
+    if (this->active_errors.count(error_info.uuid) != 0) {
         // has already been handled and reported
         return false;
     }
@@ -247,10 +247,10 @@ bool ChargePointFSM::handle_error_cleared(const std::string uuid) {
     std::optional<CiString<50>> vendor_error_code;
 
     // report the latest error if there are still errors active
-    if (this->active_errors.size() > 0) {
+    if (not this->active_errors.empty()) {
         const auto latest_error_opt = this->get_latest_error();
         if (latest_error_opt.has_value()) {
-            const auto latest_error = latest_error_opt.value();
+            const auto& latest_error = latest_error_opt.value();
             error_code = latest_error.error_code;
             info = latest_error.info;
             vendor_id = latest_error.vendor_id;
@@ -291,13 +291,14 @@ void ChargePointStates::reset(std::map<int, ChargePointStatus> connector_status_
     state_machines.clear();
 
     for (size_t connector_id = 0; connector_id < connector_status_map.size(); ++connector_id) {
-        const auto initial_state = connector_status_map.at(connector_id);
+        const auto initial_state = connector_status_map.at(clamp_to<int>(connector_id));
 
         if (connector_id == 0 and initial_state != ChargePointStatus::Available and
             initial_state != ChargePointStatus::Unavailable and initial_state != ChargePointStatus::Faulted) {
             throw std::runtime_error("Invalid initial status for connector 0: " +
                                      conversions::charge_point_status_to_string(initial_state));
-        } else if (connector_id == 0) {
+        }
+        if (connector_id == 0) {
             state_machine_connector_zero = std::make_unique<ChargePointFSM>(
                 [this](const ChargePointStatus status, const ChargePointErrorCode error_code,
                        const ocpp::DateTime& timestamp, const std::optional<CiString<50>>& info,
@@ -313,8 +314,8 @@ void ChargePointStates::reset(std::map<int, ChargePointStatus> connector_status_
                                      ocpp::DateTime timestamp, std::optional<CiString<50>> info,
                                      std::optional<CiString<255>> vendor_id,
                                      std::optional<CiString<50>> vendor_error_code) {
-                    this->connector_status_callback(connector_id, error_code, status, timestamp, info, vendor_id,
-                                                    vendor_error_code);
+                    this->connector_status_callback(clamp_to<int>(connector_id), error_code, status, timestamp, info,
+                                                    vendor_id, vendor_error_code);
                 },
                 initial_state);
         }
@@ -379,7 +380,8 @@ ChargePointStatus ChargePointStates::get_state(int connector_id) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
     if (connector_id > 0 && static_cast<size_t>(connector_id) <= this->state_machines.size()) {
         return state_machines.at(connector_id - 1).get_state();
-    } else if (connector_id == 0) {
+    }
+    if (connector_id == 0) {
         return state_machine_connector_zero->get_state();
     }
 
@@ -391,9 +393,8 @@ std::optional<ErrorInfo> ChargePointStates::get_latest_error(int connector_id) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
     if (connector_id > 0 && static_cast<size_t>(connector_id) <= this->state_machines.size()) {
         return state_machines.at(connector_id - 1).get_latest_error();
-    } else {
-        return state_machine_connector_zero->get_latest_error();
     }
+    return state_machine_connector_zero->get_latest_error();
 }
 
 } // namespace v16

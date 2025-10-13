@@ -33,7 +33,8 @@ void to_json(json& j, const ClearChargingProfileRequest& k);
 void from_json(const json& j, ClearChargingProfileRequest& k);
 
 /// \brief Writes the string representation of the given ClearChargingProfileRequest \p k to the given output stream \p
-/// os \returns an output stream with the ClearChargingProfileRequest written to
+/// os
+/// \returns an output stream with the ClearChargingProfileRequest written to
 std::ostream& operator<<(std::ostream& os, const ClearChargingProfileRequest& k);
 
 /// \brief Contains a OCPP ClearChargingProfileResponse message
@@ -54,7 +55,8 @@ void to_json(json& j, const ClearChargingProfileResponse& k);
 void from_json(const json& j, ClearChargingProfileResponse& k);
 
 /// \brief Writes the string representation of the given ClearChargingProfileResponse \p k to the given output stream \p
-/// os \returns an output stream with the ClearChargingProfileResponse written to
+/// os
+/// \returns an output stream with the ClearChargingProfileResponse written to
 std::ostream& operator<<(std::ostream& os, const ClearChargingProfileResponse& k);
 
 } // namespace v2

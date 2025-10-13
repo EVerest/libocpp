@@ -12,8 +12,9 @@ namespace ocpp {
 
 namespace v2 {
 
+namespace {
 /// \brief For AlignedDataInterval, SampledDataTxUpdatedInterval and SampledDataTxEndedInterval, zero is allowed
-static bool allow_zero(const Component& component, const Variable& variable) {
+bool allow_zero(const Component& component, const Variable& variable) {
     ComponentVariable component_variable;
     component_variable.component = component;
     component_variable.variable = variable;
@@ -64,6 +65,7 @@ bool filter_criteria_monitor(const std::vector<MonitoringCriterionEnum>& criteri
 
     return any_filter_match;
 }
+} // namespace
 
 void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
                               std::vector<VariableMonitoringMeta>& monitors) {
@@ -73,7 +75,7 @@ void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criter
     }
 
     for (auto it = std::begin(monitors); it != std::end(monitors);) {
-        bool any_filter_match = filter_criteria_monitor(criteria, *it);
+        const bool any_filter_match = filter_criteria_monitor(criteria, *it);
 
         if (any_filter_match == false) {
             it = monitors.erase(it);
@@ -98,15 +100,21 @@ bool DeviceModel::component_criteria_match(const Component& component,
             return true;
         }
         // also send true if the component crietria isn't part of the component except "problem"
-        else if (!value.has_value() and (variable.name != "Problem")) {
+        if (!value.has_value() and (variable.name != "Problem")) {
             return true;
         }
     }
     return false;
 }
 
-bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>& component_variables,
-                                            const ocpp::v2::Component& component, const ocpp::v2::Variable& variable) {
+namespace {
+/// @brief Iterates over the given \p component_variables and filters them according to the requirement conditions.
+/// @param component_variables
+/// @param component_ current component
+/// @param variable_ current variable
+/// @return true if the component is found according to any of the requirement conditions.
+bool component_variables_match(const std::vector<ComponentVariable>& component_variables,
+                               const ocpp::v2::Component& component, const ocpp::v2::Variable& variable) {
 
     return std::find_if(
                component_variables.begin(), component_variables.end(), [component, variable](ComponentVariable v) {
@@ -120,14 +128,20 @@ bool DeviceModel::component_variables_match(const std::vector<ComponentVariable>
                            (component.instance == v.component.instance) and (variable == v.variable)); // B08.FR.23
                }) != component_variables.end();
 }
+} // namespace
 
 void DeviceModel::check_variable_has_value(const ComponentVariable& component_variable, const AttributeEnum attribute) {
     std::string value;
-    const auto response = this->request_value_internal(component_variable.component,
-                                                       component_variable.variable.value(), attribute, value, true);
+    if (not component_variable.variable.has_value()) {
+        throw DeviceModelError("Attempted to check if a variale of component " +
+                               component_variable.component.name.get() +
+                               " has a value but did not provide the variable");
+    }
+    const auto& variable = component_variable.variable.value();
+    const auto response = this->request_value_internal(component_variable.component, variable, attribute, value, true);
 
     if (response != GetVariableStatusEnum::Accepted) {
-        throw DeviceModelError("Required variable " + component_variable.variable->name.get() + " of component " +
+        throw DeviceModelError("Required variable " + variable.name.get() + " of component " +
                                component_variable.component.name.get() + " does not have a value in the device model");
     }
 }
@@ -182,7 +196,7 @@ void DeviceModel::check_required_variables() {
 
     // Check controller-specific required variables (if controller is available)
     for (const auto& available_required : required_component_available_variables) {
-        std::optional<bool> available = this->get_optional_value<bool>(available_required.first);
+        const std::optional<bool> available = this->get_optional_value<bool>(available_required.first);
         if (!available.value_or(false)) {
             continue;
         }
@@ -211,13 +225,16 @@ void DeviceModel::check_required_variables() {
     }
 }
 
+namespace {
 bool validate_value(const VariableCharacteristics& characteristics, const std::string& value, bool allow_zero) {
     switch (characteristics.dataType) {
     case DataEnum::string:
-        if (characteristics.minLimit.has_value() and value.size() < characteristics.minLimit.value()) {
+        if (characteristics.minLimit.has_value() and
+            value.size() < convert_to_positive_size_t(characteristics.minLimit.value())) {
             return false;
         }
-        if (characteristics.maxLimit.has_value() and value.size() > characteristics.maxLimit.value()) {
+        if (characteristics.maxLimit.has_value() and
+            value.size() > convert_to_positive_size_t(characteristics.maxLimit.value())) {
             return false;
         }
         return true;
@@ -225,7 +242,7 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
         if (!is_decimal_number(value)) {
             return false;
         }
-        float f = std::stof(value);
+        const float f = std::stof(value);
 
         if (allow_zero and f == 0) {
             return true;
@@ -243,15 +260,15 @@ bool validate_value(const VariableCharacteristics& characteristics, const std::s
             return false;
         }
 
-        int i = std::stoi(value);
+        const int i = std::stoi(value);
 
         if (allow_zero and i == 0) {
             return true;
         }
-        if (characteristics.minLimit.has_value() and i < characteristics.minLimit.value()) {
+        if (characteristics.minLimit.has_value() and i < convert_to_positive_size_t(characteristics.minLimit.value())) {
             return false;
         }
-        if (characteristics.maxLimit.has_value() and i > characteristics.maxLimit.value()) {
+        if (characteristics.maxLimit.has_value() and i > convert_to_positive_size_t(characteristics.maxLimit.value())) {
             return false;
         }
         return true;
@@ -308,6 +325,7 @@ bool include_in_summary_inventory(const ComponentVariable& cv, const VariableAtt
     }
     return false;
 }
+} // namespace
 
 GetVariableStatusEnum DeviceModel::request_value_internal(const Component& component_id, const Variable& variable_id,
                                                           const AttributeEnum& attribute_enum, std::string& value,
@@ -349,7 +367,7 @@ std::optional<MutabilityEnum> DeviceModel::get_mutability(const Component& compo
         return std::nullopt;
     }
 
-    return attribute.value().mutability.value();
+    return attribute.value().mutability;
 }
 
 SetVariableStatusEnum DeviceModel::set_value(const Component& component, const Variable& variable,
@@ -432,18 +450,18 @@ SetVariableStatusEnum DeviceModel::set_read_only_value(const Component& componen
 
 std::optional<VariableMetaData> DeviceModel::get_variable_meta_data(const Component& component,
                                                                     const Variable& variable) {
-    if (this->device_model_map.count(component) and this->device_model_map.at(component).count(variable)) {
+    if ((this->device_model_map.count(component) != 0) and
+        (this->device_model_map.at(component).count(variable) != 0)) {
         return this->device_model_map.at(component).at(variable);
-    } else {
-        return std::nullopt;
     }
+    return std::nullopt;
 }
 
 std::vector<ReportData> DeviceModel::get_base_report_data(const ReportBaseEnum& report_base) {
     std::vector<ReportData> report_data_vec;
 
-    for (auto const& [component, variable_map] : this->device_model_map) {
-        for (auto const& [variable, variable_meta_data] : variable_map) {
+    for (const auto& [component, variable_map] : this->device_model_map) {
+        for (const auto& [variable, variable_meta_data] : variable_map) {
 
             ReportData report_data;
             report_data.component = component;
@@ -487,10 +505,10 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
                                     const std::optional<std::vector<ComponentCriterionEnum>>& component_criteria) {
     std::vector<ReportData> report_data_vec;
 
-    for (auto const& [component, variable_map] : this->device_model_map) {
+    for (const auto& [component, variable_map] : this->device_model_map) {
         if (!component_criteria.has_value() or component_criteria_match(component, component_criteria.value())) {
 
-            for (auto const& [variable, variable_meta_data] : variable_map) {
+            for (const auto& [variable, variable_meta_data] : variable_map) {
                 if (!component_variables.has_value() or
                     component_variables_match(component_variables.value(), component, variable)) {
                     ReportData report_data;
@@ -528,10 +546,14 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             if (component.name == "EVSE") {
                 nr_evse_components++;
             } else if (component.name == "Connector") {
-                if (evse_id_nr_connector_components.count(component.evse.value().id)) {
-                    evse_id_nr_connector_components[component.evse.value().id] += 1;
+                if (not component.evse.has_value()) {
+                    throw DeviceModelError("EVSE component did not contain evse member");
+                }
+                const auto& evse = component.evse.value();
+                if (evse_id_nr_connector_components.count(evse.id) != 0) {
+                    evse_id_nr_connector_components[evse.id] += 1;
                 } else {
-                    evse_id_nr_connector_components[component.evse.value().id] = 1;
+                    evse_id_nr_connector_components[evse.id] = 1;
                 }
             }
         }
@@ -555,7 +577,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             Component evse_component;
             evse_component.name = "EVSE";
             evse_component.evse = evse;
-            if (!this->device_model_map.count(evse_component)) {
+            if (this->device_model_map.count(evse_component) == 0) {
                 throw DeviceModelError("Could not find required EVSE component in device model");
             }
 
@@ -567,7 +589,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             const auto& variable =
                 EvseComponentVariables::get_component_variable(evse_id, EvseComponentVariables::Power);
             std::map<Variable, VariableMetaData>& v = device_model_map[evse_component];
-            if (!v.count(EvseComponentVariables::Power)) {
+            if (v.count(EvseComponentVariables::Power) == 0) {
                 throw DeviceModelError("Could not find required 'Power' variable in EVSE component in device model");
             }
 
@@ -578,7 +600,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             Component v2x_component;
             v2x_component.name = "V2XChargingCtrlr";
             v2x_component.evse = evse;
-            if (this->device_model_map.count(v2x_component) and
+            if ((this->device_model_map.count(v2x_component) != 0) and
                 std::any_of(evse_connector_structure.begin(), evse_connector_structure.end(),
                             [this](const auto& entry) {
                                 const auto& [evse, connectors] = entry;
@@ -595,13 +617,13 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
             for (size_t connector_id = 1; connector_id <= nr_of_connectors; connector_id++) {
                 evse_component.name = "Connector";
                 evse_component.evse.value().connectorId = connector_id;
-                if (!this->device_model_map.count(evse_component)) {
+                if (this->device_model_map.count(evse_component) == 0) {
                     throw DeviceModelError("Could not find required Connector component in device model");
                 }
 
                 for (const auto& required_variable : required_connector_variables) {
-                    const auto& variable =
-                        ConnectorComponentVariables::get_component_variable(evse_id, connector_id, required_variable);
+                    const auto& variable = ConnectorComponentVariables::get_component_variable(
+                        evse_id, clamp_to<int32_t>(connector_id), required_variable);
                     check_variable_has_value(variable);
                 }
             }
@@ -653,10 +675,10 @@ bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string
                 // Update value in-memory too
                 monitor_meta->reference_value = reference_value;
                 return true;
-            } else {
-                EVLOG_warning << "Could not update in DB trivial delta monitor with ID: " << monitor_id
-                              << ". Reference value not updated!";
             }
+            EVLOG_warning << "Could not update in DB trivial delta monitor with ID: " << monitor_id
+                          << ". Reference value not updated!";
+
         } catch (const everest::db::Exception& e) {
             EVLOG_error << "Exception while updating trivial delta monitor reference with ID: " << monitor_id;
             throw DeviceModelError(e.what());
@@ -690,7 +712,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
 
         // N04.FR.16 - If we find a monitor with this ID, and there's a comp/var mismatch, send a rejected result
         // N04.FR.13 - If we receive an ID but we can't find a monitor with this ID send a rejected result
-        bool request_has_id = request.id.has_value();
+        const bool request_has_id = request.id.has_value();
         bool id_found = false;
 
         if (request_has_id) {
@@ -759,8 +781,9 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
             if (request.type == MonitorEnum::Delta && std::signbit(request.value)) {
                 // N04.FR.14
                 valid_value = false;
-            } else if (request.type == MonitorEnum::Delta && (characteristics.dataType != DataEnum::decimal &&
-                                                              characteristics.dataType != DataEnum::integer)) {
+            } else if (request.type == MonitorEnum::Delta &&
+                       (characteristics.dataType != DataEnum::decimal &&
+                        characteristics.dataType != DataEnum::integer)) { // NOLINT(bugprone-branch-clone): readability
                 valid_value = true;
             } else if (request.type == MonitorEnum::Periodic || request.type == MonitorEnum::PeriodicClockAligned) {
                 valid_value = true;
@@ -814,7 +837,7 @@ std::vector<SetMonitoringResult> DeviceModel::set_monitors(const std::vector<Set
                                                                                 AttributeEnum::Actual);
 
                     if (attribute.has_value()) {
-                        static std::string empty_value{};
+                        static const std::string empty_value{};
                         const auto& current_value = attribute.value().value.value_or(empty_value);
 
                         monitor_update_listener(monitor_meta.value(), component_it->first, variable_it->first,
@@ -949,7 +972,7 @@ std::vector<MonitoringData> DeviceModel::get_monitors(const std::vector<Monitori
 }
 std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector<int>& request_ids,
                                                                bool allow_protected) {
-    if (request_ids.size() <= 0) {
+    if (request_ids.empty()) {
         return {};
     }
 
@@ -984,7 +1007,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
 
 int32_t DeviceModel::clear_custom_monitors() {
     try {
-        int32_t deleted = this->device_model->clear_custom_variable_monitors();
+        const int32_t deleted = this->device_model->clear_custom_variable_monitors();
 
         // Clear from memory too
         for (auto& [component, variable_map] : this->device_model_map) {

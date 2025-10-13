@@ -117,7 +117,7 @@ MessageType string_to_messagetype(const std::string& s);
 std::ostream& operator<<(std::ostream& os, const MessageType& message_type);
 
 /// \brief Contains the supported OCPP 1.6 feature profiles
-enum SupportedFeatureProfiles {
+enum class SupportedFeatureProfiles {
     Internal,
     Core,
     CostAndPrice,
@@ -145,7 +145,7 @@ SupportedFeatureProfiles string_to_supported_feature_profiles(const std::string&
 std::ostream& operator<<(std::ostream& os, const SupportedFeatureProfiles& supported_feature_profiles);
 
 /// \brief Contains the different connection states of the charge point
-enum ChargePointConnectionState {
+enum class ChargePointConnectionState {
     Disconnected, // state when disconnected
     Connected,    // state when ws is connected
     Booted,       // state when ws is connected and BootNotifcation had been Accepted
@@ -189,7 +189,7 @@ struct AvailabilityChange {
 };
 
 /// \brief BootReasonEnum contains the different boot reasons of the charge point (copied from OCPP2.0.1 definition)
-enum BootReasonEnum {
+enum class BootReasonEnum {
     ApplicationReset,
     FirmwareUpdate,
     LocalReset,

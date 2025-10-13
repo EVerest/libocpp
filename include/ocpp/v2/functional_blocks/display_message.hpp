@@ -32,16 +32,16 @@ std::optional<MessageInfo> display_message_to_message_info_type(const DisplayMes
 ///
 DisplayMessage message_info_to_display_message(const MessageInfo& message_info);
 
-typedef std::function<std::vector<ocpp::DisplayMessage>(const GetDisplayMessagesRequest& request)>
-    GetDisplayMessageCallback;
-typedef std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>
-    SetDisplayMessageCallback;
-typedef std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request)>
-    ClearDisplayMessageCallback;
+using GetDisplayMessageCallback =
+    std::function<std::vector<ocpp::DisplayMessage>(const GetDisplayMessagesRequest& request)>;
+using SetDisplayMessageCallback =
+    std::function<SetDisplayMessageResponse(const std::vector<DisplayMessage>& display_messages)>;
+using ClearDisplayMessageCallback =
+    std::function<ClearDisplayMessageResponse(const ClearDisplayMessageRequest& request)>;
 
 class DisplayMessageInterface : public MessageHandlerInterface {
 public:
-    virtual ~DisplayMessageInterface() = default;
+    ~DisplayMessageInterface() override = default;
 };
 
 class DisplayMessageBlock : public DisplayMessageInterface {
@@ -51,7 +51,7 @@ public:
                         GetDisplayMessageCallback get_display_message_callback,
                         SetDisplayMessageCallback set_display_message_callback,
                         ClearDisplayMessageCallback clear_display_message_callback);
-    virtual void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
+    void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private:
     const FunctionalBlockContext& context;

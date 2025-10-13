@@ -41,7 +41,8 @@ void from_json(const json& j, ReservationStatusUpdateRequest& k) {
 }
 
 /// \brief Writes the string representation of the given ReservationStatusUpdateRequest \p k to the given output stream
-/// \p os \returns an output stream with the ReservationStatusUpdateRequest written to
+/// \p os
+/// \returns an output stream with the ReservationStatusUpdateRequest written to
 std::ostream& operator<<(std::ostream& os, const ReservationStatusUpdateRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -70,7 +71,8 @@ void from_json(const json& j, ReservationStatusUpdateResponse& k) {
 }
 
 /// \brief Writes the string representation of the given ReservationStatusUpdateResponse \p k to the given output stream
-/// \p os \returns an output stream with the ReservationStatusUpdateResponse written to
+/// \p os
+/// \returns an output stream with the ReservationStatusUpdateResponse written to
 std::ostream& operator<<(std::ostream& os, const ReservationStatusUpdateResponse& k) {
     os << json(k).dump(4);
     return os;

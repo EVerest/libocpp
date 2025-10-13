@@ -27,9 +27,9 @@ const size_t AUTHORIZATION_KEY_MIN_LENGTH = 8;
 const int32_t MAX_WAIT_FOR_SET_USER_PRICE_TIMEOUT_MS = 30000;
 
 ChargePointConfiguration::ChargePointConfiguration(const std::string& config, const fs::path& ocpp_main_path,
-                                                   const fs::path& user_config_path) {
+                                                   const fs::path& user_config_path) :
+    user_config_path(user_config_path) {
 
-    this->user_config_path = user_config_path;
     if (!fs::exists(this->user_config_path)) {
         EVLOG_critical << "User config file does not exist";
         throw std::runtime_error("User config file does not exist");
@@ -44,7 +44,8 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
         const auto custom_schema_path = schemas_path / "Custom.json";
         if (fs::exists(custom_schema_path)) {
             std::ifstream ifs(custom_schema_path.c_str());
-            std::string custom_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+            const std::string custom_schema_file((std::istreambuf_iterator<char>(ifs)),
+                                                 (std::istreambuf_iterator<char>()));
             this->custom_schema = json::parse(custom_schema_file);
         }
     } catch (const json::parse_error& e) {
@@ -55,7 +56,8 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
     try {
         const auto internal_schema_path = schemas_path / "Internal.json";
         std::ifstream ifs(internal_schema_path.c_str());
-        std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        const std::string internal_schema_file((std::istreambuf_iterator<char>(ifs)),
+                                               (std::istreambuf_iterator<char>()));
         this->internal_schema = json::parse(internal_schema_file);
     } catch (const json::parse_error& e) {
         EVLOG_error << "Error while parsing Internal.json file.";
@@ -66,7 +68,8 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
         const auto core_schema_path = schemas_path / "Core.json";
         if (fs::exists(core_schema_path)) {
             std::ifstream ifs(core_schema_path.c_str());
-            std::string core_schema_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+            const std::string core_schema_file((std::istreambuf_iterator<char>(ifs)),
+                                               (std::istreambuf_iterator<char>()));
             const auto core_schema = json::parse(core_schema_file);
             this->core_schema_unlock_connector_on_ev_side_disconnect_ro_value =
                 core_schema["properties"]["UnlockConnectorOnEVSideDisconnect"]["readOnly"];
@@ -216,7 +219,7 @@ json ChargePointConfiguration::get_user_config() {
     if (fs::exists(this->user_config_path)) {
         // reading from and overriding to existing user config
         std::fstream ifs(user_config_path.c_str());
-        std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+        const std::string user_config_file((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
         ifs.close();
         return json::parse(user_config_file);
     }
@@ -244,6 +247,7 @@ void ChargePointConfiguration::setInUserConfig(std::string profile, std::string 
     }
 }
 
+namespace {
 std::string to_csl(const std::vector<std::string>& vec) {
     std::string csl;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
@@ -254,6 +258,7 @@ std::string to_csl(const std::vector<std::string>& vec) {
     }
     return csl;
 }
+} // namespace
 
 void ChargePointConfiguration::init_supported_measurands() {
     const auto _supported_measurands = ocpp::split_string(this->config["Internal"]["SupportedMeasurands"], ',');
@@ -482,7 +487,7 @@ bool ChargePointConfiguration::setIgnoredProfilePurposesOffline(const std::strin
     }
 
     const auto profile_purposes = split_string(ignored_profile_purposes_offline, ',');
-    for (const auto purpose : profile_purposes) {
+    for (const auto& purpose : profile_purposes) {
         try {
             conversions::string_to_charging_profile_purpose_type(purpose);
         } catch (const StringToEnumException& e) {
@@ -605,12 +610,12 @@ void ChargePointConfiguration::setSupplyVoltage(int32_t supply_voltage) {
 }
 
 std::string ChargePointConfiguration::getSupportedCiphers12() {
-    std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers12"];
+    const std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers12"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
 
 std::string ChargePointConfiguration::getSupportedCiphers13() {
-    std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers13"];
+    const std::vector<std::string> supported_ciphers = this->config["Internal"]["SupportedCiphers13"];
     return boost::algorithm::join(supported_ciphers, ":");
 }
 
@@ -1026,9 +1031,9 @@ std::vector<MeasurandWithPhase> ChargePointConfiguration::csv_to_measurand_with_
     }
     for (const auto& component : components) {
         MeasurandWithPhase measurand_with_phase;
-        Measurand measurand = conversions::string_to_measurand(component);
+        const Measurand measurand = conversions::string_to_measurand(component);
         // check if this measurand can be provided on multiple phases
-        if (this->supported_measurands.count(measurand) and this->supported_measurands.at(measurand).size() > 0) {
+        if ((this->supported_measurands.count(measurand) != 0) and !this->supported_measurands.at(measurand).empty()) {
             // multiple phases are available
             // also add the measurand without a phase as a total value
             measurand_with_phase.measurand = measurand;
@@ -1070,7 +1075,7 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
     measurands_vector.push_back(config["Core"]["StopTxnAlignedData"]);
     measurands_vector.push_back(config["Core"]["StopTxnSampledData"]);
 
-    for (const auto measurands : measurands_vector) {
+    for (const auto& measurands : measurands_vector) {
         if (!this->measurands_supported(measurands)) {
             return false;
         }
@@ -1078,6 +1083,7 @@ bool ChargePointConfiguration::validate_measurands(const json& config) {
     return true;
 }
 
+namespace {
 bool validate_connector_evse_ids(const std::string& value) {
     if (value.length() > CONNECTOR_EVSE_IDS_MAX_LENGTH) {
         return false;
@@ -1093,6 +1099,7 @@ bool validate_connector_evse_ids(const std::string& value) {
     }
     return true;
 }
+} // namespace
 
 bool ChargePointConfiguration::measurands_supported(std::string csv) {
 
@@ -2083,24 +2090,25 @@ std::optional<std::string> ChargePointConfiguration::getAuthorizationKey() {
     return authorization_key;
 }
 
-std::string hexToString(std::string const& s) {
+namespace {
+std::string hexToString(const std::string& s) {
     std::string str;
     for (size_t i = 0; i < s.length(); i += 2) {
-        std::string byte = s.substr(i, 2);
-        char chr = (char)(int)strtol(byte.c_str(), NULL, 16);
+        const std::string byte = s.substr(i, 2);
+        const char chr = (char)(int)strtol(byte.c_str(), nullptr, 16);
         str.push_back(chr);
     }
     return str;
 }
 
-bool isHexNotation(std::string const& s) {
-    bool is_hex = s.size() > 2 and s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
+bool isHexNotation(const std::string& s) {
+    const bool is_hex = s.size() > 2 and s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
 
     if (is_hex) {
         // check if every char is printable
         for (size_t i = 0; i < s.length(); i += 2) {
-            std::string byte = s.substr(i, 2);
-            char chr = (char)(int)strtol(byte.c_str(), NULL, 16);
+            const std::string byte = s.substr(i, 2);
+            const char chr = (char)(int)strtol(byte.c_str(), nullptr, 16);
             if ((chr < 0x20 or chr > 0x7e) and chr != 0xa) {
                 return false;
             }
@@ -2110,6 +2118,7 @@ bool isHexNotation(std::string const& s) {
     }
     return true;
 }
+} // namespace
 
 void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key) {
 
@@ -2127,7 +2136,6 @@ void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key
 }
 
 bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
-    std::stringstream ss(str);
     std::vector<std::string> elements;
 
     str.erase(std::remove_if(str.begin(), str.end(), isspace), str.end());
@@ -2135,13 +2143,13 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
 
     // Filter per element of type 0.NotApplicable, 1.NotApplicable, or 0.Unknown etc
     for (int connector_id = 0; connector_id <= this->getNumberOfConnectors(); connector_id++) {
-        std::string myNotApplicable = std::to_string(connector_id) + ".NotApplicable";
-        std::string myNotDefined = std::to_string(connector_id) + ".Unknown";
+        const std::string myNotApplicable = std::to_string(connector_id) + ".NotApplicable";
+        const std::string myNotDefined = std::to_string(connector_id) + ".Unknown";
         elements.erase(std::remove(elements.begin(), elements.end(), myNotApplicable), elements.end());
         elements.erase(std::remove(elements.begin(), elements.end(), myNotDefined), elements.end());
     }
     // if all elemens are hit, accept it, else check the remaining
-    if (elements.size() == 0) {
+    if (elements.empty()) {
         return true;
     }
 
@@ -2157,7 +2165,7 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
         } catch (const std::invalid_argument&) {
             return false;
         }
-        std::string phase_rotation = e.substr(2, 5);
+        const std::string phase_rotation = e.substr(2, 5);
         if (phase_rotation != "RST" and phase_rotation != "RTS" and phase_rotation != "SRT" and
             phase_rotation != "STR" and phase_rotation != "TRS" and phase_rotation != "TSR") {
             return false;
@@ -2166,39 +2174,40 @@ bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
     return true;
 }
 
-bool ChargePointConfiguration::checkTimeOffset(const std::string& offset) {
+namespace {
+bool checkTimeOffset(const std::string& offset) {
     const std::vector<std::string> times = split_string(offset, ':');
     if (times.size() != 2) {
         EVLOG_error << "Could not set display time offset: format not correct (should be something like "
                        "\"-05:00\", but is "
                     << offset << ")";
         return false;
-    } else {
-        try {
-            // Check if strings are numbers.
-            const int32_t hours = std::stoi(times.at(0));
-            const int32_t minutes = std::stoi(times.at(1));
+    }
+    try {
+        // Check if strings are numbers.
+        const int32_t hours = std::stoi(times.at(0));
+        const int32_t minutes = std::stoi(times.at(1));
 
-            // And check if numbers are valid.
-            if (hours < -24 or hours > 24) {
-                EVLOG_error << "Could not set display time offset: hours should be between -24 and +24, but is "
-                            << times.at(0);
-                return false;
-            }
-
-            if (minutes < 0 or minutes > 59) {
-                EVLOG_error << "Could not set display time offset: minutes should be between 0 and 59, but is "
-                            << times.at(1);
-                return false;
-            }
-
-        } catch (const std::exception& e) {
-            EVLOG_error << "Could not set display time offset: format not correct (should be something "
-                           "like \"-19:15\", but is "
-                        << offset << "): " << e.what();
+        // And check if numbers are valid.
+        if (hours < -24 or hours > 24) {
+            EVLOG_error << "Could not set display time offset: hours should be between -24 and +24, but is "
+                        << times.at(0);
             return false;
         }
+
+        if (minutes < 0 or minutes > 59) {
+            EVLOG_error << "Could not set display time offset: minutes should be between 0 and 59, but is "
+                        << times.at(1);
+            return false;
+        }
+
+    } catch (const std::exception& e) {
+        EVLOG_error << "Could not set display time offset: format not correct (should be something "
+                       "like \"-19:15\", but is "
+                    << offset << "): " << e.what();
+        return false;
     }
+
     return true;
 }
 
@@ -2207,6 +2216,7 @@ bool isBool(const std::string& str) {
     std::transform(out.begin(), out.end(), out.begin(), ::tolower);
     return out == "true" || out == "false";
 }
+} // namespace
 
 std::optional<KeyValue> ChargePointConfiguration::getAuthorizationKeyKeyValue() {
     std::optional<KeyValue> enabled_kv = std::nullopt;
@@ -2278,9 +2288,9 @@ std::optional<std::string> ChargePointConfiguration::getCpoName() {
     return cpo_name;
 }
 
-void ChargePointConfiguration::setCpoName(std::string cpoName) {
-    this->config["Security"]["CpoName"] = cpoName;
-    this->setInUserConfig("Security", "CpoName", cpoName);
+void ChargePointConfiguration::setCpoName(std::string cpo_name) {
+    this->config["Security"]["CpoName"] = cpo_name;
+    this->setInUserConfig("Security", "CpoName", cpo_name);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::getCpoNameKeyValue() {
@@ -2338,9 +2348,8 @@ KeyValue ChargePointConfiguration::getDisableSecurityEventNotificationsKeyValue(
 bool ChargePointConfiguration::getLocalAuthListEnabled() {
     if (this->config.contains("LocalAuthListManagement")) {
         return this->config["LocalAuthListManagement"]["LocalAuthListEnabled"];
-    } else {
-        return false;
     }
+    return false;
 }
 
 void ChargePointConfiguration::setLocalAuthListEnabled(bool local_auth_list_enabled) {
@@ -2665,7 +2674,7 @@ std::optional<KeyValue> ChargePointConfiguration::getAllowChargingProfileWithout
         KeyValue kv;
         kv.key = "AllowChargingProfileWithoutStartSchedule";
         kv.readonly = false;
-        kv.value.emplace(std::to_string(allow.value()));
+        kv.value.emplace(std::to_string(static_cast<int>(allow.value())));
         allow_opt.emplace(kv);
     }
     return allow_opt;
@@ -2842,7 +2851,7 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString
 
     json default_price = json::object();
     if (this->config.contains("CostAndPrice") and this->config.at("CostAndPrice").contains("DefaultPriceText")) {
-        json result = json::object();
+        const json result = json::object();
         default_price = this->config["CostAndPrice"]["DefaultPriceText"];
     }
 
@@ -2995,7 +3004,7 @@ std::optional<std::string> ChargePointConfiguration::getNextTimeOffsetTransition
 }
 
 ConfigurationStatus ChargePointConfiguration::setNextTimeOffsetTransitionDateTime(const std::string& date_time) {
-    DateTime d(date_time);
+    const DateTime d(date_time);
     if (d.to_time_point() > date::utc_clock::now()) {
         this->config["CostAndPrice"]["NextTimeOffsetTransitionDateTime"] = date_time;
         this->setInUserConfig("CostAndPrice", "NextTimeOffsetTransitionDateTime", date_time);
@@ -3174,7 +3183,7 @@ std::optional<KeyValue> ChargePointConfiguration::getLanguageKeyValue() {
 
 // Custom
 std::optional<KeyValue> ChargePointConfiguration::getCustomKeyValue(CiString<50> key) {
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (!this->config["Custom"].contains(key.get())) {
         return std::nullopt;
     }
@@ -3199,7 +3208,7 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
     if (!kv.has_value() or (kv.value().readonly and !force)) {
         return ConfigurationStatus::Rejected;
     }
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     try {
         const auto type = custom_schema["properties"][key]["type"];
         json new_value;
@@ -3230,14 +3239,14 @@ ConfigurationStatus ChargePointConfiguration::setCustomKey(CiString<50> key, CiS
     return ConfigurationStatus::Accepted;
 }
 
-void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri) {
-    EVLOG_warning << "CentralSystemURI changed to: " << centralSystemUri;
-    this->config["Internal"]["CentralSystemURI"] = centralSystemUri;
-    this->setInUserConfig("Internal", "CentralSystemURI", centralSystemUri);
+void ChargePointConfiguration::setCentralSystemURI(std::string ocpp_uri) {
+    EVLOG_warning << "CentralSystemURI changed to: " << ocpp_uri;
+    this->config["Internal"]["CentralSystemURI"] = ocpp_uri;
+    this->setInUserConfig("Internal", "CentralSystemURI", ocpp_uri);
 }
 
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     // Internal Profile
     if (key == "ChargePointId") {
         return this->getChargePointIdKeyValue();
@@ -3486,14 +3495,14 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Firmware Management
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::FirmwareManagement)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::FirmwareManagement) != 0) {
         if (key == "SupportedFileTransferProtocols") {
             return this->getSupportedFileTransferProtocolsKeyValue();
         }
     }
 
     // PnC
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::PnC)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::PnC) != 0) {
         if (key == "ISO15118CertificateManagementEnabled") {
             return this->getISO15118CertificateManagementEnabledKeyValue();
         }
@@ -3515,7 +3524,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Smart Charging
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::SmartCharging)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::SmartCharging) != 0) {
         if (key == "ChargeProfileMaxStackLevel") {
             return this->getChargeProfileMaxStackLevelKeyValue();
         }
@@ -3534,7 +3543,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Security (always added as supported feature profile)
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Security)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Security) != 0) {
         if (key == "AdditionalRootCertificateCheck") {
             return this->getAdditionalRootCertificateCheckKeyValue();
         }
@@ -3560,7 +3569,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
 
     // Local Auth List Managementg
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement) != 0) {
         if (key == "LocalAuthListEnabled") {
             return this->getLocalAuthListEnabledKeyValue();
         }
@@ -3572,7 +3581,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         }
     }
 
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::CostAndPrice)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::CostAndPrice) != 0) {
         // California Pricing
         if (key == "CustomDisplayCostAndPrice") {
             return this->getCustomDisplayCostAndPriceEnabledKeyValue();
@@ -3584,8 +3593,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         if (key == "DefaultPrice") {
             return this->getDefaultPriceKeyValue();
         }
-        if (key.get().find("DefaultPriceText") == 0 and this->getCustomMultiLanguageMessagesEnabled().has_value() and
-            this->getCustomMultiLanguageMessagesEnabled().value()) {
+        if (key.get().find("DefaultPriceText") == 0 and this->getCustomMultiLanguageMessagesEnabled().value_or(false)) {
             const std::vector<std::string> message_language = split_string(key, ',');
             if (message_language.size() > 1) {
                 return this->getDefaultPriceTextKeyValue(message_language.at(1));
@@ -3617,7 +3625,7 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
         }
     }
 
-    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Custom)) {
+    if (this->supported_feature_profiles.count(SupportedFeatureProfiles::Custom) != 0) {
         return this->getCustomKeyValue(key);
     }
 
@@ -3654,7 +3662,7 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
 }
 
 ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
-    std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
+    const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (key == "IgnoredProfilePurposesOffline") {
         if (this->setIgnoredProfilePurposesOffline(value) == false) {
             return ConfigurationStatus::Rejected;
@@ -3681,14 +3689,13 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         }
     }
     if (key == "AuthorizationKey") {
-        std::string authorization_key = value.get();
+        const std::string authorization_key = value.get();
         if (authorization_key.length() >= AUTHORIZATION_KEY_MIN_LENGTH) {
             this->setAuthorizationKey(value.get());
             return ConfigurationStatus::Accepted;
-        } else {
-            EVLOG_warning << "Attempt to change AuthorizationKey to value with < 8 characters";
-            return ConfigurationStatus::Rejected;
         }
+        EVLOG_warning << "Attempt to change AuthorizationKey to value with < 8 characters";
+        return ConfigurationStatus::Rejected;
     }
     if (key == "AuthorizeRemoteTxRequests") {
         this->setAuthorizeRemoteTxRequests(ocpp::conversions::string_to_bool(value.get()));
@@ -3745,42 +3752,39 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     if (key == "CentralContractValidationAllowed") {
         if (this->getCentralContractValidationAllowed() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
-        } else {
-            this->setCentralContractValidationAllowed(ocpp::conversions::string_to_bool(value.get()));
         }
+        this->setCentralContractValidationAllowed(ocpp::conversions::string_to_bool(value.get()));
     }
     if (key == "CertSigningWaitMinimum") {
         if (this->getCertSigningWaitMinimum() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
-        } else {
-            try {
-                auto [valid, cert_signing_wait_minimum] = is_positive_integer(value.get());
-                if (!valid) {
-                    return ConfigurationStatus::Rejected;
-                }
-                this->setCertSigningWaitMinimum(cert_signing_wait_minimum);
-            } catch (const std::invalid_argument& e) {
-                return ConfigurationStatus::Rejected;
-            } catch (const std::out_of_range& e) {
+        }
+        try {
+            auto [valid, cert_signing_wait_minimum] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
+            this->setCertSigningWaitMinimum(cert_signing_wait_minimum);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "CertSigningRepeatTimes") {
         if (this->getCertSigningRepeatTimes() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
-        } else {
-            try {
-                auto [valid, cert_signing_repeat_times] = is_positive_integer(value.get());
-                if (!valid) {
-                    return ConfigurationStatus::Rejected;
-                }
-                this->setCertSigningRepeatTimes(cert_signing_repeat_times);
-            } catch (const std::invalid_argument& e) {
-                return ConfigurationStatus::Rejected;
-            } catch (const std::out_of_range& e) {
+        }
+        try {
+            auto [valid, cert_signing_repeat_times] = is_positive_integer(value.get());
+            if (!valid) {
                 return ConfigurationStatus::Rejected;
             }
+            this->setCertSigningRepeatTimes(cert_signing_repeat_times);
+        } catch (const std::invalid_argument& e) {
+            return ConfigurationStatus::Rejected;
+        } catch (const std::out_of_range& e) {
+            return ConfigurationStatus::Rejected;
         }
     }
     if (key == "ContractValidationOffline") {
@@ -4011,7 +4015,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
 
     // Local Auth List Management
     if (key == "LocalAuthListEnabled") {
-        if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement)) {
+        if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement) != 0) {
             if (isBool(value.get())) {
                 this->setLocalAuthListEnabled(ocpp::conversions::string_to_bool(value.get()));
             } else {

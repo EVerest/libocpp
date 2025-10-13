@@ -32,7 +32,8 @@ void to_json(json& j, const ClearedChargingLimitRequest& k);
 void from_json(const json& j, ClearedChargingLimitRequest& k);
 
 /// \brief Writes the string representation of the given ClearedChargingLimitRequest \p k to the given output stream \p
-/// os \returns an output stream with the ClearedChargingLimitRequest written to
+/// os
+/// \returns an output stream with the ClearedChargingLimitRequest written to
 std::ostream& operator<<(std::ostream& os, const ClearedChargingLimitRequest& k);
 
 /// \brief Contains a OCPP ClearedChargingLimitResponse message
@@ -51,7 +52,8 @@ void to_json(json& j, const ClearedChargingLimitResponse& k);
 void from_json(const json& j, ClearedChargingLimitResponse& k);
 
 /// \brief Writes the string representation of the given ClearedChargingLimitResponse \p k to the given output stream \p
-/// os \returns an output stream with the ClearedChargingLimitResponse written to
+/// os
+/// \returns an output stream with the ClearedChargingLimitResponse written to
 std::ostream& operator<<(std::ostream& os, const ClearedChargingLimitResponse& k);
 
 } // namespace v2

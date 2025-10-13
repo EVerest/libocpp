@@ -39,7 +39,8 @@ void from_json(const json& j, RequestStopTransactionRequest& k) {
 }
 
 /// \brief Writes the string representation of the given RequestStopTransactionRequest \p k to the given output stream
-/// \p os \returns an output stream with the RequestStopTransactionRequest written to
+/// \p os
+/// \returns an output stream with the RequestStopTransactionRequest written to
 std::ostream& operator<<(std::ostream& os, const RequestStopTransactionRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -77,7 +78,8 @@ void from_json(const json& j, RequestStopTransactionResponse& k) {
 }
 
 /// \brief Writes the string representation of the given RequestStopTransactionResponse \p k to the given output stream
-/// \p os \returns an output stream with the RequestStopTransactionResponse written to
+/// \p os
+/// \returns an output stream with the RequestStopTransactionResponse written to
 std::ostream& operator<<(std::ostream& os, const RequestStopTransactionResponse& k) {
     os << json(k).dump(4);
     return os;

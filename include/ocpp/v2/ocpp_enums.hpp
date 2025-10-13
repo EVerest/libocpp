@@ -28,7 +28,8 @@ GenericStatusEnum string_to_generic_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GenericStatusEnum \p generic_status_enum to the given output
-/// stream \p os \returns an output stream with the GenericStatusEnum written to
+/// stream \p os
+/// \returns an output stream with the GenericStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const GenericStatusEnum& generic_status_enum);
 
 // from: AuthorizeRequest
@@ -49,7 +50,8 @@ HashAlgorithmEnum string_to_hash_algorithm_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given HashAlgorithmEnum \p hash_algorithm_enum to the given output
-/// stream \p os \returns an output stream with the HashAlgorithmEnum written to
+/// stream \p os
+/// \returns an output stream with the HashAlgorithmEnum written to
 std::ostream& operator<<(std::ostream& os, const HashAlgorithmEnum& hash_algorithm_enum);
 
 // from: AuthorizeResponse
@@ -77,7 +79,8 @@ AuthorizationStatusEnum string_to_authorization_status_enum(const std::string& s
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AuthorizationStatusEnum \p authorization_status_enum to the
-/// given output stream \p os \returns an output stream with the AuthorizationStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the AuthorizationStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const AuthorizationStatusEnum& authorization_status_enum);
 
 // from: AuthorizeResponse
@@ -100,7 +103,8 @@ MessageFormatEnum string_to_message_format_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessageFormatEnum \p message_format_enum to the given output
-/// stream \p os \returns an output stream with the MessageFormatEnum written to
+/// stream \p os
+/// \returns an output stream with the MessageFormatEnum written to
 std::ostream& operator<<(std::ostream& os, const MessageFormatEnum& message_format_enum);
 
 // from: AuthorizeResponse
@@ -125,8 +129,8 @@ AuthorizeCertificateStatusEnum string_to_authorize_certificate_status_enum(const
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AuthorizeCertificateStatusEnum \p
-/// authorize_certificate_status_enum to the given output stream \p os \returns an output stream with the
-/// AuthorizeCertificateStatusEnum written to
+/// authorize_certificate_status_enum to the given output stream \p os
+/// \returns an output stream with the AuthorizeCertificateStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const AuthorizeCertificateStatusEnum& authorize_certificate_status_enum);
 
 // from: AuthorizeResponse
@@ -155,7 +159,8 @@ EnergyTransferModeEnum string_to_energy_transfer_mode_enum(const std::string& s)
 } // namespace conversions
 
 /// \brief Writes the string representation of the given EnergyTransferModeEnum \p energy_transfer_mode_enum to the
-/// given output stream \p os \returns an output stream with the EnergyTransferModeEnum written to
+/// given output stream \p os
+/// \returns an output stream with the EnergyTransferModeEnum written to
 std::ostream& operator<<(std::ostream& os, const EnergyTransferModeEnum& energy_transfer_mode_enum);
 
 // from: AuthorizeResponse
@@ -180,7 +185,8 @@ DayOfWeekEnum string_to_day_of_week_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DayOfWeekEnum \p day_of_week_enum to the given output stream \p
-/// os \returns an output stream with the DayOfWeekEnum written to
+/// os
+/// \returns an output stream with the DayOfWeekEnum written to
 std::ostream& operator<<(std::ostream& os, const DayOfWeekEnum& day_of_week_enum);
 
 // from: AuthorizeResponse
@@ -221,7 +227,8 @@ BatterySwapEventEnum string_to_battery_swap_event_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given BatterySwapEventEnum \p battery_swap_event_enum to the given
-/// output stream \p os \returns an output stream with the BatterySwapEventEnum written to
+/// output stream \p os
+/// \returns an output stream with the BatterySwapEventEnum written to
 std::ostream& operator<<(std::ostream& os, const BatterySwapEventEnum& battery_swap_event_enum);
 
 // from: BootNotificationRequest
@@ -248,7 +255,8 @@ BootReasonEnum string_to_boot_reason_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given BootReasonEnum \p boot_reason_enum to the given output stream
-/// \p os \returns an output stream with the BootReasonEnum written to
+/// \p os
+/// \returns an output stream with the BootReasonEnum written to
 std::ostream& operator<<(std::ostream& os, const BootReasonEnum& boot_reason_enum);
 
 // from: BootNotificationResponse
@@ -269,7 +277,8 @@ RegistrationStatusEnum string_to_registration_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RegistrationStatusEnum \p registration_status_enum to the given
-/// output stream \p os \returns an output stream with the RegistrationStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the RegistrationStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const RegistrationStatusEnum& registration_status_enum);
 
 // from: CancelReservationResponse
@@ -289,7 +298,8 @@ CancelReservationStatusEnum string_to_cancel_reservation_status_enum(const std::
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CancelReservationStatusEnum \p cancel_reservation_status_enum
-/// to the given output stream \p os \returns an output stream with the CancelReservationStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the CancelReservationStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const CancelReservationStatusEnum& cancel_reservation_status_enum);
 
 // from: CertificateSignedRequest
@@ -310,7 +320,8 @@ CertificateSigningUseEnum string_to_certificate_signing_use_enum(const std::stri
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CertificateSigningUseEnum \p certificate_signing_use_enum to
-/// the given output stream \p os \returns an output stream with the CertificateSigningUseEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the CertificateSigningUseEnum written to
 std::ostream& operator<<(std::ostream& os, const CertificateSigningUseEnum& certificate_signing_use_enum);
 
 // from: CertificateSignedResponse
@@ -330,7 +341,8 @@ CertificateSignedStatusEnum string_to_certificate_signed_status_enum(const std::
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CertificateSignedStatusEnum \p certificate_signed_status_enum
-/// to the given output stream \p os \returns an output stream with the CertificateSignedStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the CertificateSignedStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const CertificateSignedStatusEnum& certificate_signed_status_enum);
 
 // from: ChangeAvailabilityRequest
@@ -350,7 +362,8 @@ OperationalStatusEnum string_to_operational_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given OperationalStatusEnum \p operational_status_enum to the given
-/// output stream \p os \returns an output stream with the OperationalStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the OperationalStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const OperationalStatusEnum& operational_status_enum);
 
 // from: ChangeAvailabilityResponse
@@ -371,7 +384,8 @@ ChangeAvailabilityStatusEnum string_to_change_availability_status_enum(const std
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChangeAvailabilityStatusEnum \p change_availability_status_enum
-/// to the given output stream \p os \returns an output stream with the ChangeAvailabilityStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the ChangeAvailabilityStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ChangeAvailabilityStatusEnum& change_availability_status_enum);
 
 // from: ChangeTransactionTariffResponse
@@ -395,7 +409,8 @@ TariffChangeStatusEnum string_to_tariff_change_status_enum(const std::string& s)
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TariffChangeStatusEnum \p tariff_change_status_enum to the
-/// given output stream \p os \returns an output stream with the TariffChangeStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the TariffChangeStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const TariffChangeStatusEnum& tariff_change_status_enum);
 
 // from: ClearCacheResponse
@@ -415,7 +430,8 @@ ClearCacheStatusEnum string_to_clear_cache_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearCacheStatusEnum \p clear_cache_status_enum to the given
-/// output stream \p os \returns an output stream with the ClearCacheStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the ClearCacheStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ClearCacheStatusEnum& clear_cache_status_enum);
 
 // from: ClearChargingProfileRequest
@@ -439,7 +455,8 @@ ChargingProfilePurposeEnum string_to_charging_profile_purpose_enum(const std::st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfilePurposeEnum \p charging_profile_purpose_enum to
-/// the given output stream \p os \returns an output stream with the ChargingProfilePurposeEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the ChargingProfilePurposeEnum written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfilePurposeEnum& charging_profile_purpose_enum);
 
 // from: ClearChargingProfileResponse
@@ -459,8 +476,8 @@ ClearChargingProfileStatusEnum string_to_clear_charging_profile_status_enum(cons
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearChargingProfileStatusEnum \p
-/// clear_charging_profile_status_enum to the given output stream \p os \returns an output stream with the
-/// ClearChargingProfileStatusEnum written to
+/// clear_charging_profile_status_enum to the given output stream \p os
+/// \returns an output stream with the ClearChargingProfileStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ClearChargingProfileStatusEnum& clear_charging_profile_status_enum);
 
 // from: ClearDERControlRequest
@@ -500,7 +517,8 @@ DERControlEnum string_to_dercontrol_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DERControlEnum \p dercontrol_enum to the given output stream \p
-/// os \returns an output stream with the DERControlEnum written to
+/// os
+/// \returns an output stream with the DERControlEnum written to
 std::ostream& operator<<(std::ostream& os, const DERControlEnum& dercontrol_enum);
 
 // from: ClearDERControlResponse
@@ -522,7 +540,8 @@ DERControlStatusEnum string_to_dercontrol_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DERControlStatusEnum \p dercontrol_status_enum to the given
-/// output stream \p os \returns an output stream with the DERControlStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the DERControlStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const DERControlStatusEnum& dercontrol_status_enum);
 
 // from: ClearDisplayMessageResponse
@@ -543,7 +562,8 @@ ClearMessageStatusEnum string_to_clear_message_status_enum(const std::string& s)
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearMessageStatusEnum \p clear_message_status_enum to the
-/// given output stream \p os \returns an output stream with the ClearMessageStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the ClearMessageStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ClearMessageStatusEnum& clear_message_status_enum);
 
 // from: ClearTariffsResponse
@@ -564,7 +584,8 @@ TariffClearStatusEnum string_to_tariff_clear_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TariffClearStatusEnum \p tariff_clear_status_enum to the given
-/// output stream \p os \returns an output stream with the TariffClearStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the TariffClearStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const TariffClearStatusEnum& tariff_clear_status_enum);
 
 // from: ClearVariableMonitoringResponse
@@ -585,7 +606,8 @@ ClearMonitoringStatusEnum string_to_clear_monitoring_status_enum(const std::stri
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearMonitoringStatusEnum \p clear_monitoring_status_enum to
-/// the given output stream \p os \returns an output stream with the ClearMonitoringStatusEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the ClearMonitoringStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ClearMonitoringStatusEnum& clear_monitoring_status_enum);
 
 // from: CustomerInformationResponse
@@ -606,8 +628,8 @@ CustomerInformationStatusEnum string_to_customer_information_status_enum(const s
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CustomerInformationStatusEnum \p
-/// customer_information_status_enum to the given output stream \p os \returns an output stream with the
-/// CustomerInformationStatusEnum written to
+/// customer_information_status_enum to the given output stream \p os
+/// \returns an output stream with the CustomerInformationStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const CustomerInformationStatusEnum& customer_information_status_enum);
 
 // from: DataTransferResponse
@@ -629,7 +651,8 @@ DataTransferStatusEnum string_to_data_transfer_status_enum(const std::string& s)
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DataTransferStatusEnum \p data_transfer_status_enum to the
-/// given output stream \p os \returns an output stream with the DataTransferStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the DataTransferStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const DataTransferStatusEnum& data_transfer_status_enum);
 
 // from: DeleteCertificateResponse
@@ -650,7 +673,8 @@ DeleteCertificateStatusEnum string_to_delete_certificate_status_enum(const std::
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DeleteCertificateStatusEnum \p delete_certificate_status_enum
-/// to the given output stream \p os \returns an output stream with the DeleteCertificateStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the DeleteCertificateStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const DeleteCertificateStatusEnum& delete_certificate_status_enum);
 
 // from: FirmwareStatusNotificationRequest
@@ -682,7 +706,8 @@ FirmwareStatusEnum string_to_firmware_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given FirmwareStatusEnum \p firmware_status_enum to the given output
-/// stream \p os \returns an output stream with the FirmwareStatusEnum written to
+/// stream \p os
+/// \returns an output stream with the FirmwareStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const FirmwareStatusEnum& firmware_status_enum);
 
 // from: Get15118EVCertificateRequest
@@ -702,7 +727,8 @@ CertificateActionEnum string_to_certificate_action_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CertificateActionEnum \p certificate_action_enum to the given
-/// output stream \p os \returns an output stream with the CertificateActionEnum written to
+/// output stream \p os
+/// \returns an output stream with the CertificateActionEnum written to
 std::ostream& operator<<(std::ostream& os, const CertificateActionEnum& certificate_action_enum);
 
 // from: Get15118EVCertificateResponse
@@ -722,8 +748,8 @@ Iso15118EVCertificateStatusEnum string_to_iso15118evcertificate_status_enum(cons
 } // namespace conversions
 
 /// \brief Writes the string representation of the given Iso15118EVCertificateStatusEnum \p
-/// iso15118evcertificate_status_enum to the given output stream \p os \returns an output stream with the
-/// Iso15118EVCertificateStatusEnum written to
+/// iso15118evcertificate_status_enum to the given output stream \p os
+/// \returns an output stream with the Iso15118EVCertificateStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const Iso15118EVCertificateStatusEnum& iso15118evcertificate_status_enum);
 
 // from: GetBaseReportRequest
@@ -744,7 +770,8 @@ ReportBaseEnum string_to_report_base_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReportBaseEnum \p report_base_enum to the given output stream
-/// \p os \returns an output stream with the ReportBaseEnum written to
+/// \p os
+/// \returns an output stream with the ReportBaseEnum written to
 std::ostream& operator<<(std::ostream& os, const ReportBaseEnum& report_base_enum);
 
 // from: GetBaseReportResponse
@@ -766,8 +793,8 @@ GenericDeviceModelStatusEnum string_to_generic_device_model_status_enum(const st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GenericDeviceModelStatusEnum \p
-/// generic_device_model_status_enum to the given output stream \p os \returns an output stream with the
-/// GenericDeviceModelStatusEnum written to
+/// generic_device_model_status_enum to the given output stream \p os
+/// \returns an output stream with the GenericDeviceModelStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const GenericDeviceModelStatusEnum& generic_device_model_status_enum);
 
 // from: GetCertificateChainStatusRequest
@@ -787,7 +814,8 @@ CertificateStatusSourceEnum string_to_certificate_status_source_enum(const std::
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CertificateStatusSourceEnum \p certificate_status_source_enum
-/// to the given output stream \p os \returns an output stream with the CertificateStatusSourceEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the CertificateStatusSourceEnum written to
 std::ostream& operator<<(std::ostream& os, const CertificateStatusSourceEnum& certificate_status_source_enum);
 
 // from: GetCertificateChainStatusResponse
@@ -809,7 +837,8 @@ CertificateStatusEnum string_to_certificate_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CertificateStatusEnum \p certificate_status_enum to the given
-/// output stream \p os \returns an output stream with the CertificateStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the CertificateStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const CertificateStatusEnum& certificate_status_enum);
 
 // from: GetCertificateStatusResponse
@@ -829,7 +858,8 @@ GetCertificateStatusEnum string_to_get_certificate_status_enum(const std::string
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetCertificateStatusEnum \p get_certificate_status_enum to the
-/// given output stream \p os \returns an output stream with the GetCertificateStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the GetCertificateStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateStatusEnum& get_certificate_status_enum);
 
 // from: GetChargingProfilesResponse
@@ -849,8 +879,8 @@ GetChargingProfileStatusEnum string_to_get_charging_profile_status_enum(const st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetChargingProfileStatusEnum \p
-/// get_charging_profile_status_enum to the given output stream \p os \returns an output stream with the
-/// GetChargingProfileStatusEnum written to
+/// get_charging_profile_status_enum to the given output stream \p os
+/// \returns an output stream with the GetChargingProfileStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const GetChargingProfileStatusEnum& get_charging_profile_status_enum);
 
 // from: GetCompositeScheduleRequest
@@ -870,7 +900,8 @@ ChargingRateUnitEnum string_to_charging_rate_unit_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingRateUnitEnum \p charging_rate_unit_enum to the given
-/// output stream \p os \returns an output stream with the ChargingRateUnitEnum written to
+/// output stream \p os
+/// \returns an output stream with the ChargingRateUnitEnum written to
 std::ostream& operator<<(std::ostream& os, const ChargingRateUnitEnum& charging_rate_unit_enum);
 
 // from: GetCompositeScheduleResponse
@@ -896,7 +927,8 @@ OperationModeEnum string_to_operation_mode_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given OperationModeEnum \p operation_mode_enum to the given output
-/// stream \p os \returns an output stream with the OperationModeEnum written to
+/// stream \p os
+/// \returns an output stream with the OperationModeEnum written to
 std::ostream& operator<<(std::ostream& os, const OperationModeEnum& operation_mode_enum);
 
 // from: GetDisplayMessagesRequest
@@ -917,7 +949,8 @@ MessagePriorityEnum string_to_message_priority_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessagePriorityEnum \p message_priority_enum to the given
-/// output stream \p os \returns an output stream with the MessagePriorityEnum written to
+/// output stream \p os
+/// \returns an output stream with the MessagePriorityEnum written to
 std::ostream& operator<<(std::ostream& os, const MessagePriorityEnum& message_priority_enum);
 
 // from: GetDisplayMessagesRequest
@@ -941,7 +974,8 @@ MessageStateEnum string_to_message_state_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessageStateEnum \p message_state_enum to the given output
-/// stream \p os \returns an output stream with the MessageStateEnum written to
+/// stream \p os
+/// \returns an output stream with the MessageStateEnum written to
 std::ostream& operator<<(std::ostream& os, const MessageStateEnum& message_state_enum);
 
 // from: GetDisplayMessagesResponse
@@ -961,8 +995,8 @@ GetDisplayMessagesStatusEnum string_to_get_display_messages_status_enum(const st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetDisplayMessagesStatusEnum \p
-/// get_display_messages_status_enum to the given output stream \p os \returns an output stream with the
-/// GetDisplayMessagesStatusEnum written to
+/// get_display_messages_status_enum to the given output stream \p os
+/// \returns an output stream with the GetDisplayMessagesStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const GetDisplayMessagesStatusEnum& get_display_messages_status_enum);
 
 // from: GetInstalledCertificateIdsRequest
@@ -986,7 +1020,8 @@ GetCertificateIdUseEnum string_to_get_certificate_id_use_enum(const std::string&
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetCertificateIdUseEnum \p get_certificate_id_use_enum to the
-/// given output stream \p os \returns an output stream with the GetCertificateIdUseEnum written to
+/// given output stream \p os
+/// \returns an output stream with the GetCertificateIdUseEnum written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateIdUseEnum& get_certificate_id_use_enum);
 
 // from: GetInstalledCertificateIdsResponse
@@ -1006,8 +1041,8 @@ GetInstalledCertificateStatusEnum string_to_get_installed_certificate_status_enu
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetInstalledCertificateStatusEnum \p
-/// get_installed_certificate_status_enum to the given output stream \p os \returns an output stream with the
-/// GetInstalledCertificateStatusEnum written to
+/// get_installed_certificate_status_enum to the given output stream \p os
+/// \returns an output stream with the GetInstalledCertificateStatusEnum written to
 std::ostream& operator<<(std::ostream& os,
                          const GetInstalledCertificateStatusEnum& get_installed_certificate_status_enum);
 
@@ -1050,7 +1085,8 @@ LogStatusEnum string_to_log_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given LogStatusEnum \p log_status_enum to the given output stream \p
-/// os \returns an output stream with the LogStatusEnum written to
+/// os
+/// \returns an output stream with the LogStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const LogStatusEnum& log_status_enum);
 
 // from: GetMonitoringReportRequest
@@ -1071,7 +1107,8 @@ MonitoringCriterionEnum string_to_monitoring_criterion_enum(const std::string& s
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MonitoringCriterionEnum \p monitoring_criterion_enum to the
-/// given output stream \p os \returns an output stream with the MonitoringCriterionEnum written to
+/// given output stream \p os
+/// \returns an output stream with the MonitoringCriterionEnum written to
 std::ostream& operator<<(std::ostream& os, const MonitoringCriterionEnum& monitoring_criterion_enum);
 
 // from: GetReportRequest
@@ -1093,7 +1130,8 @@ ComponentCriterionEnum string_to_component_criterion_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ComponentCriterionEnum \p component_criterion_enum to the given
-/// output stream \p os \returns an output stream with the ComponentCriterionEnum written to
+/// output stream \p os
+/// \returns an output stream with the ComponentCriterionEnum written to
 std::ostream& operator<<(std::ostream& os, const ComponentCriterionEnum& component_criterion_enum);
 
 // from: GetTariffsResponse
@@ -1114,7 +1152,8 @@ TariffGetStatusEnum string_to_tariff_get_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TariffGetStatusEnum \p tariff_get_status_enum to the given
-/// output stream \p os \returns an output stream with the TariffGetStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the TariffGetStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const TariffGetStatusEnum& tariff_get_status_enum);
 
 // from: GetTariffsResponse
@@ -1134,7 +1173,8 @@ TariffKindEnum string_to_tariff_kind_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TariffKindEnum \p tariff_kind_enum to the given output stream
-/// \p os \returns an output stream with the TariffKindEnum written to
+/// \p os
+/// \returns an output stream with the TariffKindEnum written to
 std::ostream& operator<<(std::ostream& os, const TariffKindEnum& tariff_kind_enum);
 
 // from: GetVariablesRequest
@@ -1156,7 +1196,8 @@ AttributeEnum string_to_attribute_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AttributeEnum \p attribute_enum to the given output stream \p
-/// os \returns an output stream with the AttributeEnum written to
+/// os
+/// \returns an output stream with the AttributeEnum written to
 std::ostream& operator<<(std::ostream& os, const AttributeEnum& attribute_enum);
 
 // from: GetVariablesResponse
@@ -1179,7 +1220,8 @@ GetVariableStatusEnum string_to_get_variable_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetVariableStatusEnum \p get_variable_status_enum to the given
-/// output stream \p os \returns an output stream with the GetVariableStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the GetVariableStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const GetVariableStatusEnum& get_variable_status_enum);
 
 // from: InstallCertificateRequest
@@ -1202,7 +1244,8 @@ InstallCertificateUseEnum string_to_install_certificate_use_enum(const std::stri
 } // namespace conversions
 
 /// \brief Writes the string representation of the given InstallCertificateUseEnum \p install_certificate_use_enum to
-/// the given output stream \p os \returns an output stream with the InstallCertificateUseEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the InstallCertificateUseEnum written to
 std::ostream& operator<<(std::ostream& os, const InstallCertificateUseEnum& install_certificate_use_enum);
 
 // from: InstallCertificateResponse
@@ -1223,7 +1266,8 @@ InstallCertificateStatusEnum string_to_install_certificate_status_enum(const std
 } // namespace conversions
 
 /// \brief Writes the string representation of the given InstallCertificateStatusEnum \p install_certificate_status_enum
-/// to the given output stream \p os \returns an output stream with the InstallCertificateStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the InstallCertificateStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const InstallCertificateStatusEnum& install_certificate_status_enum);
 
 // from: LogStatusNotificationRequest
@@ -1249,7 +1293,8 @@ UploadLogStatusEnum string_to_upload_log_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UploadLogStatusEnum \p upload_log_status_enum to the given
-/// output stream \p os \returns an output stream with the UploadLogStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the UploadLogStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const UploadLogStatusEnum& upload_log_status_enum);
 
 // from: MeterValuesRequest
@@ -1323,7 +1368,8 @@ MeasurandEnum string_to_measurand_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MeasurandEnum \p measurand_enum to the given output stream \p
-/// os \returns an output stream with the MeasurandEnum written to
+/// os
+/// \returns an output stream with the MeasurandEnum written to
 std::ostream& operator<<(std::ostream& os, const MeasurandEnum& measurand_enum);
 
 // from: MeterValuesRequest
@@ -1349,7 +1395,8 @@ ReadingContextEnum string_to_reading_context_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReadingContextEnum \p reading_context_enum to the given output
-/// stream \p os \returns an output stream with the ReadingContextEnum written to
+/// stream \p os
+/// \returns an output stream with the ReadingContextEnum written to
 std::ostream& operator<<(std::ostream& os, const ReadingContextEnum& reading_context_enum);
 
 // from: MeterValuesRequest
@@ -1421,8 +1468,8 @@ NotifyAllowedEnergyTransferStatusEnum string_to_notify_allowed_energy_transfer_s
 } // namespace conversions
 
 /// \brief Writes the string representation of the given NotifyAllowedEnergyTransferStatusEnum \p
-/// notify_allowed_energy_transfer_status_enum to the given output stream \p os \returns an output stream with the
-/// NotifyAllowedEnergyTransferStatusEnum written to
+/// notify_allowed_energy_transfer_status_enum to the given output stream \p os
+/// \returns an output stream with the NotifyAllowedEnergyTransferStatusEnum written to
 std::ostream& operator<<(std::ostream& os,
                          const NotifyAllowedEnergyTransferStatusEnum& notify_allowed_energy_transfer_status_enum);
 
@@ -1473,7 +1520,8 @@ GridEventFaultEnum string_to_grid_event_fault_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GridEventFaultEnum \p grid_event_fault_enum to the given output
-/// stream \p os \returns an output stream with the GridEventFaultEnum written to
+/// stream \p os
+/// \returns an output stream with the GridEventFaultEnum written to
 std::ostream& operator<<(std::ostream& os, const GridEventFaultEnum& grid_event_fault_enum);
 
 // from: NotifyEVChargingNeedsRequest
@@ -1506,7 +1554,8 @@ IslandingDetectionEnum string_to_islanding_detection_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given IslandingDetectionEnum \p islanding_detection_enum to the given
-/// output stream \p os \returns an output stream with the IslandingDetectionEnum written to
+/// output stream \p os
+/// \returns an output stream with the IslandingDetectionEnum written to
 std::ostream& operator<<(std::ostream& os, const IslandingDetectionEnum& islanding_detection_enum);
 
 // from: NotifyEVChargingNeedsRequest
@@ -1526,7 +1575,8 @@ ControlModeEnum string_to_control_mode_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ControlModeEnum \p control_mode_enum to the given output stream
-/// \p os \returns an output stream with the ControlModeEnum written to
+/// \p os
+/// \returns an output stream with the ControlModeEnum written to
 std::ostream& operator<<(std::ostream& os, const ControlModeEnum& control_mode_enum);
 
 // from: NotifyEVChargingNeedsRequest
@@ -1546,7 +1596,8 @@ MobilityNeedsModeEnum string_to_mobility_needs_mode_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MobilityNeedsModeEnum \p mobility_needs_mode_enum to the given
-/// output stream \p os \returns an output stream with the MobilityNeedsModeEnum written to
+/// output stream \p os
+/// \returns an output stream with the MobilityNeedsModeEnum written to
 std::ostream& operator<<(std::ostream& os, const MobilityNeedsModeEnum& mobility_needs_mode_enum);
 
 // from: NotifyEVChargingNeedsResponse
@@ -1568,8 +1619,8 @@ NotifyEVChargingNeedsStatusEnum string_to_notify_evcharging_needs_status_enum(co
 } // namespace conversions
 
 /// \brief Writes the string representation of the given NotifyEVChargingNeedsStatusEnum \p
-/// notify_evcharging_needs_status_enum to the given output stream \p os \returns an output stream with the
-/// NotifyEVChargingNeedsStatusEnum written to
+/// notify_evcharging_needs_status_enum to the given output stream \p os
+/// \returns an output stream with the NotifyEVChargingNeedsStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const NotifyEVChargingNeedsStatusEnum& notify_evcharging_needs_status_enum);
 
 // from: NotifyEventRequest
@@ -1590,7 +1641,8 @@ EventTriggerEnum string_to_event_trigger_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given EventTriggerEnum \p event_trigger_enum to the given output
-/// stream \p os \returns an output stream with the EventTriggerEnum written to
+/// stream \p os
+/// \returns an output stream with the EventTriggerEnum written to
 std::ostream& operator<<(std::ostream& os, const EventTriggerEnum& event_trigger_enum);
 
 // from: NotifyEventRequest
@@ -1612,7 +1664,8 @@ EventNotificationEnum string_to_event_notification_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given EventNotificationEnum \p event_notification_enum to the given
-/// output stream \p os \returns an output stream with the EventNotificationEnum written to
+/// output stream \p os
+/// \returns an output stream with the EventNotificationEnum written to
 std::ostream& operator<<(std::ostream& os, const EventNotificationEnum& event_notification_enum);
 
 // from: NotifyMonitoringReportRequest
@@ -1658,7 +1711,8 @@ MutabilityEnum string_to_mutability_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MutabilityEnum \p mutability_enum to the given output stream \p
-/// os \returns an output stream with the MutabilityEnum written to
+/// os
+/// \returns an output stream with the MutabilityEnum written to
 std::ostream& operator<<(std::ostream& os, const MutabilityEnum& mutability_enum);
 
 // from: NotifyReportRequest
@@ -1706,7 +1760,8 @@ PaymentStatusEnum string_to_payment_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given PaymentStatusEnum \p payment_status_enum to the given output
-/// stream \p os \returns an output stream with the PaymentStatusEnum written to
+/// stream \p os
+/// \returns an output stream with the PaymentStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const PaymentStatusEnum& payment_status_enum);
 
 // from: PublishFirmwareStatusNotificationRequest
@@ -1734,7 +1789,8 @@ PublishFirmwareStatusEnum string_to_publish_firmware_status_enum(const std::stri
 } // namespace conversions
 
 /// \brief Writes the string representation of the given PublishFirmwareStatusEnum \p publish_firmware_status_enum to
-/// the given output stream \p os \returns an output stream with the PublishFirmwareStatusEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the PublishFirmwareStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const PublishFirmwareStatusEnum& publish_firmware_status_enum);
 
 // from: PullDynamicScheduleUpdateResponse
@@ -1754,7 +1810,8 @@ ChargingProfileStatusEnum string_to_charging_profile_status_enum(const std::stri
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileStatusEnum \p charging_profile_status_enum to
-/// the given output stream \p os \returns an output stream with the ChargingProfileStatusEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the ChargingProfileStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfileStatusEnum& charging_profile_status_enum);
 
 // from: ReportChargingProfilesRequest
@@ -1776,7 +1833,8 @@ ChargingProfileKindEnum string_to_charging_profile_kind_enum(const std::string& 
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileKindEnum \p charging_profile_kind_enum to the
-/// given output stream \p os \returns an output stream with the ChargingProfileKindEnum written to
+/// given output stream \p os
+/// \returns an output stream with the ChargingProfileKindEnum written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfileKindEnum& charging_profile_kind_enum);
 
 // from: ReportChargingProfilesRequest
@@ -1796,7 +1854,8 @@ RecurrencyKindEnum string_to_recurrency_kind_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RecurrencyKindEnum \p recurrency_kind_enum to the given output
-/// stream \p os \returns an output stream with the RecurrencyKindEnum written to
+/// stream \p os
+/// \returns an output stream with the RecurrencyKindEnum written to
 std::ostream& operator<<(std::ostream& os, const RecurrencyKindEnum& recurrency_kind_enum);
 
 // from: ReportDERControlRequest
@@ -1816,7 +1875,8 @@ PowerDuringCessationEnum string_to_power_during_cessation_enum(const std::string
 } // namespace conversions
 
 /// \brief Writes the string representation of the given PowerDuringCessationEnum \p power_during_cessation_enum to the
-/// given output stream \p os \returns an output stream with the PowerDuringCessationEnum written to
+/// given output stream \p os
+/// \returns an output stream with the PowerDuringCessationEnum written to
 std::ostream& operator<<(std::ostream& os, const PowerDuringCessationEnum& power_during_cessation_enum);
 
 // from: ReportDERControlRequest
@@ -1860,7 +1920,8 @@ RequestStartStopStatusEnum string_to_request_start_stop_status_enum(const std::s
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RequestStartStopStatusEnum \p request_start_stop_status_enum to
-/// the given output stream \p os \returns an output stream with the RequestStartStopStatusEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the RequestStartStopStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const RequestStartStopStatusEnum& request_start_stop_status_enum);
 
 // from: ReservationStatusUpdateRequest
@@ -1881,7 +1942,8 @@ ReservationUpdateStatusEnum string_to_reservation_update_status_enum(const std::
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReservationUpdateStatusEnum \p reservation_update_status_enum
-/// to the given output stream \p os \returns an output stream with the ReservationUpdateStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the ReservationUpdateStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ReservationUpdateStatusEnum& reservation_update_status_enum);
 
 // from: ReserveNowResponse
@@ -1904,7 +1966,8 @@ ReserveNowStatusEnum string_to_reserve_now_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReserveNowStatusEnum \p reserve_now_status_enum to the given
-/// output stream \p os \returns an output stream with the ReserveNowStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the ReserveNowStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ReserveNowStatusEnum& reserve_now_status_enum);
 
 // from: ResetRequest
@@ -1946,7 +2009,8 @@ ResetStatusEnum string_to_reset_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ResetStatusEnum \p reset_status_enum to the given output stream
-/// \p os \returns an output stream with the ResetStatusEnum written to
+/// \p os
+/// \returns an output stream with the ResetStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ResetStatusEnum& reset_status_enum);
 
 // from: SendLocalListRequest
@@ -1987,7 +2051,8 @@ SendLocalListStatusEnum string_to_send_local_list_status_enum(const std::string&
 } // namespace conversions
 
 /// \brief Writes the string representation of the given SendLocalListStatusEnum \p send_local_list_status_enum to the
-/// given output stream \p os \returns an output stream with the SendLocalListStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the SendLocalListStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const SendLocalListStatusEnum& send_local_list_status_enum);
 
 // from: SetDefaultTariffResponse
@@ -2010,7 +2075,8 @@ TariffSetStatusEnum string_to_tariff_set_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TariffSetStatusEnum \p tariff_set_status_enum to the given
-/// output stream \p os \returns an output stream with the TariffSetStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the TariffSetStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const TariffSetStatusEnum& tariff_set_status_enum);
 
 // from: SetDisplayMessageResponse
@@ -2035,7 +2101,8 @@ DisplayMessageStatusEnum string_to_display_message_status_enum(const std::string
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DisplayMessageStatusEnum \p display_message_status_enum to the
-/// given output stream \p os \returns an output stream with the DisplayMessageStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the DisplayMessageStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const DisplayMessageStatusEnum& display_message_status_enum);
 
 // from: SetMonitoringBaseRequest
@@ -2056,7 +2123,8 @@ MonitoringBaseEnum string_to_monitoring_base_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MonitoringBaseEnum \p monitoring_base_enum to the given output
-/// stream \p os \returns an output stream with the MonitoringBaseEnum written to
+/// stream \p os
+/// \returns an output stream with the MonitoringBaseEnum written to
 std::ostream& operator<<(std::ostream& os, const MonitoringBaseEnum& monitoring_base_enum);
 
 // from: SetNetworkProfileRequest
@@ -2078,7 +2146,8 @@ APNAuthenticationEnum string_to_apnauthentication_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given APNAuthenticationEnum \p apnauthentication_enum to the given
-/// output stream \p os \returns an output stream with the APNAuthenticationEnum written to
+/// output stream \p os
+/// \returns an output stream with the APNAuthenticationEnum written to
 std::ostream& operator<<(std::ostream& os, const APNAuthenticationEnum& apnauthentication_enum);
 
 // from: SetNetworkProfileRequest
@@ -2102,7 +2171,8 @@ OCPPVersionEnum string_to_ocppversion_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given OCPPVersionEnum \p ocppversion_enum to the given output stream
-/// \p os \returns an output stream with the OCPPVersionEnum written to
+/// \p os
+/// \returns an output stream with the OCPPVersionEnum written to
 std::ostream& operator<<(std::ostream& os, const OCPPVersionEnum& ocppversion_enum);
 
 // from: SetNetworkProfileRequest
@@ -2129,7 +2199,8 @@ OCPPInterfaceEnum string_to_ocppinterface_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given OCPPInterfaceEnum \p ocppinterface_enum to the given output
-/// stream \p os \returns an output stream with the OCPPInterfaceEnum written to
+/// stream \p os
+/// \returns an output stream with the OCPPInterfaceEnum written to
 std::ostream& operator<<(std::ostream& os, const OCPPInterfaceEnum& ocppinterface_enum);
 
 // from: SetNetworkProfileRequest
@@ -2149,7 +2220,8 @@ OCPPTransportEnum string_to_ocpptransport_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given OCPPTransportEnum \p ocpptransport_enum to the given output
-/// stream \p os \returns an output stream with the OCPPTransportEnum written to
+/// stream \p os
+/// \returns an output stream with the OCPPTransportEnum written to
 std::ostream& operator<<(std::ostream& os, const OCPPTransportEnum& ocpptransport_enum);
 
 // from: SetNetworkProfileRequest
@@ -2192,7 +2264,8 @@ SetNetworkProfileStatusEnum string_to_set_network_profile_status_enum(const std:
 } // namespace conversions
 
 /// \brief Writes the string representation of the given SetNetworkProfileStatusEnum \p set_network_profile_status_enum
-/// to the given output stream \p os \returns an output stream with the SetNetworkProfileStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the SetNetworkProfileStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const SetNetworkProfileStatusEnum& set_network_profile_status_enum);
 
 // from: SetVariableMonitoringResponse
@@ -2216,7 +2289,8 @@ SetMonitoringStatusEnum string_to_set_monitoring_status_enum(const std::string& 
 } // namespace conversions
 
 /// \brief Writes the string representation of the given SetMonitoringStatusEnum \p set_monitoring_status_enum to the
-/// given output stream \p os \returns an output stream with the SetMonitoringStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the SetMonitoringStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const SetMonitoringStatusEnum& set_monitoring_status_enum);
 
 // from: SetVariablesResponse
@@ -2240,7 +2314,8 @@ SetVariableStatusEnum string_to_set_variable_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given SetVariableStatusEnum \p set_variable_status_enum to the given
-/// output stream \p os \returns an output stream with the SetVariableStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the SetVariableStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const SetVariableStatusEnum& set_variable_status_enum);
 
 // from: StatusNotificationRequest
@@ -2263,7 +2338,8 @@ ConnectorStatusEnum string_to_connector_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ConnectorStatusEnum \p connector_status_enum to the given
-/// output stream \p os \returns an output stream with the ConnectorStatusEnum written to
+/// output stream \p os
+/// \returns an output stream with the ConnectorStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const ConnectorStatusEnum& connector_status_enum);
 
 // from: TransactionEventRequest
@@ -2288,7 +2364,8 @@ CostDimensionEnum string_to_cost_dimension_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CostDimensionEnum \p cost_dimension_enum to the given output
-/// stream \p os \returns an output stream with the CostDimensionEnum written to
+/// stream \p os
+/// \returns an output stream with the CostDimensionEnum written to
 std::ostream& operator<<(std::ostream& os, const CostDimensionEnum& cost_dimension_enum);
 
 // from: TransactionEventRequest
@@ -2309,7 +2386,8 @@ TariffCostEnum string_to_tariff_cost_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TariffCostEnum \p tariff_cost_enum to the given output stream
-/// \p os \returns an output stream with the TariffCostEnum written to
+/// \p os
+/// \returns an output stream with the TariffCostEnum written to
 std::ostream& operator<<(std::ostream& os, const TariffCostEnum& tariff_cost_enum);
 
 // from: TransactionEventRequest
@@ -2330,7 +2408,8 @@ TransactionEventEnum string_to_transaction_event_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TransactionEventEnum \p transaction_event_enum to the given
-/// output stream \p os \returns an output stream with the TransactionEventEnum written to
+/// output stream \p os
+/// \returns an output stream with the TransactionEventEnum written to
 std::ostream& operator<<(std::ostream& os, const TransactionEventEnum& transaction_event_enum);
 
 // from: TransactionEventRequest
@@ -2377,7 +2456,8 @@ TriggerReasonEnum string_to_trigger_reason_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TriggerReasonEnum \p trigger_reason_enum to the given output
-/// stream \p os \returns an output stream with the TriggerReasonEnum written to
+/// stream \p os
+/// \returns an output stream with the TriggerReasonEnum written to
 std::ostream& operator<<(std::ostream& os, const TriggerReasonEnum& trigger_reason_enum);
 
 // from: TransactionEventRequest
@@ -2399,7 +2479,8 @@ PreconditioningStatusEnum string_to_preconditioning_status_enum(const std::strin
 } // namespace conversions
 
 /// \brief Writes the string representation of the given PreconditioningStatusEnum \p preconditioning_status_enum to the
-/// given output stream \p os \returns an output stream with the PreconditioningStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the PreconditioningStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const PreconditioningStatusEnum& preconditioning_status_enum);
 
 // from: TransactionEventRequest
@@ -2422,7 +2503,8 @@ ChargingStateEnum string_to_charging_state_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingStateEnum \p charging_state_enum to the given output
-/// stream \p os \returns an output stream with the ChargingStateEnum written to
+/// stream \p os
+/// \returns an output stream with the ChargingStateEnum written to
 std::ostream& operator<<(std::ostream& os, const ChargingStateEnum& charging_state_enum);
 
 // from: TransactionEventRequest
@@ -2491,7 +2573,8 @@ MessageTriggerEnum string_to_message_trigger_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessageTriggerEnum \p message_trigger_enum to the given output
-/// stream \p os \returns an output stream with the MessageTriggerEnum written to
+/// stream \p os
+/// \returns an output stream with the MessageTriggerEnum written to
 std::ostream& operator<<(std::ostream& os, const MessageTriggerEnum& message_trigger_enum);
 
 // from: TriggerMessageResponse
@@ -2512,7 +2595,8 @@ TriggerMessageStatusEnum string_to_trigger_message_status_enum(const std::string
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TriggerMessageStatusEnum \p trigger_message_status_enum to the
-/// given output stream \p os \returns an output stream with the TriggerMessageStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the TriggerMessageStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const TriggerMessageStatusEnum& trigger_message_status_enum);
 
 // from: UnlockConnectorResponse
@@ -2534,7 +2618,8 @@ UnlockStatusEnum string_to_unlock_status_enum(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UnlockStatusEnum \p unlock_status_enum to the given output
-/// stream \p os \returns an output stream with the UnlockStatusEnum written to
+/// stream \p os
+/// \returns an output stream with the UnlockStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const UnlockStatusEnum& unlock_status_enum);
 
 // from: UnpublishFirmwareResponse
@@ -2555,7 +2640,8 @@ UnpublishFirmwareStatusEnum string_to_unpublish_firmware_status_enum(const std::
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UnpublishFirmwareStatusEnum \p unpublish_firmware_status_enum
-/// to the given output stream \p os \returns an output stream with the UnpublishFirmwareStatusEnum written to
+/// to the given output stream \p os
+/// \returns an output stream with the UnpublishFirmwareStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const UnpublishFirmwareStatusEnum& unpublish_firmware_status_enum);
 
 // from: UpdateFirmwareResponse
@@ -2578,7 +2664,8 @@ UpdateFirmwareStatusEnum string_to_update_firmware_status_enum(const std::string
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UpdateFirmwareStatusEnum \p update_firmware_status_enum to the
-/// given output stream \p os \returns an output stream with the UpdateFirmwareStatusEnum written to
+/// given output stream \p os
+/// \returns an output stream with the UpdateFirmwareStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const UpdateFirmwareStatusEnum& update_firmware_status_enum);
 
 // from: UsePriorityChargingResponse
@@ -2599,7 +2686,8 @@ PriorityChargingStatusEnum string_to_priority_charging_status_enum(const std::st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given PriorityChargingStatusEnum \p priority_charging_status_enum to
-/// the given output stream \p os \returns an output stream with the PriorityChargingStatusEnum written to
+/// the given output stream \p os
+/// \returns an output stream with the PriorityChargingStatusEnum written to
 std::ostream& operator<<(std::ostream& os, const PriorityChargingStatusEnum& priority_charging_status_enum);
 
 } // namespace v2

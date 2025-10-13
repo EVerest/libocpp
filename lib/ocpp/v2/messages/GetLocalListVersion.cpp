@@ -36,7 +36,8 @@ void from_json(const json& j, GetLocalListVersionRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetLocalListVersionRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetLocalListVersionRequest written to
+/// os
+/// \returns an output stream with the GetLocalListVersionRequest written to
 std::ostream& operator<<(std::ostream& os, const GetLocalListVersionRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -68,7 +69,8 @@ void from_json(const json& j, GetLocalListVersionResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetLocalListVersionResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetLocalListVersionResponse written to
+/// os
+/// \returns an output stream with the GetLocalListVersionResponse written to
 std::ostream& operator<<(std::ostream& os, const GetLocalListVersionResponse& k) {
     os << json(k).dump(4);
     return os;

@@ -31,6 +31,7 @@ struct Message {
     /// \brief Provides the type of the message
     /// \returns the message type as a string
     virtual std::string get_type() const = 0;
+    virtual ~Message() = default;
 };
 
 /// \brief Exception used when DateTime class is initialized by invalid timepoint string.
@@ -81,7 +82,7 @@ public:
 
     /// \brief Conversion operatpr std::string returns a RFC 3339 compatible string representation of the stored
     /// DateTime
-    operator std::string() {
+    operator std::string() const {
         return this->to_rfc3339();
     }
 
@@ -152,7 +153,7 @@ public:
 };
 
 /// \brief Contains the different connection states of the charge point
-enum SessionStartedReason {
+enum class SessionStartedReason {
     EVConnected,
     Authorized
 };
@@ -292,7 +293,7 @@ struct Powermeter {
 };
 
 struct StateOfCharge {
-    float value;                         ///< State of Charge in percent
+    float value = 0;                     ///< State of Charge in percent
     std::optional<std::string> location; ///< Location of the State of Charge measurement
 
     /// \brief Conversion from a given StateOfCharge \p k to a given json object \p j
@@ -307,7 +308,7 @@ struct StateOfCharge {
 };
 
 struct Temperature {
-    float value;                         ///< Temperature in degree Celsius
+    float value = 0;                     ///< Temperature in degree Celsius
     std::optional<std::string> location; ///< Location of the Temperature measurement
 
     /// \brief Conversion from a given Temperature \p k to a given json object \p j
@@ -322,7 +323,7 @@ struct Temperature {
 };
 
 struct RPM {
-    float value;                         ///< RPM
+    float value = 0;                     ///< RPM
     std::optional<std::string> location; ///< Location of the RPM measurement
 
     /// \brief Conversion from a given RPM \p k to a given json object \p j
@@ -598,9 +599,9 @@ std::string certificate_type_to_string(CertificateType e);
 CertificateType string_to_certificate_type(const std::string& s);
 } // namespace conversions
 
-/// \brief Writes the string representation of the given CertificateType \p ceritficate_type to
+/// \brief Writes the string representation of the given CertificateType \p certificate_type to
 /// the given output stream \p os \returns an output stream with the CertificateType written to
-std::ostream& operator<<(std::ostream& os, const CertificateType& ceritficate_type);
+std::ostream& operator<<(std::ostream& os, const CertificateType& certificate_type);
 
 struct CertificateHashDataChain {
     CertificateHashDataType certificateHashData;
@@ -704,7 +705,7 @@ struct CertificateInfo {
 };
 
 struct GetCertificateInfoResult {
-    GetCertificateInfoStatus status;
+    GetCertificateInfoStatus status = GetCertificateInfoStatus::Rejected;
     std::optional<CertificateInfo> info;
 };
 
@@ -768,8 +769,8 @@ firmware_status_notification_to_firmware_status_enum_type(const FirmwareStatusNo
 
 namespace security {
 // The security profiles defined in OCPP 2.0.1 resp. in the OCPP 1.6 security-whitepaper.
-enum SecurityProfile { // no "enum class" because values are used in implicit `switch`-comparisons to `int
-                       // security_profile`
+// NOLINTNEXTLINE(cppcoreguidelines-use-enum-class): used in implicit `switch`-comparisons to `int security_profile`
+enum SecurityProfile {
     OCPP_1_6_ONLY_UNSECURED_TRANSPORT_WITHOUT_BASIC_AUTHENTICATION = 0,
     UNSECURED_TRANSPORT_WITH_BASIC_AUTHENTICATION = 1,
     TLS_WITH_BASIC_AUTHENTICATION = 2,

@@ -52,7 +52,7 @@ k.{{property.name}}
 {%- endif %}
 {%- for property in type.properties %}
 {%- if property.required and property.type.startswith('std::vector<') and property.type.endswith('Enum>')%}
-            for (auto val : k.{{property.name}}) {
+            for (const auto& val : k.{{property.name}}) {
                 {%- if property.type.endswith('Enum>') %}
                 j["{{property.name}}"].push_back({{ conversions_namespace_prefix }}conversions::{{- property.type.replace('std::vector<','').replace('>','') | snake_case}}_to_string(val));
                 {%- else%}
@@ -72,13 +72,13 @@ j["{{property.name}}"] = json::array();
             {%- else %}
 {#only optional keys in json#}
 {#TODO: add key to json when there are no required keys but multiple optional keys#}
-if (j.size() == 0) {
+if (j.empty()) {
                 j = json{{'{{"'+property.name+'", json::array()}};'}}
             } else {
                 j["{{property.name}}"] = json::array();
             }
 {% endif %}
-            for (auto val : k.{{property.name}}.value()) {
+            for (const auto& val : k.{{property.name}}.value()) {
                 {%- if property.type.endswith('Enum>') %}
                 j["{{property.name}}"].push_back({{ conversions_namespace_prefix }}conversions::{{- property.type.replace('std::vector<','').replace('>','') | snake_case}}_to_string(val));
                 {%- else%}
@@ -109,7 +109,7 @@ j["{{property.name}}"] = k.{{property.name}}.value();
 {% for property in type.properties %}
 {% if property.required %}
 {% if property.type.startswith('std::vector<') %}
-        for (auto val : j.at("{{property.name}}")) {
+        for (const auto& val : j.at("{{property.name}}")) {
 {%- if property.type.endswith('Enum>') %}
             k.{{property.name}}.push_back({{ conversions_namespace_prefix }}conversions::string_to_{{- property.type.replace('std::vector<','').replace('>','') | snake_case}}(val));
 {% else %}
@@ -136,9 +136,9 @@ j["{{property.name}}"] = k.{{property.name}}.value();
 {% if not property.required %}
         if (j.contains("{{property.name}}")) {
 {% if property.type.startswith('std::vector<') %}
-            json arr = j.at("{{property.name}}");
+            const json& arr = j.at("{{property.name}}");
             {{property.type}} vec;
-            for (auto val : arr) {
+            for (const auto& val : arr) {
                 {%- if property.type.endswith('Enum>') %}
                 vec.push_back({{ conversions_namespace_prefix }}conversions::string_to_{{- property.type.replace('std::vector<','').replace('>','') | snake_case}}(val));
                 {%- else %}

@@ -27,7 +27,7 @@ void to_json(json& j, const NotifyMonitoringReportRequest& k) {
     // the optional parts of the message
     if (k.monitor) {
         j["monitor"] = json::array();
-        for (auto val : k.monitor.value()) {
+        for (const auto& val : k.monitor.value()) {
             j["monitor"].push_back(val);
         }
     }
@@ -47,9 +47,9 @@ void from_json(const json& j, NotifyMonitoringReportRequest& k) {
 
     // the optional parts of the message
     if (j.contains("monitor")) {
-        json arr = j.at("monitor");
+        const json& arr = j.at("monitor");
         std::vector<MonitoringData> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.monitor.emplace(vec);
@@ -63,7 +63,8 @@ void from_json(const json& j, NotifyMonitoringReportRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyMonitoringReportRequest \p k to the given output stream
-/// \p os \returns an output stream with the NotifyMonitoringReportRequest written to
+/// \p os
+/// \returns an output stream with the NotifyMonitoringReportRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyMonitoringReportRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -92,7 +93,8 @@ void from_json(const json& j, NotifyMonitoringReportResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyMonitoringReportResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyMonitoringReportResponse written to
+/// \p os
+/// \returns an output stream with the NotifyMonitoringReportResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyMonitoringReportResponse& k) {
     os << json(k).dump(4);
     return os;

@@ -22,8 +22,7 @@ ocpp::v2::Bidirectional::Bidirectional(
     context(context), notify_allowed_energy_transfer_callback(notify_allowed_energy_transfer_callback) {
 }
 
-ocpp::v2::Bidirectional::~Bidirectional() {
-}
+ocpp::v2::Bidirectional::~Bidirectional() = default;
 
 void ocpp::v2::Bidirectional::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
     const auto& json_message = message.message;
@@ -53,8 +52,8 @@ void ocpp::v2::Bidirectional::handle_notify_allowed_energy_transfer(
         status_info.reasonCode = "InvalidValue";
         status_info.additionalInfo = "No evse associated to that transactionId.";
         response.statusInfo = status_info;
-        ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(response,
-                                                                               notify_allowed_energy_transfer.uniqueId);
+        const ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(
+            response, notify_allowed_energy_transfer.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -68,8 +67,8 @@ void ocpp::v2::Bidirectional::handle_notify_allowed_energy_transfer(
         status_info.reasonCode = "InvalidValue";
         status_info.additionalInfo = "EVSE does not support V2X or V2X is disabled.";
         response.statusInfo = status_info;
-        ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(response,
-                                                                               notify_allowed_energy_transfer.uniqueId);
+        const ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(
+            response, notify_allowed_energy_transfer.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -87,8 +86,8 @@ void ocpp::v2::Bidirectional::handle_notify_allowed_energy_transfer(
         status_info.additionalInfo = "Impossible to trigger service renegotiation due to the ISO15118 version that "
                                      "does not support it. Ignoring command.";
         response.statusInfo = status_info;
-        ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(response,
-                                                                               notify_allowed_energy_transfer.uniqueId);
+        const ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(
+            response, notify_allowed_energy_transfer.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -105,17 +104,17 @@ void ocpp::v2::Bidirectional::handle_notify_allowed_energy_transfer(
         status_info.additionalInfo =
             "Impossible to trigger service renegotiation since it is not supported. Ignoring command.";
         response.statusInfo = status_info;
-        ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(response,
-                                                                               notify_allowed_energy_transfer.uniqueId);
+        const ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(
+            response, notify_allowed_energy_transfer.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
 
-    bool update_result = this->notify_allowed_energy_transfer_callback.has_value()
-                             ? this->notify_allowed_energy_transfer_callback.value()(
-                                   notify_allowed_energy_transfer.msg.allowedEnergyTransfer,
-                                   notify_allowed_energy_transfer.msg.transactionId)
-                             : false;
+    const bool update_result = this->notify_allowed_energy_transfer_callback.has_value()
+                                   ? this->notify_allowed_energy_transfer_callback.value()(
+                                         notify_allowed_energy_transfer.msg.allowedEnergyTransfer,
+                                         notify_allowed_energy_transfer.msg.transactionId)
+                                   : false;
     if (!update_result) {
         response.status = NotifyAllowedEnergyTransferStatusEnum::Rejected;
         ocpp::v2::StatusInfo status_info;
@@ -123,7 +122,7 @@ void ocpp::v2::Bidirectional::handle_notify_allowed_energy_transfer(
         status_info.additionalInfo = "Update of allowed energy transfer and/or service renegotiation was unsuccessful.";
         response.statusInfo = status_info;
     }
-    ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(response,
-                                                                           notify_allowed_energy_transfer.uniqueId);
+    const ocpp::CallResult<v21::NotifyAllowedEnergyTransferResponse> call_result(
+        response, notify_allowed_energy_transfer.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }

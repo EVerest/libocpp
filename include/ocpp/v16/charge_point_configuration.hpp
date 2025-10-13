@@ -40,8 +40,6 @@ private:
 
     bool isConnectorPhaseRotationValid(std::string str);
 
-    bool checkTimeOffset(const std::string& offset);
-
     void setChargepointInformationProperty(json& user_config, const std::string& key,
                                            const std::optional<std::string>& value);
 

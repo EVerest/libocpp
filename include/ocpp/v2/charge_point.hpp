@@ -443,7 +443,7 @@ private:
                     conversions::messagetype_to_string(expected_response_message_type) +
                     ", got: " + conversions::messagetype_to_string(enhanced_response.messageType));
             }
-            ocpp::CallResult<ResponseType> call_result = enhanced_response.message;
+            const ocpp::CallResult<ResponseType> call_result = enhanced_response.message;
             return call_result.msg;
         };
     }
@@ -514,14 +514,14 @@ public:
 
     /// @}  // End chargepoint 2.0.1 topic
 
-    ~ChargePoint();
+    ~ChargePoint() override;
 
     void start(BootReasonEnum bootreason = BootReasonEnum::PowerUp, bool start_connecting = true) override;
 
     void stop() override;
 
     void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) override;
-    virtual void disconnect_websocket() override;
+    void disconnect_websocket() override;
 
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
 

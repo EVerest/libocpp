@@ -32,7 +32,8 @@ void to_json(json& j, const GetCertificateStatusRequest& k);
 void from_json(const json& j, GetCertificateStatusRequest& k);
 
 /// \brief Writes the string representation of the given GetCertificateStatusRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetCertificateStatusRequest written to
+/// os
+/// \returns an output stream with the GetCertificateStatusRequest written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateStatusRequest& k);
 
 /// \brief Contains a OCPP GetCertificateStatusResponse message
@@ -54,7 +55,8 @@ void to_json(json& j, const GetCertificateStatusResponse& k);
 void from_json(const json& j, GetCertificateStatusResponse& k);
 
 /// \brief Writes the string representation of the given GetCertificateStatusResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetCertificateStatusResponse written to
+/// os
+/// \returns an output stream with the GetCertificateStatusResponse written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateStatusResponse& k);
 
 } // namespace v2

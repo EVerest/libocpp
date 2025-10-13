@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #include <ocpp/v16/messages/GetInstalledCertificateIds.hpp>
@@ -33,7 +33,8 @@ void from_json(const json& j, GetInstalledCertificateIdsRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetInstalledCertificateIdsRequest \p k to the given output
-/// stream \p os \returns an output stream with the GetInstalledCertificateIdsRequest written to
+/// stream \p os
+/// \returns an output stream with the GetInstalledCertificateIdsRequest written to
 std::ostream& operator<<(std::ostream& os, const GetInstalledCertificateIdsRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -51,7 +52,7 @@ void to_json(json& j, const GetInstalledCertificateIdsResponse& k) {
     // the optional parts of the message
     if (k.certificateHashData) {
         j["certificateHashData"] = json::array();
-        for (auto val : k.certificateHashData.value()) {
+        for (const auto& val : k.certificateHashData.value()) {
             j["certificateHashData"].push_back(val);
         }
     }
@@ -63,9 +64,9 @@ void from_json(const json& j, GetInstalledCertificateIdsResponse& k) {
 
     // the optional parts of the message
     if (j.contains("certificateHashData")) {
-        json arr = j.at("certificateHashData");
+        const json& arr = j.at("certificateHashData");
         std::vector<CertificateHashDataType> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.certificateHashData.emplace(vec);
@@ -73,7 +74,8 @@ void from_json(const json& j, GetInstalledCertificateIdsResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetInstalledCertificateIdsResponse \p k to the given output
-/// stream \p os \returns an output stream with the GetInstalledCertificateIdsResponse written to
+/// stream \p os
+/// \returns an output stream with the GetInstalledCertificateIdsResponse written to
 std::ostream& operator<<(std::ostream& os, const GetInstalledCertificateIdsResponse& k) {
     os << json(k).dump(4);
     return os;

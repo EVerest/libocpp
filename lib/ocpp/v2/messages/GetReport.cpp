@@ -25,13 +25,13 @@ void to_json(json& j, const GetReportRequest& k) {
     // the optional parts of the message
     if (k.componentVariable) {
         j["componentVariable"] = json::array();
-        for (auto val : k.componentVariable.value()) {
+        for (const auto& val : k.componentVariable.value()) {
             j["componentVariable"].push_back(val);
         }
     }
     if (k.componentCriteria) {
         j["componentCriteria"] = json::array();
-        for (auto val : k.componentCriteria.value()) {
+        for (const auto& val : k.componentCriteria.value()) {
             j["componentCriteria"].push_back(conversions::component_criterion_enum_to_string(val));
         }
     }
@@ -46,17 +46,17 @@ void from_json(const json& j, GetReportRequest& k) {
 
     // the optional parts of the message
     if (j.contains("componentVariable")) {
-        json arr = j.at("componentVariable");
+        const json& arr = j.at("componentVariable");
         std::vector<ComponentVariable> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.componentVariable.emplace(vec);
     }
     if (j.contains("componentCriteria")) {
-        json arr = j.at("componentCriteria");
+        const json& arr = j.at("componentCriteria");
         std::vector<ComponentCriterionEnum> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(conversions::string_to_component_criterion_enum(val));
         }
         k.componentCriteria.emplace(vec);

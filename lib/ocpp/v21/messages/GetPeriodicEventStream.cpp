@@ -36,7 +36,8 @@ void from_json(const json& j, GetPeriodicEventStreamRequest& k) {
 }
 
 /// \brief Writes the string representation of the given GetPeriodicEventStreamRequest \p k to the given output stream
-/// \p os \returns an output stream with the GetPeriodicEventStreamRequest written to
+/// \p os
+/// \returns an output stream with the GetPeriodicEventStreamRequest written to
 std::ostream& operator<<(std::ostream& os, const GetPeriodicEventStreamRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -51,12 +52,12 @@ void to_json(json& j, const GetPeriodicEventStreamResponse& k) {
     j = json({}, true);
     // the optional parts of the message
     if (k.constantStreamData) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"constantStreamData", json::array()}};
         } else {
             j["constantStreamData"] = json::array();
         }
-        for (auto val : k.constantStreamData.value()) {
+        for (const auto& val : k.constantStreamData.value()) {
             j["constantStreamData"].push_back(val);
         }
     }
@@ -70,9 +71,9 @@ void from_json(const json& j, GetPeriodicEventStreamResponse& k) {
 
     // the optional parts of the message
     if (j.contains("constantStreamData")) {
-        json arr = j.at("constantStreamData");
+        const json& arr = j.at("constantStreamData");
         std::vector<ConstantStreamData> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.constantStreamData.emplace(vec);
@@ -83,7 +84,8 @@ void from_json(const json& j, GetPeriodicEventStreamResponse& k) {
 }
 
 /// \brief Writes the string representation of the given GetPeriodicEventStreamResponse \p k to the given output stream
-/// \p os \returns an output stream with the GetPeriodicEventStreamResponse written to
+/// \p os
+/// \returns an output stream with the GetPeriodicEventStreamResponse written to
 std::ostream& operator<<(std::ostream& os, const GetPeriodicEventStreamResponse& k) {
     os << json(k).dump(4);
     return os;

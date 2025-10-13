@@ -32,8 +32,10 @@ const auto DEFAULT_BOOT_NOTIFICATION_RETRY_INTERVAL = std::chrono::seconds(30);
 
 namespace ocpp::v2 {
 
-static bool component_variable_change_requires_websocket_option_update_without_reconnect(
+namespace {
+bool component_variable_change_requires_websocket_option_update_without_reconnect(
     const ComponentVariable& component_variable);
+}
 
 Provisioning::Provisioning(const FunctionalBlockContext& functional_block_context,
                            MessageQueue<MessageType>& message_queue, OcspUpdaterInterface& ocsp_updater,
@@ -103,7 +105,7 @@ void Provisioning::boot_notification_req(const BootReasonEnum& reason, const boo
     req.reason = reason;
     req.chargingStation = charging_station;
 
-    ocpp::Call<BootNotificationRequest> call(req);
+    const ocpp::Call<BootNotificationRequest> call(req);
     this->context.message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
@@ -153,7 +155,7 @@ void Provisioning::notify_report_req(const int request_id, const std::vector<Rep
     req.tbc = false;
 
     if (report_data.size() <= 1) {
-        ocpp::Call<NotifyReportRequest> call(req);
+        const ocpp::Call<NotifyReportRequest> call(req);
         this->context.message_dispatcher.dispatch_call(call);
     } else {
         NotifyReportRequestsSplitter splitter{
@@ -232,7 +234,7 @@ void Provisioning::handle_set_variables_req(Call<SetVariablesRequest> call) {
         response.setVariableResult.push_back(single_set_variable_result);
     }
 
-    ocpp::CallResult<SetVariablesResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SetVariablesResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     // post handling of changed variables after the SetVariables.conf has been queued
@@ -240,7 +242,7 @@ void Provisioning::handle_set_variables_req(Call<SetVariablesRequest> call) {
 }
 
 void Provisioning::handle_get_variables_req(const EnhancedMessage<MessageType>& message) {
-    Call<GetVariablesRequest> call = message.call_message;
+    const Call<GetVariablesRequest> call = message.call_message;
     const auto msg = call.msg;
 
     const auto max_variables_per_message =
@@ -267,7 +269,7 @@ void Provisioning::handle_get_variables_req(const EnhancedMessage<MessageType>& 
     GetVariablesResponse response;
     response.getVariableResult = this->get_variables(msg.getVariableData);
 
-    ocpp::CallResult<GetVariablesResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetVariablesResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -276,7 +278,7 @@ void Provisioning::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
     GetBaseReportResponse response;
     response.status = GenericDeviceModelStatusEnum::Accepted;
 
-    ocpp::CallResult<GetBaseReportResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetBaseReportResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     if (response.status == GenericDeviceModelStatusEnum::Accepted) {
@@ -286,7 +288,7 @@ void Provisioning::handle_get_base_report_req(Call<GetBaseReportRequest> call) {
 }
 
 void Provisioning::handle_get_report_req(const EnhancedMessage<MessageType>& message) {
-    Call<GetReportRequest> call = message.call_message;
+    const Call<GetReportRequest> call = message.call_message;
     const auto msg = call.msg;
     std::vector<ReportData> report_data;
     GetReportResponse response;
@@ -339,7 +341,7 @@ void Provisioning::handle_get_report_req(const EnhancedMessage<MessageType>& mes
         }
     }
 
-    ocpp::CallResult<GetReportResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetReportResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     if (response.status == GenericDeviceModelStatusEnum::Accepted) {
@@ -355,7 +357,7 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
     if (!this->validate_network_profile_callback.has_value()) {
         EVLOG_warning << "No callback registered to validate network profile";
         response.status = SetNetworkProfileStatusEnum::Rejected;
-        ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -364,7 +366,7 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
         this->context.device_model.get_value<int>(ControllerComponentVariables::SecurityProfile)) {
         EVLOG_warning << "CSMS attempted to set a network profile with a lower securityProfile";
         response.status = SetNetworkProfileStatusEnum::Rejected;
-        ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -373,7 +375,7 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
         SetNetworkProfileStatusEnum::Accepted) {
         EVLOG_warning << "CSMS attempted to set a network profile that could not be validated.";
         response.status = SetNetworkProfileStatusEnum::Rejected;
-        ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -383,7 +385,7 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
 
     int index_to_override = -1;
     int index = 0;
-    for (const SetNetworkProfileRequest& network_profile : network_connection_profiles) {
+    for (const SetNetworkProfileRequest network_profile : network_connection_profiles) {
         if (network_profile.configurationSlot == msg.configurationSlot) {
             index_to_override = index;
         }
@@ -398,6 +400,14 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
         network_connection_profiles.push_back(msg);
     }
 
+    if (not ControllerComponentVariables::NetworkConnectionProfiles.variable.has_value()) {
+        EVLOG_warning << "Could not set a network profile because NetworkConnectionProfiles.variable is not defined";
+        response.status = SetNetworkProfileStatusEnum::Rejected;
+        const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
+        this->context.message_dispatcher.dispatch_call_result(call_result);
+        return;
+    }
+
     if (this->context.device_model.set_value(ControllerComponentVariables::NetworkConnectionProfiles.component,
                                              ControllerComponentVariables::NetworkConnectionProfiles.variable.value(),
                                              AttributeEnum::Actual, network_connection_profiles.dump(),
@@ -405,7 +415,7 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
         SetVariableStatusEnum::Accepted) {
         EVLOG_warning << "CSMS attempted to set a network profile that could not be written to the device model";
         response.status = SetNetworkProfileStatusEnum::Rejected;
-        ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
+        const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
         return;
     }
@@ -419,7 +429,7 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
                                                    utils::is_critical(security_event));
 
     response.status = SetNetworkProfileStatusEnum::Accepted;
-    ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -474,10 +484,8 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
 
     if (response.status == ResetStatusEnum::Accepted and transaction_active and msg.type == ResetEnum::OnIdle) {
         std::optional<int32_t> reset_scheduled_evseid = std::nullopt;
-        if (msg.evseId.has_value()) {
-            // B12.FR.07
-            reset_scheduled_evseid = msg.evseId.value();
-        }
+        // B12.FR.07
+        reset_scheduled_evseid = msg.evseId;
 
         // B12.FR.01: We have to wait until transactions have ended.
         // B12.FR.07
@@ -485,7 +493,7 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
         response.status = ResetStatusEnum::Scheduled;
     }
 
-    ocpp::CallResult<ResetResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ResetResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 
     // Reset response is sent, now set evse connectors to unavailable and / or
@@ -510,7 +518,8 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
 }
 
 void Provisioning::handle_variable_changed(const SetVariableData& set_variable_data) {
-    ComponentVariable component_variable = {set_variable_data.component, set_variable_data.variable, std::nullopt};
+    const ComponentVariable component_variable = {set_variable_data.component, set_variable_data.variable,
+                                                  std::nullopt};
 
     if (set_variable_data.attributeType.has_value() and
         set_variable_data.attributeType.value() != AttributeEnum::Actual) {
@@ -597,7 +606,7 @@ void Provisioning::handle_variables_changed(const std::map<SetVariableData, SetV
 }
 
 bool Provisioning::validate_set_variable(const SetVariableData& set_variable_data) {
-    ComponentVariable cv = {set_variable_data.component, set_variable_data.variable, std::nullopt};
+    const ComponentVariable cv = {set_variable_data.component, set_variable_data.variable, std::nullopt};
     if (cv == ControllerComponentVariables::NetworkConfigurationPriority) {
         const auto network_configuration_priorities = ocpp::split_string(set_variable_data.attributeValue.get(), ',');
         const auto active_security_profile =
@@ -606,7 +615,7 @@ bool Provisioning::validate_set_variable(const SetVariableData& set_variable_dat
         try {
             const auto network_connection_profiles = json::parse(this->context.device_model.get_value<std::string>(
                 ControllerComponentVariables::NetworkConnectionProfiles));
-            for (const auto configuration_slot : network_configuration_priorities) {
+            for (const auto& configuration_slot : network_configuration_priorities) {
                 auto network_profile_it =
                     std::find_if(network_connection_profiles.begin(), network_connection_profiles.end(),
                                  [configuration_slot](const SetNetworkProfileRequest& network_profile) {
@@ -680,6 +689,7 @@ Provisioning::set_variables_internal(const std::vector<SetVariableData>& set_var
     return response;
 }
 
+namespace {
 /**
  * Determine for a component variable whether it affects the Websocket Connection Options (cf.
  * get_ws_connection_options); return true if it is furthermore writable and does not require a reconnect
@@ -687,7 +697,7 @@ Provisioning::set_variables_internal(const std::vector<SetVariableData>& set_var
  * @param component_variable
  * @return
  */
-static bool component_variable_change_requires_websocket_option_update_without_reconnect(
+bool component_variable_change_requires_websocket_option_update_without_reconnect(
     const ComponentVariable& component_variable) {
 
     return component_variable == ControllerComponentVariables::RetryBackOffRandomRange or
@@ -696,4 +706,5 @@ static bool component_variable_change_requires_websocket_option_update_without_r
            component_variable == ControllerComponentVariables::NetworkProfileConnectionAttempts or
            component_variable == ControllerComponentVariables::WebSocketPingInterval;
 }
+} // namespace
 } // namespace ocpp::v2

@@ -91,7 +91,7 @@ public:
     EvseInterface& get_evse(int32_t id) override;
     const EvseInterface& get_evse(const int32_t id) const override;
 
-    virtual bool does_connector_exist(const int32_t evse_id, const CiString<20> connector_type) const override;
+    bool does_connector_exist(const int32_t evse_id, const CiString<20> connector_type) const override;
     bool does_evse_exist(const int32_t id) const override;
 
     bool are_all_connectors_effectively_inoperative() const override;

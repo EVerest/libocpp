@@ -21,17 +21,16 @@ struct GetBaseReportRequest;
 struct ResetRequest;
 struct SetNetworkProfileRequest;
 
-typedef std::function<void(const ocpp::DateTime& currentTime)> TimeSyncCallback;
-typedef std::function<void(const BootNotificationResponse& boot_notification_response)> BootNotificationCallback;
-typedef std::function<SetNetworkProfileStatusEnum(const int32_t configuration_slot,
-                                                  const NetworkConnectionProfile& network_connection_profile)>
-    ValidateNetworkProfileCallback;
-typedef std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
-    IsResetAllowedCallback;
-typedef std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> ResetCallback;
-typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
-    StopTransactionCallback;
-typedef std::function<void(const SetVariableData& set_variable_data)> VariableChangedCallback;
+using TimeSyncCallback = std::function<void(const ocpp::DateTime& currentTime)>;
+using BootNotificationCallback = std::function<void(const BootNotificationResponse& boot_notification_response)>;
+using ValidateNetworkProfileCallback = std::function<SetNetworkProfileStatusEnum(
+    const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>;
+using IsResetAllowedCallback =
+    std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>;
+using ResetCallback = std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>;
+using StopTransactionCallback =
+    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>;
+using VariableChangedCallback = std::function<void(const SetVariableData& set_variable_data)>;
 
 class ProvisioningInterface : public MessageHandlerInterface {
 public:
@@ -83,7 +82,8 @@ public:
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     MessageQueue<v2::MessageType>& message_queue;
     OcspUpdaterInterface& ocsp_updater;
@@ -106,7 +106,7 @@ private: // Members
 
     Everest::SteadyTimer boot_notification_timer;
 
-private: // Functions
+    // Functions
     /* OCPP message requests */
 
     void notify_report_req(const int request_id, const std::vector<ReportData>& report_data);

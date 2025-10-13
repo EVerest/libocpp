@@ -30,7 +30,7 @@ void to_json(json& j, const SetVariablesRequest& k) {
 
 void from_json(const json& j, SetVariablesRequest& k) {
     // the required parts of the message
-    for (auto val : j.at("setVariableData")) {
+    for (const auto& val : j.at("setVariableData")) {
         k.setVariableData.push_back(val);
     }
 
@@ -64,7 +64,7 @@ void to_json(json& j, const SetVariablesResponse& k) {
 
 void from_json(const json& j, SetVariablesResponse& k) {
     // the required parts of the message
-    for (auto val : j.at("setVariableResult")) {
+    for (const auto& val : j.at("setVariableResult")) {
         k.setVariableResult.push_back(val);
     }
 

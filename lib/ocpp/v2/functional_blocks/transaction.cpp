@@ -36,9 +36,7 @@ TransactionBlock::TransactionBlock(
     transaction_event_callback(transaction_event_callback),
     transaction_event_response_callback(transaction_event_response_callback),
     reset_callback(reset_callback),
-    remote_start_id_per_evse{},
-    reset_scheduled(false),
-    reset_scheduled_evseids{} {
+    reset_scheduled(false) {
 }
 
 void TransactionBlock::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -69,10 +67,8 @@ void TransactionBlock::on_transaction_started(
     const auto& enhanced_transaction = evse_handle.get_transaction();
     Transaction transaction{enhanced_transaction->transactionId};
     transaction.chargingState = charging_state;
-    if (remote_start_id.has_value()) {
-        transaction.remoteStartId = remote_start_id.value();
-        enhanced_transaction->remoteStartId = remote_start_id.value();
-    }
+    transaction.remoteStartId = remote_start_id;
+    enhanced_transaction->remoteStartId = remote_start_id;
 
     EVSE evse{evse_id};
     evse.connectorId.emplace(connector_id);
@@ -92,7 +88,7 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
                                                const MeterValue& meter_stop, const ReasonEnum reason,
                                                const TriggerReasonEnum trigger_reason,
                                                const std::optional<IdToken>& id_token,
-                                               const std::optional<std::string>& signed_meter_value,
+                                               const std::optional<std::string>& /*signed_meter_value*/,
                                                const ChargingStateEnum charging_state) {
     auto& evse_handle = this->context.evse_manager.get_evse(evse_id);
     auto& enhanced_transaction = evse_handle.get_transaction();
@@ -104,7 +100,6 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
     enhanced_transaction->chargingState = charging_state;
     evse_handle.close_transaction(timestamp, meter_stop, reason);
     const auto transaction = enhanced_transaction->get_transaction();
-    const auto transaction_id = enhanced_transaction->transactionId.get();
 
     std::optional<std::vector<ocpp::v2::MeterValue>> meter_values = std::nullopt;
     try {
@@ -153,7 +148,7 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
             // No evse id is given, whole charging station needs a reset. Wait
             // for last evse id to stop charging.
             bool is_charging = false;
-            for (auto const& evse : this->context.evse_manager) {
+            for (const auto& evse : this->context.evse_manager) {
                 if (evse.has_active_transaction()) {
                     is_charging = true;
                     break;
@@ -266,7 +261,7 @@ void TransactionBlock::schedule_reset(const std::optional<int32_t> reset_schedul
 }
 
 void TransactionBlock::handle_transaction_event_response(const EnhancedMessage<MessageType>& message) {
-    CallResult<TransactionEventResponse> call_result = message.message;
+    const CallResult<TransactionEventResponse> call_result = message.message;
     const Call<TransactionEventRequest>& original_call = message.call_message;
     const auto& original_msg = original_call.msg;
 
@@ -355,7 +350,7 @@ void TransactionBlock::handle_get_transaction_status(const Call<GetTransactionSt
         response.messagesInQueue = true;
     }
 
-    ocpp::CallResult<GetTransactionStatusResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetTransactionStatusResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 } // namespace ocpp::v2

@@ -12,14 +12,13 @@
 
 namespace ocpp::v2 {
 
-typedef std::function<bool(const std::vector<ocpp::v2::EnergyTransferModeEnum> allowed_energy_transfer_modes,
-                           const CiString<36> transaction_id)>
-    NotifyAllowedEnergyTransferCallback;
+using NotifyAllowedEnergyTransferCallback =
+    std::function<bool(const std::vector<ocpp::v2::EnergyTransferModeEnum> allowed_energy_transfer_modes,
+                       const CiString<36> transaction_id)>;
 
 class BidirectionalInterface : public MessageHandlerInterface {
 public:
-    virtual ~BidirectionalInterface() {
-    }
+    ~BidirectionalInterface() override = default;
 };
 
 class Bidirectional : public BidirectionalInterface {
@@ -31,12 +30,13 @@ private: // Members
 public:
     explicit Bidirectional(const FunctionalBlockContext& context,
                            std::optional<NotifyAllowedEnergyTransferCallback> notify_allowed_energy_transfer_callback);
-    ~Bidirectional();
+    ~Bidirectional() override;
 
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private: // Functions
-    void handle_notify_allowed_energy_transfer(Call<v21::NotifyAllowedEnergyTransferRequest> msg);
+    void
+    handle_notify_allowed_energy_transfer(Call<v21::NotifyAllowedEnergyTransferRequest> notify_allowed_energy_transfer);
 };
 
 } // namespace ocpp::v2

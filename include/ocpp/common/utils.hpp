@@ -40,6 +40,15 @@ std::vector<std::string> split_string(const std::string& string_to_split, const 
 ///
 std::string trim_string(const std::string& string_to_trim);
 
+///
+/// \brief Clamp the value to the maximum value of the given type
+/// \param len The value to clamp
+/// \return The clamped value
+template <typename T, typename U> T constexpr clamp_to(U len) {
+    return (len <= std::numeric_limits<T>::max()) ? static_cast<T>(len) : std::numeric_limits<T>::max();
+}
+
+std::size_t convert_to_positive_size_t(float value);
 } // namespace ocpp
 
 #endif

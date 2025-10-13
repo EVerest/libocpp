@@ -16,7 +16,7 @@ namespace utils {
 
 std::vector<MeasurandEnum> get_measurands_vec(const std::string& measurands_csv) {
     std::vector<MeasurandEnum> measurands;
-    std::vector<std::string> measurands_strings = ocpp::split_string(measurands_csv, ',');
+    const std::vector<std::string> measurands_strings = ocpp::split_string(measurands_csv, ',');
 
     for (const auto& measurand_string : measurands_strings) {
         try {
@@ -112,8 +112,8 @@ MeterValue set_meter_value_reading_context(const MeterValue& meter_value, const 
 }
 
 std::string sha256(const std::string& str) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    EVP_Digest(str.c_str(), str.size(), hash, NULL, EVP_sha256(), NULL);
+    std::array<unsigned char, SHA256_DIGEST_LENGTH> hash;
+    EVP_Digest(str.c_str(), str.size(), hash.data(), nullptr, EVP_sha256(), nullptr);
     std::stringstream ss;
     ss << std::hex << std::setfill('0');
     for (const auto& byte : hash) {
@@ -159,33 +159,47 @@ std::optional<float> get_total_power_active_import(const MeterValue& meter_value
 bool is_critical(const std::string& security_event) {
     if (security_event == ocpp::security_events::FIRMWARE_UPDATED) {
         return true;
-    } else if (security_event == ocpp::security_events::SETTINGSYSTEMTIME) {
+    }
+    if (security_event == ocpp::security_events::SETTINGSYSTEMTIME) {
         return true;
-    } else if (security_event == ocpp::security_events::STARTUP_OF_THE_DEVICE) {
+    }
+    if (security_event == ocpp::security_events::STARTUP_OF_THE_DEVICE) {
         return true;
-    } else if (security_event == ocpp::security_events::RESET_OR_REBOOT) {
+    }
+    if (security_event == ocpp::security_events::RESET_OR_REBOOT) {
         return true;
-    } else if (security_event == ocpp::security_events::SECURITYLOGWASCLEARED) {
+    }
+    if (security_event == ocpp::security_events::SECURITYLOGWASCLEARED) {
         return true;
-    } else if (security_event == ocpp::security_events::MEMORYEXHAUSTION) {
+    }
+    if (security_event == ocpp::security_events::MEMORYEXHAUSTION) {
         return true;
-    } else if (security_event == ocpp::security_events::TAMPERDETECTIONACTIVATED) {
+    }
+    if (security_event == ocpp::security_events::TAMPERDETECTIONACTIVATED) {
         return true;
-    } else if (security_event == ocpp::security_events::INVALIDFIRMWARESIGNATURE) {
+    }
+    if (security_event == ocpp::security_events::INVALIDFIRMWARESIGNATURE) {
         return true;
-    } else if (security_event == ocpp::security_events::INVALIDFIRMWARESIGNINGCERTIFICATE) {
+    }
+    if (security_event == ocpp::security_events::INVALIDFIRMWARESIGNINGCERTIFICATE) {
         return true;
-    } else if (security_event == ocpp::security_events::INVALIDCSMSCERTIFICATE) {
+    }
+    if (security_event == ocpp::security_events::INVALIDCSMSCERTIFICATE) {
         return true;
-    } else if (security_event == ocpp::security_events::INVALIDCHARGINGSTATIONCERTIFICATE) {
+    }
+    if (security_event == ocpp::security_events::INVALIDCHARGINGSTATIONCERTIFICATE) {
         return true;
-    } else if (security_event == ocpp::security_events::INVALIDTLSVERSION) {
+    }
+    if (security_event == ocpp::security_events::INVALIDTLSVERSION) {
         return true;
-    } else if (security_event == ocpp::security_events::INVALIDTLSCIPHERSUITE) {
+    }
+    if (security_event == ocpp::security_events::INVALIDTLSCIPHERSUITE) {
         return true;
-    } else if (security_event == ocpp::security_events::MAINTENANCELOGINACCEPTED) {
+    }
+    if (security_event == ocpp::security_events::MAINTENANCELOGINACCEPTED) {
         return true;
-    } else if (security_event == ocpp::security_events::MAINTENANCELOGINFAILED) {
+    }
+    if (security_event == ocpp::security_events::MAINTENANCELOGINFAILED) {
         return true;
     }
 
@@ -221,7 +235,7 @@ std::vector<OcppProtocolVersion> get_ocpp_protocol_versions(const std::string& c
 
     std::vector<OcppProtocolVersion> ocpp_versions;
     const auto ocpp_versions_str = ocpp::split_string(csl, ',');
-    for (const auto ocpp_version_str : ocpp_versions_str) {
+    for (const auto& ocpp_version_str : ocpp_versions_str) {
         try {
             ocpp_versions.push_back(ocpp::conversions::string_to_ocpp_protocol_version(ocpp_version_str));
         } catch (std::out_of_range& e) {

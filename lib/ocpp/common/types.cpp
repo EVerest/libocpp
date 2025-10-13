@@ -7,6 +7,7 @@
 
 namespace ocpp {
 
+// NOLINTNEXTLINE(readability-redundant-member-init): explicitly call base class ctor here for readability
 DateTime::DateTime() : DateTimeImpl() {
 }
 
@@ -53,10 +54,7 @@ std::chrono::time_point<date::utc_clock> DateTimeImpl::to_time_point() const {
     return this->timepoint;
 }
 
-DateTimeImpl& DateTimeImpl::operator=(const DateTimeImpl& dt) {
-    this->timepoint = dt.timepoint;
-    return *this;
-}
+DateTimeImpl& DateTimeImpl::operator=(const DateTimeImpl& dt) = default;
 
 std::ostream& operator<<(std::ostream& os, const DateTimeImpl& dt) {
     os << dt.to_rfc3339();
@@ -83,15 +81,11 @@ bool operator==(const DateTimeImpl& lhs, const DateTimeImpl& rhs) {
     return lhs.timepoint == rhs.timepoint;
 }
 
-CallError::CallError() {
-}
+CallError::CallError() = default;
 
 CallError::CallError(const MessageId& uniqueId, const std::string& errorCode, const std::string& errorDescription,
-                     const json& errorDetails) {
-    this->uniqueId = uniqueId;
-    this->errorCode = errorCode;
-    this->errorDescription = errorDescription;
-    this->errorDetails = errorDetails;
+                     const json& errorDetails) :
+    uniqueId(uniqueId), errorCode(errorCode), errorDescription(errorDescription), errorDetails(errorDetails) {
 }
 
 void to_json(json& j, const CallError& c) {
@@ -631,9 +625,11 @@ namespace conversions {
 RunningCostState string_to_running_cost_state(const std::string& state) {
     if (state == "Charging") {
         return RunningCostState::Charging;
-    } else if (state == "Idle") {
+    }
+    if (state == "Idle") {
         return RunningCostState::Idle;
-    } else if (state == "Finished") {
+    }
+    if (state == "Finished") {
         return RunningCostState::Finished;
     }
 
@@ -656,7 +652,7 @@ std::string running_cost_state_to_string(const RunningCostState& state) {
 void from_json(const json& j, RunningCost& c) {
     if (j.contains("transactionId")) {
         if (j.at("transactionId").is_number()) {
-            uint32_t transaction_id = j.at("transactionId");
+            const uint32_t transaction_id = j.at("transactionId");
             c.transaction_id = std::to_string(transaction_id);
         } else if (j.at("transactionId").is_string()) {
             c.transaction_id = j.at("transactionId");
@@ -722,7 +718,7 @@ void from_json(const json& j, RunningCost& c) {
                 c.cost_messages = std::vector<DisplayMessageContent>();
             }
             for (const json& p : price_text) {
-                DisplayMessageContent display_message = p;
+                const DisplayMessageContent display_message = p;
                 c.cost_messages->push_back(display_message);
             }
         }
@@ -749,7 +745,7 @@ void from_json(const json& j, TriggerMeterValue& t) {
 
         if (j.contains("atCPStatus")) {
             std::vector<v16::ChargePointStatus> trigger_cp_status;
-            json array;
+            const json array;
             for (const auto& cp_status : j.at("atCPStatus").items()) {
                 try {
                     trigger_cp_status.push_back(
@@ -759,7 +755,7 @@ void from_json(const json& j, TriggerMeterValue& t) {
                                 << ") is not a valid chargepoint status: " << e.what();
                 }
             }
-            if (trigger_cp_status.size() > 0) {
+            if (!trigger_cp_status.empty()) {
                 t.at_chargepoint_status = trigger_cp_status;
             }
         }
@@ -787,13 +783,17 @@ std::string ca_certificate_type_to_string(CaCertificateType e) {
 CaCertificateType string_to_ca_certificate_type(const std::string& s) {
     if (s == "V2G") {
         return CaCertificateType::V2G;
-    } else if (s == "MO") {
+    }
+    if (s == "MO") {
         return CaCertificateType::MO;
-    } else if (s == "CSMS") {
+    }
+    if (s == "CSMS") {
         return CaCertificateType::CSMS;
-    } else if (s == "MF") {
+    }
+    if (s == "MF") {
         return CaCertificateType::MF;
-    } else if (s == "OEM") {
+    }
+    if (s == "OEM") {
         return CaCertificateType::OEM;
     }
     throw StringToEnumException{s, "CertificateType"};
@@ -995,7 +995,7 @@ void to_json(json& j, const CertificateHashDataChain& k) {
     // the optional parts of the message
     if (k.childCertificateHashData) {
         j["childCertificateHashData"] = json::array();
-        for (auto val : k.childCertificateHashData.value()) {
+        for (const auto& val : k.childCertificateHashData.value()) {
             j["childCertificateHashData"].push_back(val);
         }
     }
@@ -1009,9 +1009,9 @@ void from_json(const json& j, CertificateHashDataChain& k) {
 
     // the optional parts of the message
     if (j.contains("childCertificateHashData")) {
-        json arr = j.at("childCertificateHashData");
+        const json& arr = j.at("childCertificateHashData");
         std::vector<CertificateHashDataType> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.childCertificateHashData.emplace(vec);

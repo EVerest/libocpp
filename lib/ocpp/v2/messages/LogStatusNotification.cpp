@@ -51,7 +51,8 @@ void from_json(const json& j, LogStatusNotificationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given LogStatusNotificationRequest \p k to the given output stream \p
-/// os \returns an output stream with the LogStatusNotificationRequest written to
+/// os
+/// \returns an output stream with the LogStatusNotificationRequest written to
 std::ostream& operator<<(std::ostream& os, const LogStatusNotificationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -80,7 +81,8 @@ void from_json(const json& j, LogStatusNotificationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given LogStatusNotificationResponse \p k to the given output stream
-/// \p os \returns an output stream with the LogStatusNotificationResponse written to
+/// \p os
+/// \returns an output stream with the LogStatusNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const LogStatusNotificationResponse& k) {
     os << json(k).dump(4);
     return os;

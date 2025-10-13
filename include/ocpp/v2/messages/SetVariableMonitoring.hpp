@@ -32,7 +32,8 @@ void to_json(json& j, const SetVariableMonitoringRequest& k);
 void from_json(const json& j, SetVariableMonitoringRequest& k);
 
 /// \brief Writes the string representation of the given SetVariableMonitoringRequest \p k to the given output stream \p
-/// os \returns an output stream with the SetVariableMonitoringRequest written to
+/// os
+/// \returns an output stream with the SetVariableMonitoringRequest written to
 std::ostream& operator<<(std::ostream& os, const SetVariableMonitoringRequest& k);
 
 /// \brief Contains a OCPP SetVariableMonitoringResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const SetVariableMonitoringResponse& k);
 void from_json(const json& j, SetVariableMonitoringResponse& k);
 
 /// \brief Writes the string representation of the given SetVariableMonitoringResponse \p k to the given output stream
-/// \p os \returns an output stream with the SetVariableMonitoringResponse written to
+/// \p os
+/// \returns an output stream with the SetVariableMonitoringResponse written to
 std::ostream& operator<<(std::ostream& os, const SetVariableMonitoringResponse& k);
 
 } // namespace v2

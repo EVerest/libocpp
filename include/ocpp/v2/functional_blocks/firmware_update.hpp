@@ -15,12 +15,12 @@ struct UpdateFirmwareRequest;
 struct UpdateFirmwareResponse;
 
 // Typedef
-typedef std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> UpdateFirmwareRequestCallback;
-typedef std::function<void()> AllConnectorsUnavailableCallback;
+using UpdateFirmwareRequestCallback = std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)>;
+using AllConnectorsUnavailableCallback = std::function<void()>;
 
 class FirmwareUpdateInterface : public MessageHandlerInterface {
 public:
-    virtual ~FirmwareUpdateInterface() = default;
+    ~FirmwareUpdateInterface() override = default;
 
     virtual void on_firmware_update_status_notification(int32_t request_id,
                                                         const FirmwareStatusEnum& firmware_update_status) = 0;

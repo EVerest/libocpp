@@ -60,7 +60,7 @@ void to_json(json& j, const GetTariffsResponse& k) {
     }
     if (k.tariffAssignments) {
         j["tariffAssignments"] = json::array();
-        for (auto val : k.tariffAssignments.value()) {
+        for (const auto& val : k.tariffAssignments.value()) {
             j["tariffAssignments"].push_back(val);
         }
     }
@@ -78,9 +78,9 @@ void from_json(const json& j, GetTariffsResponse& k) {
         k.statusInfo.emplace(j.at("statusInfo"));
     }
     if (j.contains("tariffAssignments")) {
-        json arr = j.at("tariffAssignments");
+        const json& arr = j.at("tariffAssignments");
         std::vector<TariffAssignment> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.tariffAssignments.emplace(vec);

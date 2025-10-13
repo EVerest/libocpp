@@ -33,14 +33,14 @@
 
 */
 
-#ifndef _BASE64_EVEREST_HPP_
-#define _BASE64_EVEREST_HPP_
+#ifndef BASE64_EVEREST_HPP_
+#define BASE64_EVEREST_HPP_
 
 #include <string>
 
 namespace ocpp {
 
-static std::string const base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
                                         "0123456789+/";
 
@@ -62,14 +62,14 @@ static inline bool is_base64(unsigned char c) {
  * @param len The length of input in bytes
  * @return A base64 encoded string representing input
  */
-inline std::string base64_encode(unsigned char const* input, size_t len) {
+inline std::string base64_encode(const unsigned char* input, size_t len) {
     std::string ret;
     int i = 0;
     int j = 0;
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
 
-    while (len--) {
+    while ((len--) != 0) {
         char_array_3[i++] = *(input++);
         if (i == 3) {
             char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
@@ -84,7 +84,7 @@ inline std::string base64_encode(unsigned char const* input, size_t len) {
         }
     }
 
-    if (i) {
+    if (i != 0) {
         for (j = i; j < 3; j++) {
             char_array_3[j] = '\0';
         }
@@ -111,7 +111,7 @@ inline std::string base64_encode(unsigned char const* input, size_t len) {
  * @param input The input data
  * @return A base64 encoded string representing input
  */
-inline std::string base64_encode(std::string const& input) {
+inline std::string base64_encode(const std::string& input) {
     return base64_encode(reinterpret_cast<const unsigned char*>(input.data()), input.size());
 }
 
@@ -120,15 +120,16 @@ inline std::string base64_encode(std::string const& input) {
  * @param input The base64 encoded input data
  * @return A string representing the decoded raw bytes
  */
-inline std::string base64_decode(std::string const& input) {
+inline std::string base64_decode(const std::string& input) {
     size_t in_len = input.size();
     int i = 0;
     int j = 0;
     int in_ = 0;
-    unsigned char char_array_4[4], char_array_3[3];
+    unsigned char char_array_4[4];
+    unsigned char char_array_3[3];
     std::string ret;
 
-    while (in_len-- && (input[in_] != '=') && is_base64(input[in_])) {
+    while (((in_len--) != 0) && (input[in_] != '=') && is_base64(input[in_])) {
         char_array_4[i++] = input[in_];
         in_++;
         if (i == 4) {
@@ -147,12 +148,14 @@ inline std::string base64_decode(std::string const& input) {
         }
     }
 
-    if (i) {
-        for (j = i; j < 4; j++)
+    if (i != 0) {
+        for (j = i; j < 4; j++) {
             char_array_4[j] = 0;
+        }
 
-        for (j = 0; j < 4; j++)
+        for (j = 0; j < 4; j++) {
             char_array_4[j] = static_cast<unsigned char>(base64_chars.find(char_array_4[j]));
+        }
 
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
@@ -168,4 +171,4 @@ inline std::string base64_decode(std::string const& input) {
 
 } // namespace ocpp
 
-#endif // _BASE64_HPP_
+#endif // BASE64_EVEREST_HPP_

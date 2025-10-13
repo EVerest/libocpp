@@ -30,7 +30,7 @@ void to_json(json& j, const ClearVariableMonitoringRequest& k) {
 
 void from_json(const json& j, ClearVariableMonitoringRequest& k) {
     // the required parts of the message
-    for (auto val : j.at("id")) {
+    for (const auto& val : j.at("id")) {
         k.id.push_back(val);
     }
 
@@ -41,7 +41,8 @@ void from_json(const json& j, ClearVariableMonitoringRequest& k) {
 }
 
 /// \brief Writes the string representation of the given ClearVariableMonitoringRequest \p k to the given output stream
-/// \p os \returns an output stream with the ClearVariableMonitoringRequest written to
+/// \p os
+/// \returns an output stream with the ClearVariableMonitoringRequest written to
 std::ostream& operator<<(std::ostream& os, const ClearVariableMonitoringRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -64,7 +65,7 @@ void to_json(json& j, const ClearVariableMonitoringResponse& k) {
 
 void from_json(const json& j, ClearVariableMonitoringResponse& k) {
     // the required parts of the message
-    for (auto val : j.at("clearMonitoringResult")) {
+    for (const auto& val : j.at("clearMonitoringResult")) {
         k.clearMonitoringResult.push_back(val);
     }
 
@@ -75,7 +76,8 @@ void from_json(const json& j, ClearVariableMonitoringResponse& k) {
 }
 
 /// \brief Writes the string representation of the given ClearVariableMonitoringResponse \p k to the given output stream
-/// \p os \returns an output stream with the ClearVariableMonitoringResponse written to
+/// \p os
+/// \returns an output stream with the ClearVariableMonitoringResponse written to
 std::ostream& operator<<(std::ostream& os, const ClearVariableMonitoringResponse& k) {
     os << json(k).dump(4);
     return os;

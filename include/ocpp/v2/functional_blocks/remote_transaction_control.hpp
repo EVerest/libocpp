@@ -24,17 +24,16 @@ struct RequestStopTransactionRequest;
 struct TriggerMessageRequest;
 struct UnlockConnectorResponse;
 
-typedef std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)>
-    UnlockConnectorCallback;
-typedef std::function<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
-                                                 const bool authorize_remote_start)>
-    RemoteStartTransactionCallback;
-typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
-    StopTransactionCallback;
+using UnlockConnectorCallback =
+    std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)>;
+using RemoteStartTransactionCallback = std::function<RequestStartStopStatusEnum(
+    const RequestStartTransactionRequest& request, const bool authorize_remote_start)>;
+using StopTransactionCallback =
+    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>;
 
 class RemoteTransactionControlInterface : public MessageHandlerInterface {
 public:
-    virtual ~RemoteTransactionControlInterface() = default;
+    ~RemoteTransactionControlInterface() override = default;
 };
 
 class RemoteTransactionControl : public RemoteTransactionControlInterface {
@@ -51,7 +50,8 @@ public:
                              std::atomic<int32_t>& upload_log_status_id);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
 
     TransactionInterface& transaction;
@@ -71,7 +71,7 @@ private: // Members
     std::atomic<UploadLogStatusEnum>& upload_log_status;
     std::atomic<int32_t>& upload_log_status_id;
 
-private: // Functions
+    // Functions
     /* OCPP message handlers */
 
     // Function Block F: Remote transaction control
@@ -81,14 +81,6 @@ private: // Functions
     void handle_trigger_message(Call<TriggerMessageRequest> call);
 
     // Helper functions
-    ///
-    /// \brief Check if one of the connectors of the evse is available (both connectors faulted or unavailable or on of
-    ///        the connectors occupied).
-    /// \param evse Evse to check.
-    /// \return True if at least one connector is not faulted or unavailable.
-    ///
-    bool is_evse_connector_available(EvseInterface& evse) const;
-
     ///
     /// \brief Check if EVSE connector is reserved for another than the given id token and / or group id token.
     /// \param evse             The evse id that must be checked. Reservation will be checked for all connectors.

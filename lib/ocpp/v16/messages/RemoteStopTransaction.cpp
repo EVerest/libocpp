@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #include <ocpp/v16/messages/RemoteStopTransaction.hpp>
@@ -32,7 +32,8 @@ void from_json(const json& j, RemoteStopTransactionRequest& k) {
 }
 
 /// \brief Writes the string representation of the given RemoteStopTransactionRequest \p k to the given output stream \p
-/// os \returns an output stream with the RemoteStopTransactionRequest written to
+/// os
+/// \returns an output stream with the RemoteStopTransactionRequest written to
 std::ostream& operator<<(std::ostream& os, const RemoteStopTransactionRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -58,7 +59,8 @@ void from_json(const json& j, RemoteStopTransactionResponse& k) {
 }
 
 /// \brief Writes the string representation of the given RemoteStopTransactionResponse \p k to the given output stream
-/// \p os \returns an output stream with the RemoteStopTransactionResponse written to
+/// \p os
+/// \returns an output stream with the RemoteStopTransactionResponse written to
 std::ostream& operator<<(std::ostream& os, const RemoteStopTransactionResponse& k) {
     os << json(k).dump(4);
     return os;

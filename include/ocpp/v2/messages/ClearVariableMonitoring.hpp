@@ -32,7 +32,8 @@ void to_json(json& j, const ClearVariableMonitoringRequest& k);
 void from_json(const json& j, ClearVariableMonitoringRequest& k);
 
 /// \brief Writes the string representation of the given ClearVariableMonitoringRequest \p k to the given output stream
-/// \p os \returns an output stream with the ClearVariableMonitoringRequest written to
+/// \p os
+/// \returns an output stream with the ClearVariableMonitoringRequest written to
 std::ostream& operator<<(std::ostream& os, const ClearVariableMonitoringRequest& k);
 
 /// \brief Contains a OCPP ClearVariableMonitoringResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const ClearVariableMonitoringResponse& k);
 void from_json(const json& j, ClearVariableMonitoringResponse& k);
 
 /// \brief Writes the string representation of the given ClearVariableMonitoringResponse \p k to the given output stream
-/// \p os \returns an output stream with the ClearVariableMonitoringResponse written to
+/// \p os
+/// \returns an output stream with the ClearVariableMonitoringResponse written to
 std::ostream& operator<<(std::ostream& os, const ClearVariableMonitoringResponse& k);
 
 } // namespace v2

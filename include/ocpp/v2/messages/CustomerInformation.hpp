@@ -37,7 +37,8 @@ void to_json(json& j, const CustomerInformationRequest& k);
 void from_json(const json& j, CustomerInformationRequest& k);
 
 /// \brief Writes the string representation of the given CustomerInformationRequest \p k to the given output stream \p
-/// os \returns an output stream with the CustomerInformationRequest written to
+/// os
+/// \returns an output stream with the CustomerInformationRequest written to
 std::ostream& operator<<(std::ostream& os, const CustomerInformationRequest& k);
 
 /// \brief Contains a OCPP CustomerInformationResponse message
@@ -58,7 +59,8 @@ void to_json(json& j, const CustomerInformationResponse& k);
 void from_json(const json& j, CustomerInformationResponse& k);
 
 /// \brief Writes the string representation of the given CustomerInformationResponse \p k to the given output stream \p
-/// os \returns an output stream with the CustomerInformationResponse written to
+/// os
+/// \returns an output stream with the CustomerInformationResponse written to
 std::ostream& operator<<(std::ostream& os, const CustomerInformationResponse& k);
 
 } // namespace v2
