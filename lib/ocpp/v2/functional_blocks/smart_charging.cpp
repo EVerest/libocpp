@@ -741,8 +741,8 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
         // does not let us get a vector of ChargingScheduleChargingRateUnits.
         auto supported_charging_rate_units = this->context.device_model.get_value<std::string>(
             ControllerComponentVariables::ChargingScheduleChargingRateUnit);
-        if (supported_charging_rate_units.find(conversions::charging_rate_unit_enum_to_string(
-                schedule.chargingRateUnit)) == supported_charging_rate_units.npos) {
+        if (supported_charging_rate_units.find(
+                conversions::charging_rate_unit_enum_to_string(schedule.chargingRateUnit)) == std::string::npos) {
             return ProfileValidationResultEnum::ChargingScheduleChargingRateUnitUnsupported;
         }
 
