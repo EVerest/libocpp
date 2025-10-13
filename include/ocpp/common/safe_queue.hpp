@@ -83,7 +83,7 @@ public:
     /// \brief Same as 'wait_on_queue' but receives an additional predicate to wait upon
     template <class Predicate>
     void wait_on_queue_element_or_predicate(Predicate pred,
-                                                   std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
+                                            std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
         std::unique_lock<std::mutex> lock(mutex);
 
         if (timeout.count() > 0) {

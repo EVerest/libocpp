@@ -51,7 +51,8 @@ public:
         if (view.length() > String<L>::length) {
             if (to_large == StringTooLarge::Throw) {
                 throw StringConversionException("String length (" + std::to_string(view.length()) +
-                                                ") exceeds permitted length (" + std::to_string(String<L>::length) + ")");
+                                                ") exceeds permitted length (" + std::to_string(String<L>::length) +
+                                                ")");
             }
             // Truncate
             view = view.substr(0, length);

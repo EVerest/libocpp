@@ -1443,7 +1443,8 @@ bool check_limits_and_setpoints(const ChargingSchedulePeriod& charging_schedule_
     const OperationModeEnum operation_mode =
         charging_schedule_period.operationMode.value_or(OperationModeEnum::ChargingOnly);
     try {
-        const LimitsSetpointsForOperationMode& limits_setpoints = limits_setpoints_per_operation_mode.at(operation_mode);
+        const LimitsSetpointsForOperationMode& limits_setpoints =
+            limits_setpoints_per_operation_mode.at(operation_mode);
         return are_limits_and_setpoints_of_operation_mode_correct(
                    limits_setpoints, LimitSetpointType::Limit, charging_schedule_period.limit,
                    charging_schedule_period.limit_L2, charging_schedule_period.limit_L3) &&
