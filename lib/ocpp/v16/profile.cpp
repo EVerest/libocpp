@@ -204,19 +204,27 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
 
             switch (in_profile.recurrencyKind.value()) {
             case RecurrencyKindType::Daily:
-                seconds_to_go_back = duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
-                                     (HOURS_PER_DAY * SECONDS_PER_HOUR);
+                seconds_to_go_back =
+                    duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
+                    (HOURS_PER_DAY * SECONDS_PER_HOUR);
                 if (seconds_to_go_back < 0) {
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
                     seconds_to_go_back += HOURS_PER_DAY * SECONDS_PER_HOUR;
                 }
+                // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
                 seconds_to_go_forward = HOURS_PER_DAY * SECONDS_PER_HOUR;
                 break;
             case RecurrencyKindType::Weekly:
-                seconds_to_go_back = duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
-                                     (SECONDS_PER_DAY * DAYS_PER_WEEK);
+                seconds_to_go_back =
+                    duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
+                    (SECONDS_PER_DAY * DAYS_PER_WEEK);
                 if (seconds_to_go_back < 0) {
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
                     seconds_to_go_back += SECONDS_PER_DAY * DAYS_PER_WEEK;
                 }
+                // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
                 seconds_to_go_forward = SECONDS_PER_DAY * DAYS_PER_WEEK;
                 break;
             }
