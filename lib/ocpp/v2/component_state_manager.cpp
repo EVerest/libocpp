@@ -34,7 +34,7 @@ void ComponentStateManager::read_all_states_from_database_or_set_defaults(
             connector_statuses.push_back(full_connector_status);
         }
 
-        this->evse_and_connector_individual_statuses.push_back(std::make_pair(evse_operational, connector_statuses));
+        this->evse_and_connector_individual_statuses.emplace_back(evse_operational, connector_statuses);
     }
 }
 
@@ -54,8 +54,8 @@ void ComponentStateManager::initialize_reported_state_cache() {
             connector_op_statuses.push_back(this->get_connector_effective_operational_status(evse_id, connector_id));
         }
 
-        this->last_evse_and_connector_effective_operational_statuses.push_back(
-            std::make_pair(evse_effective, connector_op_statuses));
+        this->last_evse_and_connector_effective_operational_statuses.emplace_back(evse_effective,
+                                                                                  connector_op_statuses);
         this->last_connector_reported_statuses.push_back(connector_statuses);
     }
 }

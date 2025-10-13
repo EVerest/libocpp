@@ -835,15 +835,15 @@ bool DatabaseHandler::clear_charging_profiles_matching_criteria(const std::optio
         std::vector<std::string> filters = {"CHARGING_PROFILE_PURPOSE != 'ChargingStationExternalConstraints'"};
 
         if (criteria->chargingProfilePurpose.has_value()) {
-            filters.push_back("CHARGING_PROFILE_PURPOSE = @charging_profile_purpose");
+            filters.emplace_back("CHARGING_PROFILE_PURPOSE = @charging_profile_purpose");
         }
 
         if (criteria->stackLevel.has_value()) {
-            filters.push_back("STACK_LEVEL = @stack_level");
+            filters.emplace_back("STACK_LEVEL = @stack_level");
         }
 
         if (criteria->evseId.has_value()) {
-            filters.push_back("EVSE_ID = @evse_id");
+            filters.emplace_back("EVSE_ID = @evse_id");
         }
 
         delete_query += " WHERE " + boost::algorithm::join(filters, " AND ");
@@ -883,7 +883,7 @@ DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int
     std::vector<std::string> where_clauses;
 
     if (evse_id.has_value()) {
-        where_clauses.push_back("EVSE_ID = @evse_id");
+        where_clauses.emplace_back("EVSE_ID = @evse_id");
     }
 
     if (criteria.chargingProfileId.has_value() && !criteria.chargingProfileId->empty()) {
@@ -903,20 +903,20 @@ DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int
         }
 
         while (stmt->step() != SQLITE_DONE) {
-            results.push_back(ReportedChargingProfile(json::parse(stmt->column_text(1)), // profile
-                                                      stmt->column_int(0),               // EVSE ID
-                                                      CiString<20>(stmt->column_text(2)) // source
-                                                      ));
+            results.emplace_back(json::parse(stmt->column_text(1)), // profile
+                                 stmt->column_int(0),               // EVSE ID
+                                 CiString<20>(stmt->column_text(2)) // source
+            );
         }
         return results;
     }
 
     if (criteria.chargingProfilePurpose.has_value()) {
-        where_clauses.push_back("CHARGING_PROFILE_PURPOSE = @charging_profile_purpose");
+        where_clauses.emplace_back("CHARGING_PROFILE_PURPOSE = @charging_profile_purpose");
     }
 
     if (criteria.stackLevel.has_value()) {
-        where_clauses.push_back("STACK_LEVEL = @stack_level");
+        where_clauses.emplace_back("STACK_LEVEL = @stack_level");
     }
 
     if (criteria.chargingLimitSource.has_value() && !criteria.chargingLimitSource->empty()) {
@@ -949,10 +949,10 @@ DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int
     }
 
     while (stmt->step() != SQLITE_DONE) {
-        results.push_back(ReportedChargingProfile(json::parse(stmt->column_text(1)), // profile
-                                                  stmt->column_int(0),               // EVSE ID
-                                                  CiString<20>(stmt->column_text(2)) // source
-                                                  ));
+        results.emplace_back(json::parse(stmt->column_text(1)), // profile
+                             stmt->column_int(0),               // EVSE ID
+                             CiString<20>(stmt->column_text(2)) // source
+        );
     }
 
     return results;

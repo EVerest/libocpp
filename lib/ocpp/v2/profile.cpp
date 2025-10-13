@@ -492,7 +492,7 @@ inline std::vector<IntermediateProfileRef> convert_to_ref_vector(const std::vect
     std::vector<IntermediateProfileRef> references{};
     references.reserve(profiles.size());
     for (auto& profile : profiles) {
-        references.push_back(profile);
+        references.emplace_back(profile);
     }
     return references;
 }
@@ -511,7 +511,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
     for (const auto& wrapped_profile : profiles) {
         auto& profile = wrapped_profile.get();
         if (!profile.empty()) {
-            profile_iterators.push_back(std::make_pair(profile.begin(), profile.end()));
+            profile_iterators.emplace_back(std::make_pair(profile.begin(), profile.end()));
         }
     }
 
