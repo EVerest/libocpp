@@ -2136,7 +2136,6 @@ void ChargePointConfiguration::setAuthorizationKey(std::string authorization_key
 }
 
 bool ChargePointConfiguration::isConnectorPhaseRotationValid(std::string str) {
-    std::stringstream ss(str);
     std::vector<std::string> elements;
 
     str.erase(std::remove_if(str.begin(), str.end(), isspace), str.end());

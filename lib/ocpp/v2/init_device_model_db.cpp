@@ -81,7 +81,6 @@ void InitDeviceModelDb::initialize_database(
 
     // Get existing components from the database.
     std::map<ComponentKey, std::vector<DeviceModelVariable>> existing_components;
-    DeviceModelMap device_model;
     if (this->database_exists) {
         existing_components = get_all_components_from_db();
     }

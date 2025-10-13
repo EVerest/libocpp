@@ -36,9 +36,7 @@ TransactionBlock::TransactionBlock(
     transaction_event_callback(transaction_event_callback),
     transaction_event_response_callback(transaction_event_response_callback),
     reset_callback(reset_callback),
-    remote_start_id_per_evse{},
-    reset_scheduled(false),
-    reset_scheduled_evseids{} {
+    reset_scheduled(false) {
 }
 
 void TransactionBlock::handle_message(const ocpp::EnhancedMessage<MessageType>& message) {
@@ -102,7 +100,6 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
     enhanced_transaction->chargingState = charging_state;
     evse_handle.close_transaction(timestamp, meter_stop, reason);
     const auto transaction = enhanced_transaction->get_transaction();
-    const auto transaction_id = enhanced_transaction->transactionId.get();
 
     std::optional<std::vector<ocpp::v2::MeterValue>> meter_values = std::nullopt;
     try {
