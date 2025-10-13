@@ -269,12 +269,12 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (tx_database_enabled) {
         try {
-            this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+            this->database_handler->transaction_insert(*this->transaction, this->evse_id);
         } catch (const QueryExecutionException& e) {
             // Delete previous transactions that should not exist anyway and try again. Otherwise throw to higher
             // level
             this->delete_database_transaction();
-            this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+            this->database_handler->transaction_insert(*this->transaction, this->evse_id);
         }
     }
 }

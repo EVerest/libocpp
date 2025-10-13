@@ -435,7 +435,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list(
                 this->insert_or_update_local_authorization_list_entry(authorization_data.idTag,
                                                                       authorization_data.idTagInfo.value());
             } else {
-                this->delete_local_authorization_list_entry(authorization_data.idTag.get().c_str());
+                this->delete_local_authorization_list_entry(authorization_data.idTag.get());
             }
         } catch (const QueryExecutionException& e) {
             // catch but continue with remaining entries
