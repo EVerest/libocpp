@@ -349,7 +349,7 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
 }
 
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
-    return this->id_connector_map.at(connector_id)->submit_event(event);
+    this->id_connector_map.at(connector_id)->submit_event(event);
 }
 
 void Evse::on_meter_value(const MeterValue& meter_value) {
