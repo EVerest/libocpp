@@ -1151,7 +1151,7 @@ void ChargePoint::websocket_connection_failed(ConnectionFailedReason reason) {
 }
 void ChargePoint::update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
                                                const ConnectorStatusEnum status) {
-    ComponentVariable charging_station = ControllerComponentVariables::ChargingStationAvailabilityState;
+    RequiredComponentVariable charging_station = ControllerComponentVariables::ChargingStationAvailabilityState;
     ComponentVariable evse_cv =
         EvseComponentVariables::get_component_variable(evse_id, EvseComponentVariables::AvailabilityState);
     ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
