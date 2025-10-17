@@ -172,7 +172,7 @@
         "NextTimeOffsetTransitionDateTime": "2024-01-01T00:00:00",
         "TimeOffsetNextTransition": "01:00",
         "CustomIdleFeeAfterStop": false,
-        "MultiLanguageSupportedLanguages": "en, nl, de, nb_NO",
+        "SupportedLanguages": "en, nl, de, nb_NO",
         "CustomMultiLanguageMessages": true,
         "Language": "en",
         "WaitForSetUserPriceTimeout": 5000

@@ -2859,7 +2859,25 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString
         default_price["priceTexts"] = json::array();
     }
 
-    default_price["priceTexts"].push_back(j);
+    auto& price_texts = default_price.at("priceTexts");
+
+    if (!price_texts.is_array()) {
+        EVLOG_error << "Error while setting default price: 'priceTexts' is not an array";
+        return ConfigurationStatus::Rejected;
+    }
+
+    bool language_found = false;
+    for (auto& price_text : price_texts.items()) {
+        if (price_text.value().at("language").get<std::string>() == language) {
+            price_text.value() = j;
+            language_found = true;
+            break;
+        }
+    }
+
+    if (!language_found) {
+        default_price["priceTexts"].push_back(j);
+    }
 
     this->config["CostAndPrice"]["DefaultPriceText"] = default_price;
     this->setInUserConfig("CostAndPrice", "DefaultPriceText", default_price);
