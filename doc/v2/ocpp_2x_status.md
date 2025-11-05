@@ -28,14 +28,14 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## Security - Generic Security Profile requirements
 
-| ID         | Status | Remark |
-| ---------- | ------ | ------ |
-| A00.FR.001 | ✅     |        |
-| A00.FR.002 | ✅     |        |
-| A00.FR.003 | ✅     |        |
-| A00.FR.004 | ✅     |        |
-| A00.FR.005 | ✅     |        |
-| A00.FR.006 | ✅     |        |
+| ID         | Status | Remark | Requirement definition |
+| ---------- | ------ | ------ | -----------------------|
+| A00.FR.001 | ✅     |        | The Charging Station and CSMS SHALL only use one security profile at a time |
+| A00.FR.002 | ✅     |        | The CSMS SHALL terminate the connection. | 
+| A00.FR.003 | ✅     |        | The Charging Station SHALL terminate the connection. |
+| A00.FR.004 | ✅     |        | The security profile SHALL be configured before OCPP communication is possible. |
+| A00.FR.005 | ✅     |        | Lowering the security profile that is used, to a less secure profile, is for security reasons, not part of the OCPP specification, and MUST be done through another method, not via OCPP. OCPP messages SHALL NOT be used for this (e.g. SetVariablesRequest or DataTransferRequest). |
+| A00.FR.006 | ✅     |        | The CSMS MAY operate the Charging Stations via different addresses or ports of the CSMS.|
 
 ## Security - Unsecured Transport with Basic Authentication Profile
 
