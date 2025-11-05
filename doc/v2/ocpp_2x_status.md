@@ -16,13 +16,13 @@ This document contains the status of which OCPP 2.0.1 and OCPP2.1 numbered funct
 
 ## General - General
 
-| ID               | Status | Remark |
-| ---------------- | ------ | ------ |
-| FR.01            | ✅     |        |
-| FR.02            | ✅     |        |
-| FR.03            | ✅     |        |
-| FR.04            | ❎     |        |
-| FR.05            | ✅     |        |
+| ID               | Status | Remark | Requirement definition |
+| ---------------- | ------ | ------ | ---------------------- |
+| FR.01            | ✅     |        | The sender of a <message>Request SHALL wait for a <message>Response or a timeout, before sending another request message |
+| FR.02            | ✅     |        | The Charging Station SHALL respond with a RPC Framework: CALLRESULT. |
+| FR.03            | ✅     |        | The Charging Station/CSMS SHALL respond with a RPC Framework: CALLERROR. |
+| FR.04            | ❎     |        | The CSMS SHALL respond with a RPC Framework: CALLERROR: SecurityError |
+| FR.05            | ✅     |        | The Charging Station SHALL <br> acknowledge the requests in the list below with a response message (shown after the arrow "→") with the same requestId as the request:|
 | FR.06 <br> (2.1) |        |        |
 | FR.07 <br> (2.1) |        |        |
 
