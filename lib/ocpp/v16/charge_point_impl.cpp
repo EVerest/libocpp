@@ -2782,8 +2782,7 @@ void ChargePointImpl::sign_certificate(const ocpp::CertificateSigningUseEnum& ce
         this->configuration->getCpoName().value(), this->configuration->getChargeBoxSerialNumber(), use_tpm);
 
     if (response.status != GetCertificateSignRequestStatus::Accepted || !response.csr.has_value()) {
-        EVLOG_error << "Create CSR (TPM=" << use_tpm << ")"
-                    << " failed for:"
+        EVLOG_error << "Create CSR (TPM=" << use_tpm << ")" << " failed for:"
                     << ocpp::conversions::certificate_signing_use_enum_to_string(certificate_signing_use);
 
         std::string gen_error =
@@ -4872,19 +4871,16 @@ GetConfigurationResponse ChargePointImpl::get_configuration_key(const GetConfigu
     return response;
 }
 
-ConfigurationStatus ChargePointImpl::set_custom_configuration_key(CiString<50> key, CiString<500> value) {
-    // attempt to set the custom key
-    const auto result = this->configuration->setCustomKey(key, value, true);
-    if (result != ConfigurationStatus::Accepted) {
-        // return immediately if not "Accepted"
-        return result;
-    }
+ConfigurationStatus ChargePointImpl::set_configuration_key(CiString<50> key, CiString<500> value) {
+    const auto result = this->configuration->set(key, value);
 
-    // notify callback if registered and change was accepted
-    if (this->configuration_key_changed_callbacks.count(key) and
-        this->configuration_key_changed_callbacks[key] != nullptr and result == ConfigurationStatus::Accepted) {
-        KeyValue kv = {key, false, value};
-        this->configuration_key_changed_callbacks[key](kv);
+    if (result == ConfigurationStatus::Accepted) {
+        // notify callback if registered and change was accepted
+        if (this->configuration_key_changed_callbacks.count(key) and
+            this->configuration_key_changed_callbacks[key] != nullptr and result == ConfigurationStatus::Accepted) {
+            KeyValue kv = {key, false, value};
+            this->configuration_key_changed_callbacks[key](kv);
+        }
     }
 
     return result;
