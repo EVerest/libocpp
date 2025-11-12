@@ -17,7 +17,7 @@ namespace ocpp::v2 {
 
 class DeviceModel;
 
-enum UpdateMonitorMetaType {
+enum class UpdateMonitorMetaType {
     TRIGGER,
     PERIODIC
 };
@@ -82,8 +82,8 @@ public:
             throw std::runtime_error("Clear state should never be used on a non-trigger meta!");
         }
 
-        if (meta_trigger.is_cleared != is_cleared) {
-            meta_trigger.is_cleared = is_cleared;
+        if (meta_trigger.is_cleared != static_cast<int>(is_cleared)) {
+            meta_trigger.is_cleared = static_cast<int>(is_cleared);
 
             // On a state change reset the CSMS sent status and
             // event generation status
@@ -93,8 +93,8 @@ public:
     }
 };
 
-typedef std::function<void(const std::vector<EventData>&)> notify_events;
-typedef std::function<bool()> is_offline;
+using notify_events = std::function<void(const std::vector<EventData>&)>;
+using is_offline = std::function<bool()>;
 
 class MonitoringUpdater {
 
@@ -109,7 +109,6 @@ public:
     MonitoringUpdater(DeviceModel& device_model, notify_events notify_csms_events, is_offline is_chargepoint_offline);
     ~MonitoringUpdater();
 
-public:
     /// \brief Starts monitoring the variables, kicking the timer
     void start_monitoring();
     /// \brief Stops monitoring the variables, canceling the timer
@@ -132,7 +131,7 @@ private:
     void on_variable_changed(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
                              const Component& component, const Variable& variable,
                              const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
-                             const std::string& value_old, const std::string& value_current);
+                             const std::string& value_previous, const std::string& value_current);
 
     /// \brief Callback that is registered to the 'device_model' that determines if any of
     /// the already existing monitors were updated. It is required for some spec requirements
@@ -159,11 +158,6 @@ private:
     /// of the offline state
     void process_monitor_meta_internal(UpdaterMonitorMeta& updater_meta_data);
 
-    /// \brief Function that determines based on the current meta internal
-    /// state if it is proper to remove from the internal list the provided
-    /// monitor meta data. That implies various checks for various states
-    bool should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data);
-
     /// \brief Query the database (from in-memory data for fast retrieval)
     /// and updates our internal monitors with the new database data
     void update_periodic_monitors_internal();
@@ -173,7 +167,6 @@ private:
 
     bool is_monitoring_enabled();
 
-private:
     DeviceModel& device_model;
     Everest::SteadyTimer monitors_timer;
 

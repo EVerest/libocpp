@@ -17,13 +17,15 @@
 #include <ocpp/v2/messages/GetLocalListVersion.hpp>
 #include <ocpp/v2/messages/SendLocalList.hpp>
 
+namespace {
 ///
 /// \brief Check if vector of authorization data has a duplicate id token.
 /// \param list List to check.
 /// \return True if there is a duplicate.
 ///
-static bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list);
-static bool has_no_token_info(const ocpp::v2::AuthorizationData& item);
+bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list);
+bool has_no_token_info(const ocpp::v2::AuthorizationData& item);
+} // namespace
 
 ocpp::v2::Authorization::Authorization(const FunctionalBlockContext& context) :
     context(context), auth_cache_cleanup_handler_running(false) {
@@ -69,7 +71,7 @@ ocpp::v2::Authorization::authorize_req(const IdToken id_token, const std::option
         return response;
     }
 
-    ocpp::Call<AuthorizeRequest> call(req);
+    const ocpp::Call<AuthorizeRequest> call(req);
     auto future = this->context.message_dispatcher.dispatch_call_async(call);
 
     if (future.wait_for(DEFAULT_WAIT_FOR_FUTURE_TIMEOUT) == std::future_status::timeout) {
@@ -90,7 +92,7 @@ ocpp::v2::Authorization::authorize_req(const IdToken id_token, const std::option
     }
 
     try {
-        ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
+        const ocpp::CallResult<AuthorizeResponse> call_result = enhanced_message.message;
         return call_result.msg;
     } catch (const EnumConversionException& e) {
         // We don't get here normally, because the future.get() already throws. Code was not removed, because something
@@ -104,7 +106,7 @@ ocpp::v2::Authorization::authorize_req(const IdToken id_token, const std::option
 
 void ocpp::v2::Authorization::trigger_authorization_cache_cleanup() {
     {
-        std::scoped_lock lk(this->auth_cache_cleanup_mutex);
+        const std::scoped_lock lk(this->auth_cache_cleanup_mutex);
         this->auth_cache_cleanup_required = true;
     }
     this->auth_cache_cleanup_cv.notify_one();
@@ -182,15 +184,15 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
             forwarded_to_csms = true;
         } else if (certificate.has_value()) {
             // First try to validate the contract certificate locally
-            CertificateValidationResult local_verify_result = this->context.evse_security.verify_certificate(
+            const CertificateValidationResult local_verify_result = this->context.evse_security.verify_certificate(
                 certificate.value().get(), {ocpp::LeafCertificateType::MO, ocpp::LeafCertificateType::V2G});
             EVLOG_info << "Local contract validation result: " << local_verify_result;
 
-            bool central_contract_validation_allowed =
+            const bool central_contract_validation_allowed =
                 this->context.device_model
                     .get_optional_value<bool>(ControllerComponentVariables::CentralContractValidationAllowed)
                     .value_or(false);
-            bool contract_validation_offline =
+            const bool contract_validation_offline =
                 this->context.device_model
                     .get_optional_value<bool>(ControllerComponentVariables::ContractValidationOffline)
                     .value_or(false);
@@ -214,7 +216,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
                     // Try to generate the OCSP data from the certificate chain and use that
                     const auto generated_ocsp_request_data_list = ocpp::evse_security_conversions::to_ocpp_v2(
                         this->context.evse_security.get_mo_ocsp_request_data(certificate.value()));
-                    if (generated_ocsp_request_data_list.size() > 0) {
+                    if (!generated_ocsp_request_data_list.empty()) {
                         EVLOG_info << "Online: Pass generated OCSP data to CSMS";
                         response = this->authorize_req(id_token, std::nullopt, generated_ocsp_request_data_list);
                         forwarded_to_csms = true;
@@ -404,7 +406,7 @@ ocpp::v2::Authorization::validate_token(const IdToken id_token, const std::optio
 void ocpp::v2::Authorization::stop_auth_cache_cleanup_thread() {
     if (this->auth_cache_cleanup_handler_running) {
         {
-            std::scoped_lock lk(this->auth_cache_cleanup_mutex);
+            const std::scoped_lock lk(this->auth_cache_cleanup_mutex);
             this->auth_cache_cleanup_handler_running = false;
         }
         this->auth_cache_cleanup_cv.notify_one();
@@ -432,7 +434,7 @@ void ocpp::v2::Authorization::handle_clear_cache_req(Call<ClearCacheRequest> cal
         }
     }
 
-    ocpp::CallResult<ClearCacheResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<ClearCacheResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -464,14 +466,18 @@ void ocpp::v2::Authorization::cache_cleanup_handler() {
             this->context.database_handler.authorization_cache_delete_expired_entries(
                 lifetime.has_value() ? std::optional<std::chrono::seconds>(*lifetime) : std::nullopt);
 
-            auto meta_data = this->context.device_model.get_variable_meta_data(
-                ControllerComponentVariables::AuthCacheStorage.component,
-                ControllerComponentVariables::AuthCacheStorage.variable.value());
+            std::optional<VariableMetaData> meta_data;
+            if (ControllerComponentVariables::AuthCacheStorage.variable.has_value()) {
+                meta_data = this->context.device_model.get_variable_meta_data(
+                    ControllerComponentVariables::AuthCacheStorage.component,
+                    ControllerComponentVariables::AuthCacheStorage.variable.value());
+            }
 
             if (meta_data.has_value()) {
-                auto max_storage = meta_data->characteristics.maxLimit;
+                auto max_storage = meta_data.value().characteristics.maxLimit;
                 if (max_storage.has_value()) {
-                    while (this->context.database_handler.authorization_cache_get_binary_size() > max_storage.value()) {
+                    while (this->context.database_handler.authorization_cache_get_binary_size() >
+                           convert_to_positive_size_t(max_storage.value())) {
                         this->context.database_handler.authorization_cache_delete_nr_of_oldest_entries(1);
                     }
                 }
@@ -521,7 +527,7 @@ void ocpp::v2::Authorization::handle_send_local_authorization_list_req(Call<Send
         }
     }
 
-    ocpp::CallResult<SendLocalListResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<SendLocalListResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -542,7 +548,7 @@ void ocpp::v2::Authorization::handle_get_local_authorization_list_version_req(Ca
         response.versionNumber = 0;
     }
 
-    ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
+    const ocpp::CallResult<GetLocalListVersionResponse> call_result(response, call.uniqueId);
     this->context.message_dispatcher.dispatch_call_result(call_result);
 }
 
@@ -600,7 +606,8 @@ ocpp::v2::Authorization::apply_local_authorization_list(const SendLocalListReque
     return status;
 }
 
-static bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list) {
+namespace {
+bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>& list) {
     for (auto it1 = list.begin(); it1 != list.end(); ++it1) {
         for (auto it2 = it1 + 1; it2 != list.end(); ++it2) {
             if (it1->idToken.idToken == it2->idToken.idToken and it1->idToken.type == it2->idToken.type) {
@@ -611,6 +618,7 @@ static bool has_duplicate_in_list(const std::vector<ocpp::v2::AuthorizationData>
     return false;
 }
 
-static bool has_no_token_info(const ocpp::v2::AuthorizationData& item) {
+bool has_no_token_info(const ocpp::v2::AuthorizationData& item) {
     return !item.idTokenInfo.has_value();
 };
+} // namespace

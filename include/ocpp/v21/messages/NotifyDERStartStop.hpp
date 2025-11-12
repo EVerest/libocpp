@@ -54,7 +54,8 @@ void to_json(json& j, const NotifyDERStartStopResponse& k);
 void from_json(const json& j, NotifyDERStartStopResponse& k);
 
 /// \brief Writes the string representation of the given NotifyDERStartStopResponse \p k to the given output stream \p
-/// os \returns an output stream with the NotifyDERStartStopResponse written to
+/// os
+/// \returns an output stream with the NotifyDERStartStopResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyDERStartStopResponse& k);
 
 } // namespace v21

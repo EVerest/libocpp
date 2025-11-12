@@ -12,6 +12,7 @@ using std::chrono::seconds;
 namespace ocpp {
 namespace v2 {
 
+namespace {
 // Forward declarations of helper functions
 void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit,
                                      const float& no_limit_specified, const std::optional<int32_t> number_phases,
@@ -35,15 +36,17 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
                                                     std::optional<float>& value, std::optional<float>& value_L2,
                                                     std::optional<float>& value_L3, const bool use_min,
                                                     const bool use_divide);
+} // namespace
 
 int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
-    return duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count();
+    return clamp_to<int32_t>(duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count());
 }
 
 ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
     return ocpp::DateTime(std::chrono::floor<seconds>(dt.to_time_point()));
 }
 
+namespace {
 IntermediatePeriod default_intermediate_period() {
     IntermediatePeriod empty;
     empty.startPeriod = 0;
@@ -65,6 +68,7 @@ IntermediatePeriod default_intermediate_period(const int32_t start_period) {
     empty.startPeriod = start_period;
     return empty;
 }
+} // namespace
 
 bool ocpp::v2::PeriodLimit::operator==(const PeriodLimit& other) const {
     return is_equal(limit, other.limit) && is_equal(limit_L2, other.limit_L2) && is_equal(limit_L3, other.limit_L3);
@@ -83,8 +87,8 @@ void period_entry_t::init(const DateTime& in_start, int in_duration, const Charg
     // note duration can be negative and hence end time is before start time
     // see period_entry_t::validate()
     const auto start_tp = std::chrono::floor<seconds>(in_start.to_time_point());
-    start = std::move(DateTime(start_tp + seconds(in_period.startPeriod)));
-    end = std::move(DateTime(start_tp + seconds(in_duration)));
+    start = DateTime(start_tp + seconds(in_period.startPeriod));
+    end = DateTime(start_tp + seconds(in_duration));
     number_phases = in_period.numberPhases;
     stack_level = in_profile.stackLevel;
     charging_rate_unit = in_profile.chargingSchedule.front().chargingRateUnit;
@@ -192,16 +196,20 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
 
             switch (in_profile.recurrencyKind.value()) {
             case RecurrencyKindEnum::Daily:
-                seconds_to_go_back = duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
-                                     (HOURS_PER_DAY * SECONDS_PER_HOUR);
+                seconds_to_go_back = clamp_to<int>(
+                    duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
+                    (HOURS_PER_DAY * SECONDS_PER_HOUR));
                 if (seconds_to_go_back < 0) {
                     seconds_to_go_back += HOURS_PER_DAY * SECONDS_PER_HOUR;
                 }
                 seconds_to_go_forward = HOURS_PER_DAY * SECONDS_PER_HOUR;
                 break;
             case RecurrencyKindEnum::Weekly:
-                seconds_to_go_back = duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
-                                     (SECONDS_PER_DAY * DAYS_PER_WEEK);
+                seconds_to_go_back = clamp_to<int>(
+                    duration_cast<seconds>(now_tp - start_schedule.to_time_point()).count() %
+                    // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result): well below int::max()
+                    (SECONDS_PER_DAY * DAYS_PER_WEEK));
                 if (seconds_to_go_back < 0) {
                     seconds_to_go_back += SECONDS_PER_DAY * DAYS_PER_WEEK;
                 }
@@ -209,7 +217,7 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
                 break;
             }
 
-            start = std::move(DateTime(now_tp - seconds(seconds_to_go_back)));
+            start = DateTime(now_tp - seconds(seconds_to_go_back));
 
             while (start <= end) {
                 start_times.push_back(start);
@@ -234,7 +242,7 @@ std::vector<DateTime> calculate_start(const DateTime& in_now, const DateTime& in
 
 std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, const DateTime& in_end,
                                                     const std::optional<DateTime>& in_session_start,
-                                                    const ChargingProfile& in_profile, std::uint8_t in_period_index) {
+                                                    const ChargingProfile& in_profile, std::size_t in_period_index) {
     std::vector<period_entry_t> entries;
 
     if (in_period_index >= in_profile.chargingSchedule.front().chargingSchedulePeriod.size()) {
@@ -261,7 +269,7 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
             // the start time of this period is calculated in period_entry_t::init()
             const auto schedule_start = calculate_start(in_now, in_end, in_session_start, in_profile);
 
-            for (std::uint8_t i = 0; i < schedule_start.size(); i++) {
+            for (std::size_t i = 0; i < schedule_start.size(); i++) {
                 const bool has_next_occurrance = (i + 1) < schedule_start.size();
                 const auto& entry_start = schedule_start[i];
 
@@ -289,9 +297,9 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
 
                 // check duration doesn't extend into the next recurrence
                 if (has_next_occurrance) {
-                    const auto next_start =
+                    const auto next_start = clamp_to<int>(
                         duration_cast<seconds>(schedule_start[i + 1].to_time_point() - entry_start.to_time_point())
-                            .count();
+                            .count());
                     if (next_start < duration) {
                         duration = next_start;
                     }
@@ -301,8 +309,8 @@ std::vector<period_entry_t> calculate_profile_entry(const DateTime& in_now, cons
                 if (in_profile.validTo) {
                     // note can be negative
                     const auto valid_to = floor_seconds(in_profile.validTo.value());
-                    const auto valid_to_seconds =
-                        duration_cast<seconds>(valid_to.to_time_point() - entry_start.to_time_point()).count();
+                    const auto valid_to_seconds = clamp_to<int>(
+                        duration_cast<seconds>(valid_to.to_time_point() - entry_start.to_time_point()).count());
                     if (valid_to_seconds < duration) {
                         duration = valid_to_seconds;
                     }
@@ -329,7 +337,7 @@ std::vector<period_entry_t> calculate_profile_unsorted(const DateTime& now, cons
     std::vector<period_entry_t> entries;
 
     const auto nr_of_entries = profile.chargingSchedule.front().chargingSchedulePeriod.size();
-    for (uint8_t i = 0; i < nr_of_entries; i++) {
+    for (std::size_t i = 0; i < nr_of_entries; i++) {
         const auto results = calculate_profile_entry(now, end, session_start, profile, i);
         for (const auto& entry : results) {
             if (entry.start <= end) {
@@ -343,7 +351,7 @@ std::vector<period_entry_t> calculate_profile_unsorted(const DateTime& now, cons
 
 void sort_periods_into_date_order(std::vector<period_entry_t>& periods) {
     // sort into date order
-    struct {
+    const struct {
         bool operator()(const period_entry_t& a, const period_entry_t& b) const {
             // earliest first
             return a.start < b.start;
@@ -389,7 +397,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
     }
 
     // sort the combined_schedules in stack priority order
-    struct {
+    const struct {
         bool operator()(const period_entry_t& a, const period_entry_t& b) const {
             // highest stack level first
             return a.stack_level > b.stack_level;
@@ -459,7 +467,7 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
             // If the new ChargingSchedulePeriod.phaseToUse field is set, pass it on
             // Profile validation has already ensured that the values have been properly set.
             if (chosen->phase_to_use.has_value()) {
-                charging_schedule_period.phaseToUse = chosen->phase_to_use.value();
+                charging_schedule_period.phaseToUse = chosen->phase_to_use;
             }
 
             combined.push_back(charging_schedule_period);
@@ -482,8 +490,9 @@ using IntermediateProfileRef = std::reference_wrapper<const IntermediateProfile>
 
 inline std::vector<IntermediateProfileRef> convert_to_ref_vector(const std::vector<IntermediateProfile>& profiles) {
     std::vector<IntermediateProfileRef> references{};
+    references.reserve(profiles.size());
     for (auto& profile : profiles) {
-        references.push_back(profile);
+        references.emplace_back(profile);
     }
     return references;
 }
@@ -502,7 +511,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
     for (const auto& wrapped_profile : profiles) {
         auto& profile = wrapped_profile.get();
         if (!profile.empty()) {
-            profile_iterators.push_back(std::make_pair(profile.begin(), profile.end()));
+            profile_iterators.emplace_back(std::make_pair(profile.begin(), profile.end()));
         }
     }
 
@@ -592,7 +601,7 @@ IntermediateProfile merge_tx_profile_with_tx_default_profile(const IntermediateP
     };
 
     // This ordering together with the combinator will prefer the tx_profile above the default profile
-    std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
+    const std::vector<IntermediateProfileRef> profiles{tx_profile, tx_default_profile};
 
     return combine_list_of_profiles(profiles, combinator);
 }
@@ -821,7 +830,7 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
 }
 
 // Helper functions
-
+namespace {
 ///
 /// \brief Set the values of the phases so both `PeriodLimit`s have the same values for number of phases, which is used
 ///        later when combining the two.
@@ -1085,7 +1094,7 @@ void store_limit_to_phase_limits(const PeriodLimit& input_limit, const float& no
 void convert_and_transform_limit_value(const float& input, const float& not_specified, const float& transform_value,
                                        std::optional<float>& value, const bool use_min, const bool use_divide) {
     if (!is_equal(input, not_specified)) {
-        float transformed_value;
+        float transformed_value; // NOLINT(cppcoreguidelines-init-variables): initialized in if/else
         if (use_divide) {
             transformed_value = input / transform_value;
         } else {
@@ -1140,6 +1149,7 @@ void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_lim
     convert_and_transform_limit_value(input_limit.limit_L2, not_specified, t, value_L2, use_min, use_divide);
     convert_and_transform_limit_value(input_limit.limit_L3, not_specified, t, value_L3, use_min, use_divide);
 }
+} // namespace
 
 } // namespace v2
 } // namespace ocpp

@@ -26,26 +26,25 @@ template <typename T> struct RequestDeviceModelResponse {
 /// \param value
 /// \return
 template <typename T> T to_specific_type(const std::string& value) {
-    static_assert(std::is_same<T, std::string>::value || std::is_same<T, int>::value ||
-                      std::is_same<T, double>::value || std::is_same<T, size_t>::value ||
-                      std::is_same<T, DateTime>::value || std::is_same<T, bool>::value ||
-                      std::is_same<T, uint64_t>::value,
+    static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, int> || std::is_same_v<T, double> ||
+                      std::is_same_v<T, size_t> || std::is_same_v<T, DateTime> || std::is_same_v<T, bool> ||
+                      std::is_same_v<T, uint64_t>,
                   "Requested unknown datatype");
 
-    if constexpr (std::is_same<T, std::string>::value) {
+    if constexpr (std::is_same_v<T, std::string>) {
         return value;
-    } else if constexpr (std::is_same<T, int>::value) {
+    } else if constexpr (std::is_same_v<T, int>) {
         return std::stoi(value);
-    } else if constexpr (std::is_same<T, double>::value) {
+    } else if constexpr (std::is_same_v<T, double>) {
         return std::stod(value);
-    } else if constexpr (std::is_same<T, size_t>::value) {
-        size_t res = std::stoul(value);
+    } else if constexpr (std::is_same_v<T, std::size_t>) {
+        const std::size_t res = std::stoul(value);
         return res;
-    } else if constexpr (std::is_same<T, DateTime>::value) {
+    } else if constexpr (std::is_same_v<T, DateTime>) {
         return DateTime(value);
-    } else if constexpr (std::is_same<T, bool>::value) {
+    } else if constexpr (std::is_same_v<T, bool>) {
         return ocpp::conversions::string_to_bool(value);
-    } else if constexpr (std::is_same<T, uint64_t>::value) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         return std::stoull(value);
     }
 }
@@ -81,16 +80,17 @@ template <DataEnum T> bool is_type_numeric() {
     }
 }
 
-typedef std::function<void(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
-                           const Component& component, const Variable& variable,
-                           const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
-                           const std::string& value_previous, const std::string& value_current)>
-    on_variable_changed;
+void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criteria,
+                              std::vector<VariableMonitoringMeta>& monitors);
 
-typedef std::function<void(const VariableMonitoringMeta& updated_monitor, const Component& component,
-                           const Variable& variable, const VariableCharacteristics& characteristics,
-                           const VariableAttribute& attribute, const std::string& current_value)>
-    on_monitor_updated;
+using on_variable_changed = std::function<void(
+    const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors, const Component& component,
+    const Variable& variable, const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
+    const std::string& value_previous, const std::string& value_current)>;
+
+using on_monitor_updated = std::function<void(const VariableMonitoringMeta& updated_monitor, const Component& component,
+                                              const Variable& variable, const VariableCharacteristics& characteristics,
+                                              const VariableAttribute& attribute, const std::string& current_value)>;
 
 /// \brief This class manages access to the device model representation and to the device model interface and provides
 /// functionality to support the use cases defined in the functional block Provisioning
@@ -127,14 +127,6 @@ private:
     ///  \return
     bool component_criteria_match(const Component& component_id,
                                   const std::vector<ComponentCriterionEnum>& component_criteria);
-
-    /// @brief Iterates over the given \p component_variables and filters them according to the requirement conditions.
-    /// @param component_variables
-    /// @param component_ current component
-    /// @param variable_ current variable
-    /// @return true if the component is found according to any of the requirement conditions.
-    bool component_variables_match(const std::vector<ComponentVariable>& component_variables,
-                                   const ocpp::v2::Component& component_, const struct ocpp::v2::Variable& variable_);
 
     ///
     /// \brief Helper function to check if a variable has a value.
@@ -188,12 +180,11 @@ public:
         }
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
-        } else {
-            EVLOG_critical << "Directly requested value for ComponentVariable that doesn't exist in the device model: "
-                           << component_variable;
-            EVLOG_AND_THROW(std::runtime_error(
-                "Directly requested value for ComponentVariable that doesn't exist in the device model."));
         }
+        EVLOG_critical << "Directly requested value for ComponentVariable that doesn't exist in the device model: "
+                       << component_variable;
+        EVLOG_AND_THROW(std::runtime_error(
+            "Directly requested value for ComponentVariable that doesn't exist in the device model."));
     }
 
     /// \brief  Access to std::optional of a VariableAttribute for the given component, variable and attribute_enum.
@@ -213,9 +204,8 @@ public:
         }
         if (response == GetVariableStatusEnum::Accepted) {
             return to_specific_type<T>(value);
-        } else {
-            return std::nullopt;
         }
+        return std::nullopt;
     }
 
     /// \brief Requests a value of a VariableAttribute specified by combination of \p component_id and \p variable_id
@@ -234,9 +224,8 @@ public:
 
         if (req_status == GetVariableStatusEnum::Accepted) {
             return {GetVariableStatusEnum::Accepted, to_specific_type<T>(value)};
-        } else {
-            return {req_status};
         }
+        return {req_status};
     }
 
     /// \brief Get the mutability for the given component, variable and attribute_enum

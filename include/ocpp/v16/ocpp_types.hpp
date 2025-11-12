@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #ifndef OCPP_V16_OCPP_TYPES_HPP
@@ -27,7 +27,7 @@ void to_json(json& j, const IdTagInfo& k);
 /// \brief Conversion from a given json object \p j to a given IdTagInfo \p k
 void from_json(const json& j, IdTagInfo& k);
 
-// \brief Writes the string representation of the given IdTagInfo \p k to the given output stream \p os
+/// \brief Writes the string representation of the given IdTagInfo \p k to the given output stream \p os
 /// \returns an output stream with the IdTagInfo written to
 std::ostream& operator<<(std::ostream& os, const IdTagInfo& k);
 
@@ -43,7 +43,7 @@ void to_json(json& j, const CertificateHashDataType& k);
 /// \brief Conversion from a given json object \p j to a given CertificateHashDataType \p k
 void from_json(const json& j, CertificateHashDataType& k);
 
-// \brief Writes the string representation of the given CertificateHashDataType \p k to the given output stream \p os
+/// \brief Writes the string representation of the given CertificateHashDataType \p k to the given output stream \p os
 /// \returns an output stream with the CertificateHashDataType written to
 std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k);
 
@@ -58,7 +58,7 @@ void to_json(json& j, const ChargingSchedulePeriod& k);
 /// \brief Conversion from a given json object \p j to a given ChargingSchedulePeriod \p k
 void from_json(const json& j, ChargingSchedulePeriod& k);
 
-// \brief Writes the string representation of the given ChargingSchedulePeriod \p k to the given output stream \p os
+/// \brief Writes the string representation of the given ChargingSchedulePeriod \p k to the given output stream \p os
 /// \returns an output stream with the ChargingSchedulePeriod written to
 std::ostream& operator<<(std::ostream& os, const ChargingSchedulePeriod& k);
 
@@ -75,7 +75,7 @@ void to_json(json& j, const ChargingSchedule& k);
 /// \brief Conversion from a given json object \p j to a given ChargingSchedule \p k
 void from_json(const json& j, ChargingSchedule& k);
 
-// \brief Writes the string representation of the given ChargingSchedule \p k to the given output stream \p os
+/// \brief Writes the string representation of the given ChargingSchedule \p k to the given output stream \p os
 /// \returns an output stream with the ChargingSchedule written to
 std::ostream& operator<<(std::ostream& os, const ChargingSchedule& k);
 
@@ -90,7 +90,7 @@ void to_json(json& j, const KeyValue& k);
 /// \brief Conversion from a given json object \p j to a given KeyValue \p k
 void from_json(const json& j, KeyValue& k);
 
-// \brief Writes the string representation of the given KeyValue \p k to the given output stream \p os
+/// \brief Writes the string representation of the given KeyValue \p k to the given output stream \p os
 /// \returns an output stream with the KeyValue written to
 std::ostream& operator<<(std::ostream& os, const KeyValue& k);
 
@@ -105,7 +105,7 @@ void to_json(json& j, const LogParametersType& k);
 /// \brief Conversion from a given json object \p j to a given LogParametersType \p k
 void from_json(const json& j, LogParametersType& k);
 
-// \brief Writes the string representation of the given LogParametersType \p k to the given output stream \p os
+/// \brief Writes the string representation of the given LogParametersType \p k to the given output stream \p os
 /// \returns an output stream with the LogParametersType written to
 std::ostream& operator<<(std::ostream& os, const LogParametersType& k);
 
@@ -124,7 +124,7 @@ void to_json(json& j, const SampledValue& k);
 /// \brief Conversion from a given json object \p j to a given SampledValue \p k
 void from_json(const json& j, SampledValue& k);
 
-// \brief Writes the string representation of the given SampledValue \p k to the given output stream \p os
+/// \brief Writes the string representation of the given SampledValue \p k to the given output stream \p os
 /// \returns an output stream with the SampledValue written to
 std::ostream& operator<<(std::ostream& os, const SampledValue& k);
 
@@ -138,7 +138,7 @@ void to_json(json& j, const MeterValue& k);
 /// \brief Conversion from a given json object \p j to a given MeterValue \p k
 void from_json(const json& j, MeterValue& k);
 
-// \brief Writes the string representation of the given MeterValue \p k to the given output stream \p os
+/// \brief Writes the string representation of the given MeterValue \p k to the given output stream \p os
 /// \returns an output stream with the MeterValue written to
 std::ostream& operator<<(std::ostream& os, const MeterValue& k);
 
@@ -159,7 +159,7 @@ void to_json(json& j, const ChargingProfile& k);
 /// \brief Conversion from a given json object \p j to a given ChargingProfile \p k
 void from_json(const json& j, ChargingProfile& k);
 
-// \brief Writes the string representation of the given ChargingProfile \p k to the given output stream \p os
+/// \brief Writes the string representation of the given ChargingProfile \p k to the given output stream \p os
 /// \returns an output stream with the ChargingProfile written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfile& k);
 
@@ -173,7 +173,7 @@ void to_json(json& j, const LocalAuthorizationList& k);
 /// \brief Conversion from a given json object \p j to a given LocalAuthorizationList \p k
 void from_json(const json& j, LocalAuthorizationList& k);
 
-// \brief Writes the string representation of the given LocalAuthorizationList \p k to the given output stream \p os
+/// \brief Writes the string representation of the given LocalAuthorizationList \p k to the given output stream \p os
 /// \returns an output stream with the LocalAuthorizationList written to
 std::ostream& operator<<(std::ostream& os, const LocalAuthorizationList& k);
 
@@ -190,7 +190,7 @@ void to_json(json& j, const FirmwareType& k);
 /// \brief Conversion from a given json object \p j to a given FirmwareType \p k
 void from_json(const json& j, FirmwareType& k);
 
-// \brief Writes the string representation of the given FirmwareType \p k to the given output stream \p os
+/// \brief Writes the string representation of the given FirmwareType \p k to the given output stream \p os
 /// \returns an output stream with the FirmwareType written to
 std::ostream& operator<<(std::ostream& os, const FirmwareType& k);
 
@@ -204,7 +204,7 @@ void to_json(json& j, const TransactionData& k);
 /// \brief Conversion from a given json object \p j to a given TransactionData \p k
 void from_json(const json& j, TransactionData& k);
 
-// \brief Writes the string representation of the given TransactionData \p k to the given output stream \p os
+/// \brief Writes the string representation of the given TransactionData \p k to the given output stream \p os
 /// \returns an output stream with the TransactionData written to
 std::ostream& operator<<(std::ostream& os, const TransactionData& k);
 

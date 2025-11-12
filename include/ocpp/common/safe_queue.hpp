@@ -15,20 +15,20 @@ namespace ocpp {
 template <typename T> class SafeQueue {
 public:
     /// \return True if the queue is empty
-    inline bool empty() const {
-        std::lock_guard lock(mutex);
+    bool empty() const {
+        const std::lock_guard lock(mutex);
         return queue.empty();
     }
 
     /// \brief We return a copy here, since while might be accessing the
     /// reference while another thread uses pop and makes the reference stale
-    inline T front() {
-        std::lock_guard lock(mutex);
+    T front() {
+        const std::lock_guard lock(mutex);
         return queue.front();
     }
 
     /// \return retrieves and removes the first element in the queue. Undefined behavior if the queue is empty
-    inline T pop() {
+    T pop() {
         std::unique_lock<std::mutex> lock(mutex);
 
         T front = std::move(queue.front());
@@ -43,19 +43,19 @@ public:
     }
 
     /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
-    inline void push(T&& value) {
+    void push(T&& value) {
         {
-            std::lock_guard<std::mutex> lock(mutex);
-            queue.push(value);
+            const std::lock_guard<std::mutex> lock(mutex);
+            queue.push(std::move(value));
         }
 
         notify_waiting_thread();
     }
 
     /// \brief Queues an element and notifies any threads waiting on the internal conditional variable
-    inline void push(const T& value) {
+    void push(const T& value) {
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            const std::lock_guard<std::mutex> lock(mutex);
             queue.push(value);
         }
 
@@ -63,9 +63,9 @@ public:
     }
 
     /// \brief Clears the queue
-    inline void clear() {
+    void clear() {
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            const std::lock_guard<std::mutex> lock(mutex);
 
             std::queue<T> empty;
             empty.swap(queue);
@@ -76,14 +76,14 @@ public:
 
     /// \brief Waits for the queue to receive an element
     /// \param timeout to wait for an element, pass in a value <= 0 to wait indefinitely
-    inline void wait_on_queue_element(std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
+    void wait_on_queue_element(std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
         wait_on_queue_element_or_predicate([]() { return false; }, timeout);
     }
 
     /// \brief Same as 'wait_on_queue' but receives an additional predicate to wait upon
     template <class Predicate>
-    inline void wait_on_queue_element_or_predicate(Predicate pred,
-                                                   std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
+    void wait_on_queue_element_or_predicate(Predicate pred,
+                                            std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
         std::unique_lock<std::mutex> lock(mutex);
 
         if (timeout.count() > 0) {
@@ -96,7 +96,7 @@ public:
     /// \brief Waits on the queue for a custom event
     /// \param timeout to wait for an element, pass in a value <= 0 to wait indefinitely
     template <class Predicate>
-    inline void wait_on_custom_event(Predicate pred, std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
+    void wait_on_custom_event(Predicate pred, std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
         std::unique_lock<std::mutex> lock(mutex);
 
         if (timeout.count() > 0) {
@@ -107,7 +107,7 @@ public:
     }
 
     /// \brief Notifies a single waiting thread to wake up
-    inline void notify_waiting_thread() {
+    void notify_waiting_thread() {
         cv.notify_one();
     }
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #include <ocpp/v16/messages/DiagnosticsStatusNotification.hpp>
@@ -32,7 +32,8 @@ void from_json(const json& j, DiagnosticsStatusNotificationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given DiagnosticsStatusNotificationRequest \p k to the given output
-/// stream \p os \returns an output stream with the DiagnosticsStatusNotificationRequest written to
+/// stream \p os
+/// \returns an output stream with the DiagnosticsStatusNotificationRequest written to
 std::ostream& operator<<(std::ostream& os, const DiagnosticsStatusNotificationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -59,7 +60,8 @@ void from_json(const json& j, DiagnosticsStatusNotificationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given DiagnosticsStatusNotificationResponse \p k to the given output
-/// stream \p os \returns an output stream with the DiagnosticsStatusNotificationResponse written to
+/// stream \p os
+/// \returns an output stream with the DiagnosticsStatusNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const DiagnosticsStatusNotificationResponse& k) {
     os << json(k).dump(4);
     return os;

@@ -35,7 +35,8 @@ void to_json(json& j, const NotifyEVChargingNeedsRequest& k);
 void from_json(const json& j, NotifyEVChargingNeedsRequest& k);
 
 /// \brief Writes the string representation of the given NotifyEVChargingNeedsRequest \p k to the given output stream \p
-/// os \returns an output stream with the NotifyEVChargingNeedsRequest written to
+/// os
+/// \returns an output stream with the NotifyEVChargingNeedsRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyEVChargingNeedsRequest& k);
 
 /// \brief Contains a OCPP NotifyEVChargingNeedsResponse message
@@ -56,7 +57,8 @@ void to_json(json& j, const NotifyEVChargingNeedsResponse& k);
 void from_json(const json& j, NotifyEVChargingNeedsResponse& k);
 
 /// \brief Writes the string representation of the given NotifyEVChargingNeedsResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyEVChargingNeedsResponse written to
+/// \p os
+/// \returns an output stream with the NotifyEVChargingNeedsResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyEVChargingNeedsResponse& k);
 
 } // namespace v2

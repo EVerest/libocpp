@@ -30,7 +30,7 @@ void to_json(json& j, const SetVariableMonitoringRequest& k) {
 
 void from_json(const json& j, SetVariableMonitoringRequest& k) {
     // the required parts of the message
-    for (auto val : j.at("setMonitoringData")) {
+    for (const auto& val : j.at("setMonitoringData")) {
         k.setMonitoringData.push_back(val);
     }
 
@@ -41,7 +41,8 @@ void from_json(const json& j, SetVariableMonitoringRequest& k) {
 }
 
 /// \brief Writes the string representation of the given SetVariableMonitoringRequest \p k to the given output stream \p
-/// os \returns an output stream with the SetVariableMonitoringRequest written to
+/// os
+/// \returns an output stream with the SetVariableMonitoringRequest written to
 std::ostream& operator<<(std::ostream& os, const SetVariableMonitoringRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -64,7 +65,7 @@ void to_json(json& j, const SetVariableMonitoringResponse& k) {
 
 void from_json(const json& j, SetVariableMonitoringResponse& k) {
     // the required parts of the message
-    for (auto val : j.at("setMonitoringResult")) {
+    for (const auto& val : j.at("setMonitoringResult")) {
         k.setMonitoringResult.push_back(val);
     }
 
@@ -75,7 +76,8 @@ void from_json(const json& j, SetVariableMonitoringResponse& k) {
 }
 
 /// \brief Writes the string representation of the given SetVariableMonitoringResponse \p k to the given output stream
-/// \p os \returns an output stream with the SetVariableMonitoringResponse written to
+/// \p os
+/// \returns an output stream with the SetVariableMonitoringResponse written to
 std::ostream& operator<<(std::ostream& os, const SetVariableMonitoringResponse& k) {
     os << json(k).dump(4);
     return os;

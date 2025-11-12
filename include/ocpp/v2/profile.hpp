@@ -86,7 +86,7 @@ std::vector<DateTime> calculate_start(const DateTime& now, const DateTime& end,
 /// \return the list of start times
 std::vector<period_entry_t> calculate_profile_entry(const DateTime& now, const DateTime& end,
                                                     const std::optional<DateTime>& session_start,
-                                                    const ChargingProfile& profile, std::uint8_t period_index);
+                                                    const ChargingProfile& profile, std::size_t period_index);
 
 /// \brief generate an ordered list of valid schedule periods for the profile
 /// \param now the current date and time

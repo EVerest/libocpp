@@ -33,7 +33,8 @@ void to_json(json& j, const GetCertificateChainStatusRequest& k);
 void from_json(const json& j, GetCertificateChainStatusRequest& k);
 
 /// \brief Writes the string representation of the given GetCertificateChainStatusRequest \p k to the given output
-/// stream \p os \returns an output stream with the GetCertificateChainStatusRequest written to
+/// stream \p os
+/// \returns an output stream with the GetCertificateChainStatusRequest written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateChainStatusRequest& k);
 
 /// \brief Contains a OCPP GetCertificateChainStatusResponse message
@@ -53,7 +54,8 @@ void to_json(json& j, const GetCertificateChainStatusResponse& k);
 void from_json(const json& j, GetCertificateChainStatusResponse& k);
 
 /// \brief Writes the string representation of the given GetCertificateChainStatusResponse \p k to the given output
-/// stream \p os \returns an output stream with the GetCertificateChainStatusResponse written to
+/// stream \p os
+/// \returns an output stream with the GetCertificateChainStatusResponse written to
 std::ostream& operator<<(std::ostream& os, const GetCertificateChainStatusResponse& k);
 
 } // namespace v21

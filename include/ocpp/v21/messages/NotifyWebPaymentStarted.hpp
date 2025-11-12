@@ -33,7 +33,8 @@ void to_json(json& j, const NotifyWebPaymentStartedRequest& k);
 void from_json(const json& j, NotifyWebPaymentStartedRequest& k);
 
 /// \brief Writes the string representation of the given NotifyWebPaymentStartedRequest \p k to the given output stream
-/// \p os \returns an output stream with the NotifyWebPaymentStartedRequest written to
+/// \p os
+/// \returns an output stream with the NotifyWebPaymentStartedRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyWebPaymentStartedRequest& k);
 
 /// \brief Contains a OCPP NotifyWebPaymentStartedResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const NotifyWebPaymentStartedResponse& k);
 void from_json(const json& j, NotifyWebPaymentStartedResponse& k);
 
 /// \brief Writes the string representation of the given NotifyWebPaymentStartedResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyWebPaymentStartedResponse written to
+/// \p os
+/// \returns an output stream with the NotifyWebPaymentStartedResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyWebPaymentStartedResponse& k);
 
 } // namespace v21

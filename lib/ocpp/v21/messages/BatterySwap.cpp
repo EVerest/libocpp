@@ -33,7 +33,7 @@ void to_json(json& j, const BatterySwapRequest& k) {
 
 void from_json(const json& j, BatterySwapRequest& k) {
     // the required parts of the message
-    for (auto val : j.at("batteryData")) {
+    for (const auto& val : j.at("batteryData")) {
         k.batteryData.push_back(val);
     }
     k.eventType = ocpp::v2::conversions::string_to_battery_swap_event_enum(j.at("eventType"));

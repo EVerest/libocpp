@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
-#include "ocpp/common/constants.hpp"
-#include "ocpp/common/types.hpp"
-#include "ocpp/v16/ocpp_enums.hpp"
 #include <chrono>
+#include <ocpp/common/constants.hpp>
+#include <ocpp/common/types.hpp>
+#include <ocpp/common/utils.hpp>
+#include <ocpp/v16/ocpp_enums.hpp>
 #include <ocpp/v16/profile.hpp>
 #include <ocpp/v16/smart_charging.hpp>
 
@@ -83,11 +84,14 @@ bool validate_schedule(const ChargingSchedule& schedule, const int charging_sche
     }
 
     for (const auto& period : schedule.chargingSchedulePeriod) {
-        if (period.numberPhases &&
-            (period.numberPhases.value() <= 0 or period.numberPhases.value() > DEFAULT_AND_MAX_NUMBER_PHASES)) {
-            EVLOG_warning << "INVALID SCHEDULE - Invalid number of phases: " << period.numberPhases.value();
-            return false;
-        } else if (period.limit < 0) {
+        if (period.numberPhases.has_value()) {
+            const auto& number_phases = period.numberPhases.value();
+            if (number_phases <= 0 or number_phases > DEFAULT_AND_MAX_NUMBER_PHASES) {
+                EVLOG_warning << "INVALID SCHEDULE - Invalid number of phases: " << number_phases;
+                return false;
+            }
+        }
+        if (period.limit < 0) {
             EVLOG_warning << "INVALID SCHEDULE - Invalid limit: " << period.limit;
             return false;
         }
@@ -108,9 +112,9 @@ void SmartChargingHandler::clear_expired_profiles(const date::utc_clock::time_po
     EVLOG_debug << "Scanning all installed profiles and clearing expired profiles";
 
     // obtain locks - note the order needs to be consistent with other uses
-    std::lock_guard<std::mutex> lk_cp(charge_point_max_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_cp(charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
 
     // check all profile types for expired entries
     ::clear_expired_profiles(now, *database_handler, stack_level_charge_point_max_profiles_map);
@@ -123,14 +127,14 @@ void SmartChargingHandler::clear_expired_profiles(const date::utc_clock::time_po
 int SmartChargingHandler::get_number_installed_profiles() {
     int number = 0;
 
-    std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
 
-    number += this->stack_level_charge_point_max_profiles_map.size();
+    number += clamp_to<int>(this->stack_level_charge_point_max_profiles_map.size());
     for (const auto& [connector_id, connector] : this->connectors) {
-        number += connector->stack_level_tx_default_profiles_map.size();
-        number += connector->stack_level_tx_profiles_map.size();
+        number += clamp_to<int>(connector->stack_level_tx_default_profiles_map.size());
+        number += clamp_to<int>(connector->stack_level_tx_profiles_map.size());
     }
 
     return number;
@@ -153,14 +157,16 @@ struct CompositeScheduleConfig {
             }
         }
 
-        this->current_limit = configuration.getCompositeScheduleDefaultLimitAmps().value_or(DEFAULT_LIMIT_AMPS);
+        this->current_limit =
+            static_cast<float>(configuration.getCompositeScheduleDefaultLimitAmps().value_or(DEFAULT_LIMIT_AMPS));
 
-        this->power_limit = configuration.getCompositeScheduleDefaultLimitWatts().value_or(DEFAULT_LIMIT_WATTS);
+        this->power_limit =
+            static_cast<float>(configuration.getCompositeScheduleDefaultLimitWatts().value_or(DEFAULT_LIMIT_WATTS));
 
         this->default_number_phases =
             configuration.getCompositeScheduleDefaultNumberPhases().value_or(DEFAULT_AND_MAX_NUMBER_PHASES);
 
-        this->supply_voltage = configuration.getSupplyVoltage().value_or(LOW_VOLTAGE);
+        this->supply_voltage = static_cast<float>(configuration.getSupplyVoltage().value_or(LOW_VOLTAGE));
     }
 };
 
@@ -286,8 +292,8 @@ EnhancedChargingSchedule SmartChargingHandler::calculate_enhanced_composite_sche
     composite.duration = elapsed_seconds(floor_seconds(end_time), floor_seconds(start_time));
     composite.chargingRateUnit = charging_rate_unit;
 
-    // Convert the intermediate result into a proper schedule. Will fill in the periods with no limits with the default
-    // one
+    // Convert the intermediate result into a proper schedule. Will fill in the periods with no limits with the
+    // default one
     const auto limit = charging_rate_unit == ChargingRateUnit::A ? config.current_limit : config.power_limit;
     composite.chargingSchedulePeriod = convert_intermediate_into_schedule(
         retval, charging_rate_unit, limit, config.default_number_phases, config.supply_voltage);
@@ -340,7 +346,7 @@ bool SmartChargingHandler::validate_profile(
             }
         }
         if (profile.chargingSchedule.duration) {
-            int max_recurrency_duration;
+            int max_recurrency_duration; // NOLINT(cppcoreguidelines-init-variables): initialized below
             if (profile.recurrencyKind == RecurrencyKindType::Daily) {
                 max_recurrency_duration = SECONDS_PER_DAY;
             } else {
@@ -348,9 +354,9 @@ bool SmartChargingHandler::validate_profile(
             }
 
             if (profile.chargingSchedule.duration > max_recurrency_duration) {
-                EVLOG_warning
-                    << "Given duration of Recurring profile was > than max_recurrency_duration. Setting duration of "
-                       "schedule to max_currency_duration";
+                EVLOG_warning << "Given duration of Recurring profile was > than max_recurrency_duration. Setting "
+                                 "duration of "
+                                 "schedule to max_currency_duration";
                 profile.chargingSchedule.duration = max_recurrency_duration;
             }
         }
@@ -359,14 +365,14 @@ bool SmartChargingHandler::validate_profile(
     if (profile.chargingProfilePurpose == ChargingProfilePurposeType::ChargePointMaxProfile) {
         if (connector_id == 0 and profile.chargingProfileKind != ChargingProfileKindType::Relative) {
             return true;
-        } else {
-            EVLOG_warning
-                << "INVALID PROFILE - connector_id != 0 with purpose ChargePointMaxProfile or kind is Relative";
-            return false;
         }
-    } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
+        EVLOG_warning << "INVALID PROFILE - connector_id != 0 with purpose ChargePointMaxProfile or kind is Relative";
+        return false;
+    }
+    if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxDefaultProfile) {
         return true;
-    } else if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
+    }
+    if (profile.chargingProfilePurpose == ChargingProfilePurposeType::TxProfile) {
         if (connector_id == 0) {
             EVLOG_warning << "INVALID PROFILE - connector_id is 0";
             return false;
@@ -396,7 +402,7 @@ bool SmartChargingHandler::validate_profile(
 }
 
 void SmartChargingHandler::add_charge_point_max_profile(const ChargingProfile& profile) {
-    std::lock_guard<std::mutex> lk(this->charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk(this->charge_point_max_profiles_map_mutex);
     this->stack_level_charge_point_max_profiles_map[profile.stackLevel] = profile;
     try {
         this->database_handler->insert_or_update_charging_profile(0, profile);
@@ -406,10 +412,10 @@ void SmartChargingHandler::add_charge_point_max_profile(const ChargingProfile& p
 }
 
 void SmartChargingHandler::add_tx_default_profile(const ChargingProfile& profile, const int connector_id) {
-    std::lock_guard<std::mutex> lk(this->tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk(this->tx_default_profiles_map_mutex);
     if (connector_id == 0) {
         for (size_t id = 1; id <= this->connectors.size() - 1; id++) {
-            this->connectors.at(id)->stack_level_tx_default_profiles_map[profile.stackLevel] = profile;
+            this->connectors.at(clamp_to<int>(id))->stack_level_tx_default_profiles_map[profile.stackLevel] = profile;
         }
     } else {
         this->connectors.at(connector_id)->stack_level_tx_default_profiles_map[profile.stackLevel] = profile;
@@ -423,7 +429,7 @@ void SmartChargingHandler::add_tx_default_profile(const ChargingProfile& profile
 }
 
 void SmartChargingHandler::add_tx_profile(const ChargingProfile& profile, const int connector_id) {
-    std::lock_guard<std::mutex> lk(this->tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk(this->tx_profiles_map_mutex);
     this->connectors.at(connector_id)->stack_level_tx_profiles_map[profile.stackLevel] = profile;
     try {
         this->database_handler->insert_or_update_charging_profile(connector_id, profile);
@@ -498,9 +504,9 @@ bool SmartChargingHandler::clear_all_profiles_with_filter(
 
 void SmartChargingHandler::clear_all_profiles() {
     EVLOG_info << "Clearing all charging profiles";
-    std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
-    std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_cp(this->charge_point_max_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_txd(this->tx_default_profiles_map_mutex);
+    const std::lock_guard<std::mutex> lk_tx(this->tx_profiles_map_mutex);
     this->stack_level_charge_point_max_profiles_map.clear();
 
     for (auto& [connector_id, connector] : this->connectors) {
@@ -516,13 +522,13 @@ void SmartChargingHandler::clear_all_profiles() {
 }
 
 std::vector<ChargingProfile>
-SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
+SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& /*start_time*/, const ocpp::DateTime& /*end_time*/,
                                          const int connector_id,
                                          const std::set<ChargingProfilePurposeType>& purposes_to_ignore) {
     std::vector<ChargingProfile> valid_profiles;
 
     {
-        std::lock_guard<std::mutex> lk(charge_point_max_profiles_map_mutex);
+        const std::lock_guard<std::mutex> lk(charge_point_max_profiles_map_mutex);
 
         if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
                       ChargingProfilePurposeType::ChargePointMaxProfile) == std::end(purposes_to_ignore)) {
@@ -544,8 +550,8 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& start_time, const
                 transactionId = itt->second->transaction->get_transaction_id();
             }
 
-            std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
-            std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
+            const std::lock_guard<std::mutex> lk_txd(tx_default_profiles_map_mutex);
+            const std::lock_guard<std::mutex> lk_tx(tx_profiles_map_mutex);
 
             if (std::find(std::begin(purposes_to_ignore), std::end(purposes_to_ignore),
                           ChargingProfilePurposeType::TxProfile) == std::end(purposes_to_ignore)) {

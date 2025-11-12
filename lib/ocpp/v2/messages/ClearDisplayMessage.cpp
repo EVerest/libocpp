@@ -39,7 +39,8 @@ void from_json(const json& j, ClearDisplayMessageRequest& k) {
 }
 
 /// \brief Writes the string representation of the given ClearDisplayMessageRequest \p k to the given output stream \p
-/// os \returns an output stream with the ClearDisplayMessageRequest written to
+/// os
+/// \returns an output stream with the ClearDisplayMessageRequest written to
 std::ostream& operator<<(std::ostream& os, const ClearDisplayMessageRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -77,7 +78,8 @@ void from_json(const json& j, ClearDisplayMessageResponse& k) {
 }
 
 /// \brief Writes the string representation of the given ClearDisplayMessageResponse \p k to the given output stream \p
-/// os \returns an output stream with the ClearDisplayMessageResponse written to
+/// os
+/// \returns an output stream with the ClearDisplayMessageResponse written to
 std::ostream& operator<<(std::ostream& os, const ClearDisplayMessageResponse& k) {
     os << json(k).dump(4);
     return os;

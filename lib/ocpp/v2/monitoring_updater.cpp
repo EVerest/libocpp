@@ -11,6 +11,7 @@
 
 namespace ocpp::v2 {
 
+namespace {
 template <DataEnum T>
 bool triggers_monitor(const VariableMonitoringMeta& monitor_meta, const std::string& value_old,
                       const std::string& value_new) {
@@ -25,19 +26,19 @@ bool triggers_monitor(const VariableMonitoringMeta& monitor_meta, const std::str
                 auto delta = std::abs(raw_val_reference - raw_val_current);
 
                 return (delta > monitor_meta.monitor.value);
-            } else {
-                EVLOG_error << "Invalid reference value for monitor: " << monitor_meta.monitor;
-                return false;
             }
-        } else if (monitor_meta.monitor.type == MonitorEnum::LowerThreshold) {
-            return (raw_val_current < monitor_meta.monitor.value);
-        } else if (monitor_meta.monitor.type == MonitorEnum::UpperThreshold) {
-            return (raw_val_current > monitor_meta.monitor.value);
-        } else {
-            EVLOG_error << "Requested unsupported trigger monitor of type: "
-                        << conversions::monitor_enum_to_string(monitor_meta.monitor.type);
+            EVLOG_error << "Invalid reference value for monitor: " << monitor_meta.monitor;
             return false;
         }
+        if (monitor_meta.monitor.type == MonitorEnum::LowerThreshold) {
+            return (raw_val_current < monitor_meta.monitor.value);
+        }
+        if (monitor_meta.monitor.type == MonitorEnum::UpperThreshold) {
+            return (raw_val_current > monitor_meta.monitor.value);
+        }
+        EVLOG_error << "Requested unsupported trigger monitor of type: "
+                    << conversions::monitor_enum_to_string(monitor_meta.monitor.type);
+        return false;
     }
 
     return false;
@@ -131,6 +132,7 @@ EventData create_notify_event(int32_t unique_id, const std::string& reported_val
 
     return notify_event;
 }
+} // namespace
 
 MonitoringUpdater::MonitoringUpdater(DeviceModel& device_model, notify_events notify_csms_events,
                                      is_offline is_chargepoint_offline) :
@@ -142,25 +144,35 @@ MonitoringUpdater::MonitoringUpdater(DeviceModel& device_model, notify_events no
 }
 
 MonitoringUpdater::~MonitoringUpdater() {
-    stop_monitoring();
+    try {
+        stop_monitoring();
+    } catch (...) {
+        return;
+    }
 }
 
 void MonitoringUpdater::start_monitoring() {
     // Bind function to this instance
-    auto fn = std::bind(&MonitoringUpdater::on_variable_changed, this, std::placeholders::_1, std::placeholders::_2,
-                        std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6,
-                        std::placeholders::_7);
+    auto fn = [this](const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors, const Component& component,
+                     const Variable& variable, const VariableCharacteristics& characteristics,
+                     const VariableAttribute& attribute, const std::string& value_previous,
+                     const std::string& value_current) {
+        this->on_variable_changed(monitors, component, variable, characteristics, attribute, value_previous,
+                                  value_current);
+    };
     device_model.register_variable_listener(std::move(fn));
 
-    auto fn_monitor =
-        std::bind(&MonitoringUpdater::on_monitor_updated, this, std::placeholders::_1, std::placeholders::_2,
-                  std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+    auto fn_monitor = [this](const VariableMonitoringMeta& updated_monitor, const Component& component,
+                             const Variable& variable, const VariableCharacteristics& characteristics,
+                             const VariableAttribute& attribute, const std::string& current_value) {
+        this->on_monitor_updated(updated_monitor, component, variable, characteristics, attribute, current_value);
+    };
     device_model.register_monitor_listener(std::move(fn_monitor));
 
     // No point in starting the monitor if this variable does not exist. It will never start to exist later on.
     if (this->device_model.get_optional_value<bool>(ControllerComponentVariables::MonitoringCtrlrEnabled)
             .value_or(false)) {
-        int process_interval_seconds =
+        const int process_interval_seconds =
             this->device_model.get_optional_value<int>(ControllerComponentVariables::MonitorsProcessingInterval)
                 .value_or(1);
 
@@ -327,7 +339,7 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
         // The return to normal does not apply to 'Delta' monitors
         if (it != std::end(updater_monitors_meta) && monitor_meta.monitor.type != MonitorEnum::Delta) {
             UpdaterMonitorMeta& triggered_data = it->second;
-            bool in_triggered_state = (triggered_data.meta_trigger.is_cleared == 0);
+            const bool in_triggered_state = (triggered_data.meta_trigger.is_cleared == 0);
 
             if (in_triggered_state) {
                 // Mark it as cleared, a.k.a normal
@@ -416,7 +428,7 @@ void MonitoringUpdater::update_periodic_monitors_internal() {
             continue;
         }
 
-        bool found_in_new_periodics =
+        const bool found_in_new_periodics =
             std::find_if(std::begin(periodic_monitors), std::end(periodic_monitors),
                          [&updater_meta_id](const auto& periodic_monitor) {
                              const auto& monitors = periodic_monitor.monitors;
@@ -494,7 +506,7 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
             comp_var.variable = updater_meta_data.variable;
 
             // This operation can cause a small stall, but only if this is triggered
-            std::string current_value = this->device_model.get_value<std::string>(comp_var);
+            const auto current_value = this->device_model.get_value<std::string>(comp_var);
 
             EventData notify_event =
                 std::move(create_notify_event(this->unique_id++, current_value, updater_meta_data.component,
@@ -524,7 +536,7 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
             // N07.FR.19
             if (monitor.type != MonitorEnum::Delta) {
                 // Mark if the event is cleared (returned to normal) if that is the case
-                notify_event.cleared = (updater_meta_data.meta_trigger.is_cleared == true);
+                notify_event.cleared = (updater_meta_data.meta_trigger.is_cleared == 1);
             }
 
             // Add it to the list of generated events
@@ -533,21 +545,26 @@ void MonitoringUpdater::process_monitor_meta_internal(UpdaterMonitorMeta& update
     }
 }
 
-bool MonitoringUpdater::should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data) {
+namespace {
+/// \brief Function that determines based on the current meta internal
+/// state if it is proper to remove from the internal list the provided
+/// monitor meta data. That implies various checks for various states
+bool should_remove_monitor_meta_internal(const UpdaterMonitorMeta& updater_meta_data) {
     if (updater_meta_data.type == UpdateMonitorMetaType::PERIODIC) {
         return false;
-    } else if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
+    }
+    if (updater_meta_data.type == UpdateMonitorMetaType::TRIGGER) {
         bool should_clear = false;
 
-        if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == false) &&
-            (updater_meta_data.meta_trigger.is_cleared == true)) {
+        if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == 0) &&
+            (updater_meta_data.meta_trigger.is_cleared == 1)) { // NOLINT(bugprone-branch-clone): readability
             // If we never sent to the CSMS a 'trigger' and we are cleared then it means the CSMS
             // does not know of our trigger event, and in case of a return to normal we can simply
             // remove this from the list
             should_clear = true;
-        } else if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == true) &&
-                   (updater_meta_data.meta_trigger.is_cleared == true) &&
-                   (updater_meta_data.meta_trigger.is_csms_sent == true)) {
+        } else if ((updater_meta_data.meta_trigger.is_csms_sent_triggered == 1) &&
+                   (updater_meta_data.meta_trigger.is_cleared == 1) &&
+                   (updater_meta_data.meta_trigger.is_csms_sent == 1)) {
             // If we sent a 'trigger' to the CSMS but now we are cleared and the current
             // state was also sent to the CSMS it means this trigger can be safely removed
             // as the CSMS knows everything
@@ -559,16 +576,17 @@ bool MonitoringUpdater::should_remove_monitor_meta_internal(const UpdaterMonitor
 
     return false;
 }
+} // namespace
 
 void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool allow_trigger) {
     if (!is_monitoring_enabled()) {
         return;
     }
 
-    bool is_offline;
-    int offline_severity;
-    int active_monitoring_level;
-    MonitoringBaseEnum active_monitoring_base;
+    bool is_offline = true;
+    int offline_severity = MonitoringLevelSeverity::Danger;
+    int active_monitoring_level = MonitoringLevelSeverity::MAX;
+    MonitoringBaseEnum active_monitoring_base = MonitoringBaseEnum::All;
 
     get_monitoring_info(is_offline, offline_severity, active_monitoring_level, active_monitoring_base);
 
@@ -644,7 +662,7 @@ void MonitoringUpdater::process_monitors_internal(bool allow_periodics, bool all
                     // If this was a state trigger, them also mark that
                     // we sent this 'dangerous' state to the CSMS at least once
                     // since in that case the clear logic changes
-                    if (updater_monitor_meta.meta_trigger.is_cleared == false) {
+                    if (updater_monitor_meta.meta_trigger.is_cleared == 0) {
                         updater_monitor_meta.meta_trigger.is_csms_sent_triggered = true;
                     }
                 }
@@ -683,7 +701,7 @@ void MonitoringUpdater::get_monitoring_info(bool& out_is_offline, int& out_offli
         this->device_model.get_optional_value<int>(ControllerComponentVariables::ActiveMonitoringLevel)
             .value_or(MonitoringLevelSeverity::MAX);
 
-    std::string active_monitoring_base_string =
+    const std::string active_monitoring_base_string =
         this->device_model.get_optional_value<std::string>(ControllerComponentVariables::ActiveMonitoringBase)
             .value_or(conversions::monitoring_base_enum_to_string(MonitoringBaseEnum::All));
 

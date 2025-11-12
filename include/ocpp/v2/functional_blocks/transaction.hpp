@@ -14,18 +14,17 @@ class TariffAndCostInterface;
 
 struct GetTransactionStatusRequest;
 
-typedef std::function<void(const TransactionEventRequest& transaction_event)> TransactionEventCallback;
-typedef std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> ResetCallback;
-typedef std::function<void(const TransactionEventRequest& transaction_event,
-                           const TransactionEventResponse& transaction_event_response)>
-    TransactionEventResponseCallback;
-typedef std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
-    StopTransactionCallback;
-typedef std::function<void(const int32_t evse_id)> PauseChargingCallback;
+using TransactionEventCallback = std::function<void(const TransactionEventRequest& transaction_event)>;
+using ResetCallback = std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>;
+using TransactionEventResponseCallback = std::function<void(
+    const TransactionEventRequest& transaction_event, const TransactionEventResponse& transaction_event_response)>;
+using StopTransactionCallback =
+    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>;
+using PauseChargingCallback = std::function<void(const int32_t evse_id)>;
 
 class TransactionInterface : public MessageHandlerInterface {
 public:
-    virtual ~TransactionInterface() = default;
+    ~TransactionInterface() override = default;
 
     /// \brief Event handler that should be called when a transaction has started
     /// \param evse_id
@@ -112,7 +111,8 @@ public:
                                       const int32_t remote_start_id) override;
     void schedule_reset(const std::optional<int32_t> reset_scheduled_evseid) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     MessageQueue<v2::MessageType>& message_queue;
     AuthorizationInterface& authorization;
@@ -131,7 +131,7 @@ private: // Members
     /// \brief If `reset_scheduled` is true and the reset is for a specific evse id, it will be stored in this member.
     std::set<int32_t> reset_scheduled_evseids;
 
-private: // Functions
+    // Functions
     /* OCPP message handlers */
 
     // Functional Block E: Transaction

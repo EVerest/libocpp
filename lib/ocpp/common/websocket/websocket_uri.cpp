@@ -12,6 +12,7 @@
 
 namespace ocpp {
 
+namespace {
 auto path_split_last_segment(std::string path) {
     struct result {
         std::string path_without_last_segment;
@@ -21,7 +22,7 @@ auto path_split_last_segment(std::string path) {
     if (path == "/") {
         return result{"/", ""};
     }
-    auto pos_last_slash = path.rfind("/");
+    auto pos_last_slash = path.rfind('/');
 
     if (pos_last_slash == path.length() - 1) {
         path.pop_back();
@@ -33,6 +34,7 @@ auto path_split_last_segment(std::string path) {
 
     return result{path_without_last_segment, last_segment};
 }
+} // namespace
 
 Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int security_profile) {
     if (uri.empty()) {

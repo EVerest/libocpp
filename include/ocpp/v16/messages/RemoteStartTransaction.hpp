@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #ifndef OCPP_V16_REMOTESTARTTRANSACTION_HPP
@@ -33,7 +33,8 @@ void to_json(json& j, const RemoteStartTransactionRequest& k);
 void from_json(const json& j, RemoteStartTransactionRequest& k);
 
 /// \brief Writes the string representation of the given RemoteStartTransactionRequest \p k to the given output stream
-/// \p os \returns an output stream with the RemoteStartTransactionRequest written to
+/// \p os
+/// \returns an output stream with the RemoteStartTransactionRequest written to
 std::ostream& operator<<(std::ostream& os, const RemoteStartTransactionRequest& k);
 
 /// \brief Contains a OCPP RemoteStartTransactionResponse message
@@ -52,7 +53,8 @@ void to_json(json& j, const RemoteStartTransactionResponse& k);
 void from_json(const json& j, RemoteStartTransactionResponse& k);
 
 /// \brief Writes the string representation of the given RemoteStartTransactionResponse \p k to the given output stream
-/// \p os \returns an output stream with the RemoteStartTransactionResponse written to
+/// \p os
+/// \returns an output stream with the RemoteStartTransactionResponse written to
 std::ostream& operator<<(std::ostream& os, const RemoteStartTransactionResponse& k);
 
 } // namespace v16

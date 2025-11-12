@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #include <ocpp/v16/messages/ChangeConfiguration.hpp>
@@ -34,7 +34,8 @@ void from_json(const json& j, ChangeConfigurationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given ChangeConfigurationRequest \p k to the given output stream \p
-/// os \returns an output stream with the ChangeConfigurationRequest written to
+/// os
+/// \returns an output stream with the ChangeConfigurationRequest written to
 std::ostream& operator<<(std::ostream& os, const ChangeConfigurationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -60,7 +61,8 @@ void from_json(const json& j, ChangeConfigurationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given ChangeConfigurationResponse \p k to the given output stream \p
-/// os \returns an output stream with the ChangeConfigurationResponse written to
+/// os
+/// \returns an output stream with the ChangeConfigurationResponse written to
 std::ostream& operator<<(std::ostream& os, const ChangeConfigurationResponse& k) {
     os << json(k).dump(4);
     return os;

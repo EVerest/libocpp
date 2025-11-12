@@ -32,7 +32,8 @@ void to_json(json& j, const ClosePeriodicEventStreamRequest& k);
 void from_json(const json& j, ClosePeriodicEventStreamRequest& k);
 
 /// \brief Writes the string representation of the given ClosePeriodicEventStreamRequest \p k to the given output stream
-/// \p os \returns an output stream with the ClosePeriodicEventStreamRequest written to
+/// \p os
+/// \returns an output stream with the ClosePeriodicEventStreamRequest written to
 std::ostream& operator<<(std::ostream& os, const ClosePeriodicEventStreamRequest& k);
 
 /// \brief Contains a OCPP ClosePeriodicEventStreamResponse message
@@ -51,7 +52,8 @@ void to_json(json& j, const ClosePeriodicEventStreamResponse& k);
 void from_json(const json& j, ClosePeriodicEventStreamResponse& k);
 
 /// \brief Writes the string representation of the given ClosePeriodicEventStreamResponse \p k to the given output
-/// stream \p os \returns an output stream with the ClosePeriodicEventStreamResponse written to
+/// stream \p os
+/// \returns an output stream with the ClosePeriodicEventStreamResponse written to
 std::ostream& operator<<(std::ostream& os, const ClosePeriodicEventStreamResponse& k);
 
 } // namespace v21

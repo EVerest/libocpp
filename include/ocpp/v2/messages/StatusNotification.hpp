@@ -54,7 +54,8 @@ void to_json(json& j, const StatusNotificationResponse& k);
 void from_json(const json& j, StatusNotificationResponse& k);
 
 /// \brief Writes the string representation of the given StatusNotificationResponse \p k to the given output stream \p
-/// os \returns an output stream with the StatusNotificationResponse written to
+/// os
+/// \returns an output stream with the StatusNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const StatusNotificationResponse& k);
 
 } // namespace v2

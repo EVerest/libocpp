@@ -13,10 +13,9 @@ class MeterValuesInterface;
 
 struct CostUpdatedRequest;
 
-typedef std::function<void(const RunningCost& running_cost, const uint32_t number_of_decimals,
-                           std::optional<std::string> currency_code)>
-    SetRunningCostCallback;
-typedef std::function<void(const TariffMessage& message)> TariffMessageCallback;
+using SetRunningCostCallback = std::function<void(const RunningCost& running_cost, const uint32_t number_of_decimals,
+                                                  std::optional<std::string> currency_code)>;
+using TariffMessageCallback = std::function<void(const TariffMessage& message)>;
 
 class TariffAndCostInterface : public MessageHandlerInterface {
 public:
@@ -45,14 +44,15 @@ public:
                                 const TransactionEventRequest& original_message,
                                 const json& original_transaction_event_response) override;
 
-private: // Members
+private:
+    // Members
     const FunctionalBlockContext& context;
     MeterValuesInterface& meter_values;
     std::optional<TariffMessageCallback> tariff_message_callback;
     std::optional<SetRunningCostCallback> set_running_cost_callback;
     boost::asio::io_context& io_context;
 
-private: // Functions
+    // Functions
     // Functional Block I: TariffAndCost
     void handle_costupdated_req(const Call<CostUpdatedRequest> call);
 

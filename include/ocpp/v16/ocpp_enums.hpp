@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #ifndef OCPP_V16_OCPP_ENUMS_HPP
@@ -31,7 +31,8 @@ AuthorizationStatus string_to_authorization_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AuthorizationStatus \p authorization_status to the given output
-/// stream \p os \returns an output stream with the AuthorizationStatus written to
+/// stream \p os
+/// \returns an output stream with the AuthorizationStatus written to
 std::ostream& operator<<(std::ostream& os, const AuthorizationStatus& authorization_status);
 
 // from: BootNotificationResponse
@@ -52,7 +53,8 @@ RegistrationStatus string_to_registration_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RegistrationStatus \p registration_status to the given output
-/// stream \p os \returns an output stream with the RegistrationStatus written to
+/// stream \p os
+/// \returns an output stream with the RegistrationStatus written to
 std::ostream& operator<<(std::ostream& os, const RegistrationStatus& registration_status);
 
 // from: CancelReservationResponse
@@ -72,7 +74,8 @@ CancelReservationStatus string_to_cancel_reservation_status(const std::string& s
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CancelReservationStatus \p cancel_reservation_status to the
-/// given output stream \p os \returns an output stream with the CancelReservationStatus written to
+/// given output stream \p os
+/// \returns an output stream with the CancelReservationStatus written to
 std::ostream& operator<<(std::ostream& os, const CancelReservationStatus& cancel_reservation_status);
 
 // from: CertificateSignedResponse
@@ -92,8 +95,8 @@ CertificateSignedStatusEnumType string_to_certificate_signed_status_enum_type(co
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CertificateSignedStatusEnumType \p
-/// certificate_signed_status_enum_type to the given output stream \p os \returns an output stream with the
-/// CertificateSignedStatusEnumType written to
+/// certificate_signed_status_enum_type to the given output stream \p os
+/// \returns an output stream with the CertificateSignedStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const CertificateSignedStatusEnumType& certificate_signed_status_enum_type);
 
 // from: ChangeAvailabilityRequest
@@ -113,7 +116,8 @@ AvailabilityType string_to_availability_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AvailabilityType \p availability_type to the given output
-/// stream \p os \returns an output stream with the AvailabilityType written to
+/// stream \p os
+/// \returns an output stream with the AvailabilityType written to
 std::ostream& operator<<(std::ostream& os, const AvailabilityType& availability_type);
 
 // from: ChangeAvailabilityResponse
@@ -134,7 +138,8 @@ AvailabilityStatus string_to_availability_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given AvailabilityStatus \p availability_status to the given output
-/// stream \p os \returns an output stream with the AvailabilityStatus written to
+/// stream \p os
+/// \returns an output stream with the AvailabilityStatus written to
 std::ostream& operator<<(std::ostream& os, const AvailabilityStatus& availability_status);
 
 // from: ChangeConfigurationResponse
@@ -156,7 +161,8 @@ ConfigurationStatus string_to_configuration_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ConfigurationStatus \p configuration_status to the given output
-/// stream \p os \returns an output stream with the ConfigurationStatus written to
+/// stream \p os
+/// \returns an output stream with the ConfigurationStatus written to
 std::ostream& operator<<(std::ostream& os, const ConfigurationStatus& configuration_status);
 
 // from: ClearCacheResponse
@@ -176,7 +182,8 @@ ClearCacheStatus string_to_clear_cache_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearCacheStatus \p clear_cache_status to the given output
-/// stream \p os \returns an output stream with the ClearCacheStatus written to
+/// stream \p os
+/// \returns an output stream with the ClearCacheStatus written to
 std::ostream& operator<<(std::ostream& os, const ClearCacheStatus& clear_cache_status);
 
 // from: ClearChargingProfileRequest
@@ -197,7 +204,8 @@ ChargingProfilePurposeType string_to_charging_profile_purpose_type(const std::st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfilePurposeType \p charging_profile_purpose_type to
-/// the given output stream \p os \returns an output stream with the ChargingProfilePurposeType written to
+/// the given output stream \p os
+/// \returns an output stream with the ChargingProfilePurposeType written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfilePurposeType& charging_profile_purpose_type);
 
 // from: ClearChargingProfileResponse
@@ -217,7 +225,8 @@ ClearChargingProfileStatus string_to_clear_charging_profile_status(const std::st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ClearChargingProfileStatus \p clear_charging_profile_status to
-/// the given output stream \p os \returns an output stream with the ClearChargingProfileStatus written to
+/// the given output stream \p os
+/// \returns an output stream with the ClearChargingProfileStatus written to
 std::ostream& operator<<(std::ostream& os, const ClearChargingProfileStatus& clear_charging_profile_status);
 
 // from: DataTransferResponse
@@ -239,7 +248,8 @@ DataTransferStatus string_to_data_transfer_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DataTransferStatus \p data_transfer_status to the given output
-/// stream \p os \returns an output stream with the DataTransferStatus written to
+/// stream \p os
+/// \returns an output stream with the DataTransferStatus written to
 std::ostream& operator<<(std::ostream& os, const DataTransferStatus& data_transfer_status);
 
 // from: DeleteCertificateRequest
@@ -260,7 +270,8 @@ HashAlgorithmEnumType string_to_hash_algorithm_enum_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given HashAlgorithmEnumType \p hash_algorithm_enum_type to the given
-/// output stream \p os \returns an output stream with the HashAlgorithmEnumType written to
+/// output stream \p os
+/// \returns an output stream with the HashAlgorithmEnumType written to
 std::ostream& operator<<(std::ostream& os, const HashAlgorithmEnumType& hash_algorithm_enum_type);
 
 // from: DeleteCertificateResponse
@@ -281,8 +292,8 @@ DeleteCertificateStatusEnumType string_to_delete_certificate_status_enum_type(co
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DeleteCertificateStatusEnumType \p
-/// delete_certificate_status_enum_type to the given output stream \p os \returns an output stream with the
-/// DeleteCertificateStatusEnumType written to
+/// delete_certificate_status_enum_type to the given output stream \p os
+/// \returns an output stream with the DeleteCertificateStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const DeleteCertificateStatusEnumType& delete_certificate_status_enum_type);
 
 // from: DiagnosticsStatusNotificationRequest
@@ -304,7 +315,8 @@ DiagnosticsStatus string_to_diagnostics_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given DiagnosticsStatus \p diagnostics_status to the given output
-/// stream \p os \returns an output stream with the DiagnosticsStatus written to
+/// stream \p os
+/// \returns an output stream with the DiagnosticsStatus written to
 std::ostream& operator<<(std::ostream& os, const DiagnosticsStatus& diagnostics_status);
 
 // from: ExtendedTriggerMessageRequest
@@ -329,7 +341,8 @@ MessageTriggerEnumType string_to_message_trigger_enum_type(const std::string& s)
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessageTriggerEnumType \p message_trigger_enum_type to the
-/// given output stream \p os \returns an output stream with the MessageTriggerEnumType written to
+/// given output stream \p os
+/// \returns an output stream with the MessageTriggerEnumType written to
 std::ostream& operator<<(std::ostream& os, const MessageTriggerEnumType& message_trigger_enum_type);
 
 // from: ExtendedTriggerMessageResponse
@@ -350,8 +363,8 @@ TriggerMessageStatusEnumType string_to_trigger_message_status_enum_type(const st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TriggerMessageStatusEnumType \p
-/// trigger_message_status_enum_type to the given output stream \p os \returns an output stream with the
-/// TriggerMessageStatusEnumType written to
+/// trigger_message_status_enum_type to the given output stream \p os
+/// \returns an output stream with the TriggerMessageStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const TriggerMessageStatusEnumType& trigger_message_status_enum_type);
 
 // from: FirmwareStatusNotificationRequest
@@ -376,7 +389,8 @@ FirmwareStatus string_to_firmware_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given FirmwareStatus \p firmware_status to the given output stream \p
-/// os \returns an output stream with the FirmwareStatus written to
+/// os
+/// \returns an output stream with the FirmwareStatus written to
 std::ostream& operator<<(std::ostream& os, const FirmwareStatus& firmware_status);
 
 // from: GetCompositeScheduleRequest
@@ -396,7 +410,8 @@ ChargingRateUnit string_to_charging_rate_unit(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingRateUnit \p charging_rate_unit to the given output
-/// stream \p os \returns an output stream with the ChargingRateUnit written to
+/// stream \p os
+/// \returns an output stream with the ChargingRateUnit written to
 std::ostream& operator<<(std::ostream& os, const ChargingRateUnit& charging_rate_unit);
 
 // from: GetCompositeScheduleResponse
@@ -416,7 +431,8 @@ GetCompositeScheduleStatus string_to_get_composite_schedule_status(const std::st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetCompositeScheduleStatus \p get_composite_schedule_status to
-/// the given output stream \p os \returns an output stream with the GetCompositeScheduleStatus written to
+/// the given output stream \p os
+/// \returns an output stream with the GetCompositeScheduleStatus written to
 std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleStatus& get_composite_schedule_status);
 
 // from: GetInstalledCertificateIdsRequest
@@ -436,7 +452,8 @@ CertificateUseEnumType string_to_certificate_use_enum_type(const std::string& s)
 } // namespace conversions
 
 /// \brief Writes the string representation of the given CertificateUseEnumType \p certificate_use_enum_type to the
-/// given output stream \p os \returns an output stream with the CertificateUseEnumType written to
+/// given output stream \p os
+/// \returns an output stream with the CertificateUseEnumType written to
 std::ostream& operator<<(std::ostream& os, const CertificateUseEnumType& certificate_use_enum_type);
 
 // from: GetInstalledCertificateIdsResponse
@@ -456,8 +473,8 @@ GetInstalledCertificateStatusEnumType string_to_get_installed_certificate_status
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GetInstalledCertificateStatusEnumType \p
-/// get_installed_certificate_status_enum_type to the given output stream \p os \returns an output stream with the
-/// GetInstalledCertificateStatusEnumType written to
+/// get_installed_certificate_status_enum_type to the given output stream \p os
+/// \returns an output stream with the GetInstalledCertificateStatusEnumType written to
 std::ostream& operator<<(std::ostream& os,
                          const GetInstalledCertificateStatusEnumType& get_installed_certificate_status_enum_type);
 
@@ -499,7 +516,8 @@ LogStatusEnumType string_to_log_status_enum_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given LogStatusEnumType \p log_status_enum_type to the given output
-/// stream \p os \returns an output stream with the LogStatusEnumType written to
+/// stream \p os
+/// \returns an output stream with the LogStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const LogStatusEnumType& log_status_enum_type);
 
 // from: InstallCertificateResponse
@@ -520,8 +538,8 @@ InstallCertificateStatusEnumType string_to_install_certificate_status_enum_type(
 } // namespace conversions
 
 /// \brief Writes the string representation of the given InstallCertificateStatusEnumType \p
-/// install_certificate_status_enum_type to the given output stream \p os \returns an output stream with the
-/// InstallCertificateStatusEnumType written to
+/// install_certificate_status_enum_type to the given output stream \p os
+/// \returns an output stream with the InstallCertificateStatusEnumType written to
 std::ostream& operator<<(std::ostream& os,
                          const InstallCertificateStatusEnumType& install_certificate_status_enum_type);
 
@@ -547,7 +565,8 @@ UploadLogStatusEnumType string_to_upload_log_status_enum_type(const std::string&
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UploadLogStatusEnumType \p upload_log_status_enum_type to the
-/// given output stream \p os \returns an output stream with the UploadLogStatusEnumType written to
+/// given output stream \p os
+/// \returns an output stream with the UploadLogStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const UploadLogStatusEnumType& upload_log_status_enum_type);
 
 // from: MeterValuesRequest
@@ -573,7 +592,8 @@ ReadingContext string_to_reading_context(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReadingContext \p reading_context to the given output stream \p
-/// os \returns an output stream with the ReadingContext written to
+/// os
+/// \returns an output stream with the ReadingContext written to
 std::ostream& operator<<(std::ostream& os, const ReadingContext& reading_context);
 
 // from: MeterValuesRequest
@@ -719,7 +739,8 @@ UnitOfMeasure string_to_unit_of_measure(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UnitOfMeasure \p unit_of_measure to the given output stream \p
-/// os \returns an output stream with the UnitOfMeasure written to
+/// os
+/// \returns an output stream with the UnitOfMeasure written to
 std::ostream& operator<<(std::ostream& os, const UnitOfMeasure& unit_of_measure);
 
 // from: RemoteStartTransactionRequest
@@ -740,7 +761,8 @@ ChargingProfileKindType string_to_charging_profile_kind_type(const std::string& 
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileKindType \p charging_profile_kind_type to the
-/// given output stream \p os \returns an output stream with the ChargingProfileKindType written to
+/// given output stream \p os
+/// \returns an output stream with the ChargingProfileKindType written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfileKindType& charging_profile_kind_type);
 
 // from: RemoteStartTransactionRequest
@@ -760,7 +782,8 @@ RecurrencyKindType string_to_recurrency_kind_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RecurrencyKindType \p recurrency_kind_type to the given output
-/// stream \p os \returns an output stream with the RecurrencyKindType written to
+/// stream \p os
+/// \returns an output stream with the RecurrencyKindType written to
 std::ostream& operator<<(std::ostream& os, const RecurrencyKindType& recurrency_kind_type);
 
 // from: RemoteStartTransactionResponse
@@ -780,7 +803,8 @@ RemoteStartStopStatus string_to_remote_start_stop_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given RemoteStartStopStatus \p remote_start_stop_status to the given
-/// output stream \p os \returns an output stream with the RemoteStartStopStatus written to
+/// output stream \p os
+/// \returns an output stream with the RemoteStartStopStatus written to
 std::ostream& operator<<(std::ostream& os, const RemoteStartStopStatus& remote_start_stop_status);
 
 // from: ReserveNowResponse
@@ -803,7 +827,8 @@ ReservationStatus string_to_reservation_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ReservationStatus \p reservation_status to the given output
-/// stream \p os \returns an output stream with the ReservationStatus written to
+/// stream \p os
+/// \returns an output stream with the ReservationStatus written to
 std::ostream& operator<<(std::ostream& os, const ReservationStatus& reservation_status);
 
 // from: ResetRequest
@@ -906,7 +931,8 @@ ChargingProfileStatus string_to_charging_profile_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargingProfileStatus \p charging_profile_status to the given
-/// output stream \p os \returns an output stream with the ChargingProfileStatus written to
+/// output stream \p os
+/// \returns an output stream with the ChargingProfileStatus written to
 std::ostream& operator<<(std::ostream& os, const ChargingProfileStatus& charging_profile_status);
 
 // from: SignCertificateResponse
@@ -926,7 +952,8 @@ GenericStatusEnumType string_to_generic_status_enum_type(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given GenericStatusEnumType \p generic_status_enum_type to the given
-/// output stream \p os \returns an output stream with the GenericStatusEnumType written to
+/// output stream \p os
+/// \returns an output stream with the GenericStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const GenericStatusEnumType& generic_status_enum_type);
 
 // from: SignedFirmwareStatusNotificationRequest
@@ -958,7 +985,8 @@ FirmwareStatusEnumType string_to_firmware_status_enum_type(const std::string& s)
 } // namespace conversions
 
 /// \brief Writes the string representation of the given FirmwareStatusEnumType \p firmware_status_enum_type to the
-/// given output stream \p os \returns an output stream with the FirmwareStatusEnumType written to
+/// given output stream \p os
+/// \returns an output stream with the FirmwareStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const FirmwareStatusEnumType& firmware_status_enum_type);
 
 // from: SignedUpdateFirmwareResponse
@@ -981,8 +1009,8 @@ UpdateFirmwareStatusEnumType string_to_update_firmware_status_enum_type(const st
 } // namespace conversions
 
 /// \brief Writes the string representation of the given UpdateFirmwareStatusEnumType \p
-/// update_firmware_status_enum_type to the given output stream \p os \returns an output stream with the
-/// UpdateFirmwareStatusEnumType written to
+/// update_firmware_status_enum_type to the given output stream \p os
+/// \returns an output stream with the UpdateFirmwareStatusEnumType written to
 std::ostream& operator<<(std::ostream& os, const UpdateFirmwareStatusEnumType& update_firmware_status_enum_type);
 
 // from: StatusNotificationRequest
@@ -1016,7 +1044,8 @@ ChargePointErrorCode string_to_charge_point_error_code(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargePointErrorCode \p charge_point_error_code to the given
-/// output stream \p os \returns an output stream with the ChargePointErrorCode written to
+/// output stream \p os
+/// \returns an output stream with the ChargePointErrorCode written to
 std::ostream& operator<<(std::ostream& os, const ChargePointErrorCode& charge_point_error_code);
 
 // from: StatusNotificationRequest
@@ -1043,7 +1072,8 @@ ChargePointStatus string_to_charge_point_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given ChargePointStatus \p charge_point_status to the given output
-/// stream \p os \returns an output stream with the ChargePointStatus written to
+/// stream \p os
+/// \returns an output stream with the ChargePointStatus written to
 std::ostream& operator<<(std::ostream& os, const ChargePointStatus& charge_point_status);
 
 // from: StopTransactionRequest
@@ -1096,7 +1126,8 @@ MessageTrigger string_to_message_trigger(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given MessageTrigger \p message_trigger to the given output stream \p
-/// os \returns an output stream with the MessageTrigger written to
+/// os
+/// \returns an output stream with the MessageTrigger written to
 std::ostream& operator<<(std::ostream& os, const MessageTrigger& message_trigger);
 
 // from: TriggerMessageResponse
@@ -1117,7 +1148,8 @@ TriggerMessageStatus string_to_trigger_message_status(const std::string& s);
 } // namespace conversions
 
 /// \brief Writes the string representation of the given TriggerMessageStatus \p trigger_message_status to the given
-/// output stream \p os \returns an output stream with the TriggerMessageStatus written to
+/// output stream \p os
+/// \returns an output stream with the TriggerMessageStatus written to
 std::ostream& operator<<(std::ostream& os, const TriggerMessageStatus& trigger_message_status);
 
 // from: UnlockConnectorResponse

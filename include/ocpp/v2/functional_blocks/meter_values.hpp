@@ -14,7 +14,7 @@ struct RequiredComponentVariable;
 
 class MeterValuesInterface : public MessageHandlerInterface {
 public:
-    virtual ~MeterValuesInterface() override = default;
+    ~MeterValuesInterface() override = default;
     virtual void update_aligned_data_interval() = 0;
     /// \brief Event handler that should be called when a new meter value is present
     /// \param evse_id
@@ -29,7 +29,7 @@ public:
 
 class MeterValues : public MeterValuesInterface {
 public:
-    virtual ~MeterValues() override = default;
+    ~MeterValues() override = default;
     explicit MeterValues(const FunctionalBlockContext& functional_block_context);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void update_aligned_data_interval() override;

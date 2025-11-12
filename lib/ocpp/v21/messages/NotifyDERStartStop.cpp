@@ -27,7 +27,7 @@ void to_json(json& j, const NotifyDERStartStopRequest& k) {
     // the optional parts of the message
     if (k.supersededIds) {
         j["supersededIds"] = json::array();
-        for (auto val : k.supersededIds.value()) {
+        for (const auto& val : k.supersededIds.value()) {
             j["supersededIds"].push_back(val);
         }
     }
@@ -44,9 +44,9 @@ void from_json(const json& j, NotifyDERStartStopRequest& k) {
 
     // the optional parts of the message
     if (j.contains("supersededIds")) {
-        json arr = j.at("supersededIds");
+        const json& arr = j.at("supersededIds");
         std::vector<CiString<36>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.supersededIds.emplace(vec);
@@ -86,7 +86,8 @@ void from_json(const json& j, NotifyDERStartStopResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyDERStartStopResponse \p k to the given output stream \p
-/// os \returns an output stream with the NotifyDERStartStopResponse written to
+/// os
+/// \returns an output stream with the NotifyDERStartStopResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyDERStartStopResponse& k) {
     os << json(k).dump(4);
     return os;

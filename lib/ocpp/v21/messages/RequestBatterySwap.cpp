@@ -79,7 +79,8 @@ void from_json(const json& j, RequestBatterySwapResponse& k) {
 }
 
 /// \brief Writes the string representation of the given RequestBatterySwapResponse \p k to the given output stream \p
-/// os \returns an output stream with the RequestBatterySwapResponse written to
+/// os
+/// \returns an output stream with the RequestBatterySwapResponse written to
 std::ostream& operator<<(std::ostream& os, const RequestBatterySwapResponse& k) {
     os << json(k).dump(4);
     return os;

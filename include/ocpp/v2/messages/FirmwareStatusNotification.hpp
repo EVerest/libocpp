@@ -34,7 +34,8 @@ void to_json(json& j, const FirmwareStatusNotificationRequest& k);
 void from_json(const json& j, FirmwareStatusNotificationRequest& k);
 
 /// \brief Writes the string representation of the given FirmwareStatusNotificationRequest \p k to the given output
-/// stream \p os \returns an output stream with the FirmwareStatusNotificationRequest written to
+/// stream \p os
+/// \returns an output stream with the FirmwareStatusNotificationRequest written to
 std::ostream& operator<<(std::ostream& os, const FirmwareStatusNotificationRequest& k);
 
 /// \brief Contains a OCPP FirmwareStatusNotificationResponse message
@@ -53,7 +54,8 @@ void to_json(json& j, const FirmwareStatusNotificationResponse& k);
 void from_json(const json& j, FirmwareStatusNotificationResponse& k);
 
 /// \brief Writes the string representation of the given FirmwareStatusNotificationResponse \p k to the given output
-/// stream \p os \returns an output stream with the FirmwareStatusNotificationResponse written to
+/// stream \p os
+/// \returns an output stream with the FirmwareStatusNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const FirmwareStatusNotificationResponse& k);
 
 } // namespace v2

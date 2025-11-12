@@ -34,7 +34,8 @@ void to_json(json& j, const GetMonitoringReportRequest& k);
 void from_json(const json& j, GetMonitoringReportRequest& k);
 
 /// \brief Writes the string representation of the given GetMonitoringReportRequest \p k to the given output stream \p
-/// os \returns an output stream with the GetMonitoringReportRequest written to
+/// os
+/// \returns an output stream with the GetMonitoringReportRequest written to
 std::ostream& operator<<(std::ostream& os, const GetMonitoringReportRequest& k);
 
 /// \brief Contains a OCPP GetMonitoringReportResponse message
@@ -55,7 +56,8 @@ void to_json(json& j, const GetMonitoringReportResponse& k);
 void from_json(const json& j, GetMonitoringReportResponse& k);
 
 /// \brief Writes the string representation of the given GetMonitoringReportResponse \p k to the given output stream \p
-/// os \returns an output stream with the GetMonitoringReportResponse written to
+/// os
+/// \returns an output stream with the GetMonitoringReportResponse written to
 std::ostream& operator<<(std::ostream& os, const GetMonitoringReportResponse& k);
 
 } // namespace v2

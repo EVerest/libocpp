@@ -51,7 +51,8 @@ void from_json(const json& j, NotifyCustomerInformationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyCustomerInformationRequest \p k to the given output
-/// stream \p os \returns an output stream with the NotifyCustomerInformationRequest written to
+/// stream \p os
+/// \returns an output stream with the NotifyCustomerInformationRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyCustomerInformationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -80,7 +81,8 @@ void from_json(const json& j, NotifyCustomerInformationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyCustomerInformationResponse \p k to the given output
-/// stream \p os \returns an output stream with the NotifyCustomerInformationResponse written to
+/// stream \p os
+/// \returns an output stream with the NotifyCustomerInformationResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyCustomerInformationResponse& k) {
     os << json(k).dump(4);
     return os;

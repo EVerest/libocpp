@@ -53,6 +53,7 @@ EvseSecurityImpl::verify_certificate(const std::string& certificate_chain,
                                      const std::vector<LeafCertificateType>& certificate_types) {
     std::vector<evse_security::LeafCertificateType> _certificate_types;
 
+    _certificate_types.reserve(certificate_types.size());
     for (const auto& certificate_type : certificate_types) {
         _certificate_types.push_back(conversions::from_ocpp(certificate_type));
     }
@@ -66,12 +67,14 @@ EvseSecurityImpl::get_installed_certificates(const std::vector<CertificateType>&
 
     std::vector<evse_security::CertificateType> _certificate_types;
 
+    _certificate_types.reserve(certificate_types.size());
     for (const auto& certificate_type : certificate_types) {
         _certificate_types.push_back(conversions::from_ocpp(certificate_type));
     }
 
     const auto installed_certificates = this->evse_security->get_installed_certificates(_certificate_types);
 
+    result.reserve(installed_certificates.certificate_hash_data_chain.size());
     for (const auto& certificate_hash_data : installed_certificates.certificate_hash_data_chain) {
         result.push_back(conversions::to_ocpp(certificate_hash_data));
     }
@@ -82,6 +85,7 @@ std::vector<OCSPRequestData> EvseSecurityImpl::get_v2g_ocsp_request_data() {
     std::vector<OCSPRequestData> result;
 
     const auto ocsp_request_data = this->evse_security->get_v2g_ocsp_request_data();
+    result.reserve(ocsp_request_data.ocsp_request_data_list.size());
     for (const auto& ocsp_request_entry : ocsp_request_data.ocsp_request_data_list) {
         result.push_back(conversions::to_ocpp(ocsp_request_entry));
     }
@@ -93,6 +97,7 @@ std::vector<OCSPRequestData> EvseSecurityImpl::get_mo_ocsp_request_data(const st
     std::vector<OCSPRequestData> result;
 
     const auto ocsp_request_data = this->evse_security->get_mo_ocsp_request_data(certificate_chain);
+    result.reserve(ocsp_request_data.ocsp_request_data_list.size());
     for (const auto& ocsp_request_entry : ocsp_request_data.ocsp_request_data_list) {
         result.push_back(conversions::to_ocpp(ocsp_request_entry));
     }
@@ -306,6 +311,7 @@ CertificateHashDataChain to_ocpp(evse_security::CertificateHashDataChain other) 
     lhs.certificateHashData = to_ocpp(other.certificate_hash_data);
 
     std::vector<CertificateHashDataType> v;
+    v.reserve(other.child_certificate_hash_data.size());
     for (const auto& certificate_hash_data : other.child_certificate_hash_data) {
         v.push_back(to_ocpp(certificate_hash_data));
     }

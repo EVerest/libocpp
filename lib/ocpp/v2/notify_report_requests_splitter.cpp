@@ -74,8 +74,9 @@ json NotifyReportRequestsSplitter::create_next_payload(
 
     json call_base{MessageTypeId::CALL, message_id, MESSAGE_TYPE};
 
-    size_t base_json_string_length = this->json_skeleton_size + message_id.size();
-    size_t remaining_size = this->max_size >= base_json_string_length ? this->max_size - base_json_string_length : 0;
+    const size_t base_json_string_length = this->json_skeleton_size + message_id.size();
+    const size_t remaining_size =
+        this->max_size >= base_json_string_length ? this->max_size - base_json_string_length : 0;
 
     auto request_json = request_json_template;
     request_json["reportData"] = create_next_report_data_json(report_data_iterator, report_data_end, remaining_size);

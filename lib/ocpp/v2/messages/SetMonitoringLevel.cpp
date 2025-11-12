@@ -77,7 +77,8 @@ void from_json(const json& j, SetMonitoringLevelResponse& k) {
 }
 
 /// \brief Writes the string representation of the given SetMonitoringLevelResponse \p k to the given output stream \p
-/// os \returns an output stream with the SetMonitoringLevelResponse written to
+/// os
+/// \returns an output stream with the SetMonitoringLevelResponse written to
 std::ostream& operator<<(std::ostream& os, const SetMonitoringLevelResponse& k) {
     os << json(k).dump(4);
     return os;

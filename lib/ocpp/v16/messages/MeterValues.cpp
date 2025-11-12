@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 // This code is generated using the generator in 'src/code_generator/common`, please do not edit manually
 
 #include <ocpp/v16/messages/MeterValues.hpp>
@@ -32,7 +32,7 @@ void to_json(json& j, const MeterValuesRequest& k) {
 void from_json(const json& j, MeterValuesRequest& k) {
     // the required parts of the message
     k.connectorId = j.at("connectorId");
-    for (auto val : j.at("meterValue")) {
+    for (const auto& val : j.at("meterValue")) {
         k.meterValue.push_back(val);
     }
 

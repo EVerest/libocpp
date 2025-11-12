@@ -40,7 +40,7 @@ void Reservation::on_reservation_status(const int32_t reservation_id, const Rese
     req.reservationId = reservation_id;
     req.reservationUpdateStatus = status;
 
-    ocpp::Call<ReservationStatusUpdateRequest> call(req);
+    const ocpp::Call<ReservationStatusUpdateRequest> call(req);
     this->context.message_dispatcher.dispatch_call(call);
 }
 
@@ -117,8 +117,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
         // Check if there is a connector available for this evse id.
         if (!this->context.evse_manager.does_connector_exist(
-                static_cast<uint32_t>(evse_id.value()),
-                request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
+                evse_id.value(), request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
             EVLOG_info << "Trying to make a reservation for connector type "
                        << request.connectorType.value_or(ConnectorEnumStringType::Unknown) << " for evse "
                        << evse_id.value() << ", but this connector type does not exist.";
@@ -136,8 +135,11 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
 
         bool connector_exists = false;
         for (uint64_t i = 1; i <= number_of_evses; i++) {
+            if (i > std::numeric_limits<int32_t>::max()) {
+                break;
+            }
             if (this->context.evse_manager.does_connector_exist(
-                    i, request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
+                    clamp_to<int32_t>(i), request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
                 connector_exists = true;
                 break;
             }

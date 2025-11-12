@@ -36,7 +36,7 @@ public:
 
     /// \brief CaseInsensitive string implementation only allows printable ASCII characters
     bool is_valid(std::string_view data) {
-        for (char character : data) {
+        for (const char& character : data) {
             // printable ASCII starts at code 0x20 (space) and ends with code 0x7e (tilde) and 0xa (\n)
             if ((character < 0x20 || character > 0x7e) && character != 0xa) {
                 throw std::runtime_error("CiString can only contain printable ASCII characters");

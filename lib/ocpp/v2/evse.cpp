@@ -2,6 +2,7 @@
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
 
 #include <cmath>
+#include <limits>
 #include <optional>
 #include <utility>
 
@@ -16,15 +17,16 @@ using QueryExecutionException = everest::db::QueryExecutionException;
 namespace ocpp {
 namespace v2 {
 
+namespace {
 // Convert an energy value into Wh
-static float get_normalized_energy_value(SampledValue sampled_value) {
+float get_normalized_energy_value(SampledValue sampled_value) {
     float value = sampled_value.value;
     // If no unit of measure is present the unit is in Wh so nothing to do
     if (sampled_value.unitOfMeasure.has_value()) {
         const auto& unit_of_measure = sampled_value.unitOfMeasure.value();
         if (unit_of_measure.unit.has_value()) {
             if (unit_of_measure.unit.value() == "kWh") {
-                value *= 1000.0f;
+                value *= 1000.0F;
             } else if (unit_of_measure.unit.value() == "Wh") {
                 // do nothing
             } else {
@@ -35,15 +37,15 @@ static float get_normalized_energy_value(SampledValue sampled_value) {
 
         if (unit_of_measure.multiplier.has_value()) {
             if (unit_of_measure.multiplier.value() != 0) {
-                value *= powf(10, unit_of_measure.multiplier.value());
+                value *= powf(10, static_cast<float>(unit_of_measure.multiplier.value()));
             }
         }
     }
     return value;
 }
+} // namespace
 
-EvseInterface::~EvseInterface() {
-}
+EvseInterface::~EvseInterface() = default;
 
 Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
            std::shared_ptr<DatabaseHandler> database_handler,
@@ -72,9 +74,13 @@ Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceMode
 }
 
 Evse::~Evse() {
-    if (this->trigger_metervalue_at_time_timer != nullptr) {
-        this->trigger_metervalue_at_time_timer->stop();
-        this->trigger_metervalue_at_time_timer = nullptr;
+    try {
+        if (this->trigger_metervalue_at_time_timer != nullptr) {
+            this->trigger_metervalue_at_time_timer->stop();
+            this->trigger_metervalue_at_time_timer = nullptr;
+        }
+    } catch (...) {
+        return;
     }
 }
 
@@ -97,7 +103,7 @@ bool Evse::does_connector_exist(const CiString<20> connector_type) const {
     }
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        Connector* connector;
+        const Connector* connector = nullptr;
         try {
             connector = this->get_connector(static_cast<int32_t>(i));
         } catch (const std::logic_error&) {
@@ -128,7 +134,7 @@ std::optional<ConnectorStatusEnum> Evse::get_connector_status(std::optional<CiSt
     }
 
     for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-        Connector* connector;
+        Connector* connector = nullptr;
         try {
             connector = this->get_connector(static_cast<int32_t>(i));
         } catch (const std::logic_error&) {
@@ -213,8 +219,12 @@ std::optional<CiString<20>> Evse::get_evse_connector_type(const uint32_t connect
         return std::nullopt;
     }
 
-    ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
-        this->evse_id, connector_id, ConnectorComponentVariables::Type);
+    if (connector_id > std::numeric_limits<int32_t>::max()) {
+        return std::nullopt;
+    }
+
+    const ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
+        this->evse_id, clamp_to<int32_t>(connector_id), ConnectorComponentVariables::Type);
 
     const std::optional<std::string> connector_type =
         this->device_model.get_optional_value<std::string>(connector_cv, AttributeEnum::Actual);
@@ -227,13 +237,13 @@ std::optional<CiString<20>> Evse::get_evse_connector_type(const uint32_t connect
 
 void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
                             const MeterValue& meter_start, const std::optional<IdToken>& id_token,
-                            const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
-                            const ChargingStateEnum charging_state) {
-    if (!this->id_connector_map.count(connector_id)) {
+                            const std::optional<IdToken>& /*group_id_token*/,
+                            const std::optional<int32_t> /*reservation_id*/, const ChargingStateEnum charging_state) {
+    if (this->id_connector_map.count(connector_id) == 0) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
 
-    bool tx_database_enabled =
+    const bool tx_database_enabled =
         this->device_model.get_optional_value<bool>(ControllerComponentVariables::ResumeTransactionsOnBoot)
             .value_or(false);
 
@@ -259,17 +269,17 @@ void Evse::open_transaction(const std::string& transaction_id, const int32_t con
 
     if (tx_database_enabled) {
         try {
-            this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+            this->database_handler->transaction_insert(*this->transaction, this->evse_id);
         } catch (const QueryExecutionException& e) {
             // Delete previous transactions that should not exist anyway and try again. Otherwise throw to higher
             // level
             this->delete_database_transaction();
-            this->database_handler->transaction_insert(*this->transaction.get(), this->evse_id);
+            this->database_handler->transaction_insert(*this->transaction, this->evse_id);
         }
     }
 }
 
-void Evse::close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) {
+void Evse::close_transaction(const DateTime& /*timestamp*/, const MeterValue& meter_stop, const ReasonEnum& reason) {
     if (this->transaction == nullptr) {
         EVLOG_warning << "Received attempt to stop a transaction without an active transaction";
         return;
@@ -310,7 +320,7 @@ bool Evse::has_active_transaction() const {
 }
 
 bool Evse::has_active_transaction(int32_t connector_id) const {
-    if (!this->id_connector_map.count(connector_id)) {
+    if (this->id_connector_map.count(connector_id) == 0) {
         EVLOG_warning << "has_active_transaction called for invalid connector_id";
         return false;
     }
@@ -339,11 +349,11 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
 }
 
 void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
-    return this->id_connector_map.at(connector_id)->submit_event(event);
+    this->id_connector_map.at(connector_id)->submit_event(event);
 }
 
 void Evse::on_meter_value(const MeterValue& meter_value) {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    const std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     this->meter_value = meter_value;
     this->aligned_data_updated.set_values(meter_value);
     this->aligned_data_tx_end.set_values(meter_value);
@@ -352,7 +362,7 @@ void Evse::on_meter_value(const MeterValue& meter_value) {
 }
 
 MeterValue Evse::get_meter_value() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    const std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     return this->meter_value;
 }
 
@@ -365,7 +375,7 @@ void Evse::clear_idle_meter_values() {
 }
 
 std::optional<float> Evse::get_active_import_register_meter_value() {
-    std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
+    const std::lock_guard<std::recursive_mutex> lk(this->meter_value_mutex);
     auto it = std::find_if(
         this->meter_value.sampledValue.begin(), this->meter_value.sampledValue.end(), [](const SampledValue& value) {
             return value.measurand == MeasurandEnum::Energy_Active_Import_Register and !value.phase.has_value();
@@ -530,6 +540,10 @@ void Evse::set_meter_value_pricing_triggers(
         this->trigger_metervalue_at_time_timer = nullptr;
     }
 
+    if (not trigger_metervalue_at_time.has_value()) {
+        return;
+    }
+
     std::chrono::time_point<date::utc_clock> trigger_timepoint = trigger_metervalue_at_time.value().to_time_point();
     const std::chrono::time_point<date::utc_clock> now = date::utc_clock::now();
 
@@ -619,7 +633,7 @@ void Evse::send_meter_value_on_pricing_trigger(const MeterValue& meter_value) {
         // Hysteresis of 5% to avoid repetitive triggers when the power fluctuates around the trigger level.
         const double hysterisis_kw = trigger_power_kw * 0.05;
         const double triggered_power_kw = this->last_triggered_metervalue_power_kw.value();
-        const double current_metervalue_w = static_cast<double>(active_power_meter_value.value());
+        const auto current_metervalue_w = static_cast<double>(active_power_meter_value.value());
         const double current_metervalue_kw = current_metervalue_w / 1000;
 
         if ( // Check if trigger value is crossed in upward direction.
@@ -678,14 +692,16 @@ Connector* Evse::get_connector(int32_t connector_id) const {
 }
 
 CurrentPhaseType Evse::get_current_phase_type() {
-    ComponentVariable evse_variable =
+    const ComponentVariable evse_variable =
         EvseComponentVariables::get_component_variable(this->evse_id, EvseComponentVariables::SupplyPhases);
     auto supply_phases = this->device_model.get_optional_value<int32_t>(evse_variable);
     if (supply_phases == std::nullopt) {
         return CurrentPhaseType::Unknown;
-    } else if (*supply_phases == 1 or *supply_phases == 3) {
+    }
+    if (*supply_phases == 1 or *supply_phases == 3) {
         return CurrentPhaseType::AC;
-    } else if (*supply_phases == 0) {
+    }
+    if (*supply_phases == 0) {
         return CurrentPhaseType::DC;
     }
 

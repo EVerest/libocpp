@@ -58,19 +58,20 @@ ocpp::v2::HashAlgorithmEnum to_ocpp_v2(ocpp::HashAlgorithmEnumType other) {
 
 ocpp::v2::InstallCertificateStatusEnum to_ocpp_v2(ocpp::InstallCertificateResult other) {
     switch (other) {
-    case ocpp::InstallCertificateResult::InvalidSignature:
+    case ocpp::InstallCertificateResult::InvalidSignature: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::InvalidCertificateChain:
+    case ocpp::InstallCertificateResult::InvalidCertificateChain: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::InvalidFormat:
+    case ocpp::InstallCertificateResult::InvalidFormat: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::InvalidCommonName:
+    case ocpp::InstallCertificateResult::InvalidCommonName: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::NoRootCertificateInstalled:
+    case ocpp::InstallCertificateResult::NoRootCertificateInstalled: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::Expired:
+    case ocpp::InstallCertificateResult::Expired: // NOLINT(bugprone-branch-clone): readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
-    case ocpp::InstallCertificateResult::CertificateStoreMaxLengthExceeded:
+    case ocpp::InstallCertificateResult::CertificateStoreMaxLengthExceeded: // NOLINT(bugprone-branch-clone):
+                                                                            // readability
         return ocpp::v2::InstallCertificateStatusEnum::Rejected;
     case ocpp::InstallCertificateResult::WriteError:
         return ocpp::v2::InstallCertificateStatusEnum::Failed;
@@ -130,7 +131,7 @@ ocpp::v2::OCSPRequestData to_ocpp_v2(ocpp::OCSPRequestData other) {
 std::vector<ocpp::v2::OCSPRequestData> to_ocpp_v2(const std::vector<ocpp::OCSPRequestData>& ocsp_request_data) {
     std::vector<ocpp::v2::OCSPRequestData> ocsp_request_data_list;
     for (const auto& ocsp_data : ocsp_request_data) {
-        ocpp::v2::OCSPRequestData request = to_ocpp_v2(ocsp_data);
+        const ocpp::v2::OCSPRequestData request = to_ocpp_v2(ocsp_data);
         ocsp_request_data_list.push_back(request);
     }
     return ocsp_request_data_list;
@@ -157,6 +158,7 @@ ocpp::CertificateType from_ocpp_v2(ocpp::v2::GetCertificateIdUseEnum other) {
 
 std::vector<ocpp::CertificateType> from_ocpp_v2(const std::vector<ocpp::v2::GetCertificateIdUseEnum>& other) {
     std::vector<ocpp::CertificateType> certificate_types;
+    certificate_types.reserve(other.size());
     for (const auto& certificate_id_use_enum : other) {
         certificate_types.push_back(from_ocpp_v2(certificate_id_use_enum));
     }

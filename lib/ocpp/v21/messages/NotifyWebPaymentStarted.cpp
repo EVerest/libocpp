@@ -41,7 +41,8 @@ void from_json(const json& j, NotifyWebPaymentStartedRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyWebPaymentStartedRequest \p k to the given output stream
-/// \p os \returns an output stream with the NotifyWebPaymentStartedRequest written to
+/// \p os
+/// \returns an output stream with the NotifyWebPaymentStartedRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyWebPaymentStartedRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -70,7 +71,8 @@ void from_json(const json& j, NotifyWebPaymentStartedResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyWebPaymentStartedResponse \p k to the given output stream
-/// \p os \returns an output stream with the NotifyWebPaymentStartedResponse written to
+/// \p os
+/// \returns an output stream with the NotifyWebPaymentStartedResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyWebPaymentStartedResponse& k) {
     os << json(k).dump(4);
     return os;

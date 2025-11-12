@@ -35,7 +35,8 @@ void to_json(json& j, const PublishFirmwareStatusNotificationRequest& k);
 void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k);
 
 /// \brief Writes the string representation of the given PublishFirmwareStatusNotificationRequest \p k to the given
-/// output stream \p os \returns an output stream with the PublishFirmwareStatusNotificationRequest written to
+/// output stream \p os
+/// \returns an output stream with the PublishFirmwareStatusNotificationRequest written to
 std::ostream& operator<<(std::ostream& os, const PublishFirmwareStatusNotificationRequest& k);
 
 /// \brief Contains a OCPP PublishFirmwareStatusNotificationResponse message
@@ -54,7 +55,8 @@ void to_json(json& j, const PublishFirmwareStatusNotificationResponse& k);
 void from_json(const json& j, PublishFirmwareStatusNotificationResponse& k);
 
 /// \brief Writes the string representation of the given PublishFirmwareStatusNotificationResponse \p k to the given
-/// output stream \p os \returns an output stream with the PublishFirmwareStatusNotificationResponse written to
+/// output stream \p os
+/// \returns an output stream with the PublishFirmwareStatusNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const PublishFirmwareStatusNotificationResponse& k);
 
 } // namespace v2

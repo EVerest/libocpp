@@ -377,361 +377,539 @@ std::string messagetype_to_string(MessageType m) {
 MessageType string_to_messagetype(const std::string& s) {
     if (s == "Authorize") {
         return MessageType::Authorize;
-    } else if (s == "AuthorizeResponse") {
+    }
+    if (s == "AuthorizeResponse") {
         return MessageType::AuthorizeResponse;
-    } else if (s == "BootNotification") {
+    }
+    if (s == "BootNotification") {
         return MessageType::BootNotification;
-    } else if (s == "BootNotificationResponse") {
+    }
+    if (s == "BootNotificationResponse") {
         return MessageType::BootNotificationResponse;
-    } else if (s == "CancelReservation") {
+    }
+    if (s == "CancelReservation") {
         return MessageType::CancelReservation;
-    } else if (s == "CancelReservationResponse") {
+    }
+    if (s == "CancelReservationResponse") {
         return MessageType::CancelReservationResponse;
-    } else if (s == "CertificateSigned") {
+    }
+    if (s == "CertificateSigned") {
         return MessageType::CertificateSigned;
-    } else if (s == "CertificateSignedResponse") {
+    }
+    if (s == "CertificateSignedResponse") {
         return MessageType::CertificateSignedResponse;
-    } else if (s == "ChangeAvailability") {
+    }
+    if (s == "ChangeAvailability") {
         return MessageType::ChangeAvailability;
-    } else if (s == "ChangeAvailabilityResponse") {
+    }
+    if (s == "ChangeAvailabilityResponse") {
         return MessageType::ChangeAvailabilityResponse;
-    } else if (s == "ClearCache") {
+    }
+    if (s == "ClearCache") {
         return MessageType::ClearCache;
-    } else if (s == "ClearCacheResponse") {
+    }
+    if (s == "ClearCacheResponse") {
         return MessageType::ClearCacheResponse;
-    } else if (s == "ClearChargingProfile") {
+    }
+    if (s == "ClearChargingProfile") {
         return MessageType::ClearChargingProfile;
-    } else if (s == "ClearChargingProfileResponse") {
+    }
+    if (s == "ClearChargingProfileResponse") {
         return MessageType::ClearChargingProfileResponse;
-    } else if (s == "ClearDisplayMessage") {
+    }
+    if (s == "ClearDisplayMessage") {
         return MessageType::ClearDisplayMessage;
-    } else if (s == "ClearDisplayMessageResponse") {
+    }
+    if (s == "ClearDisplayMessageResponse") {
         return MessageType::ClearDisplayMessageResponse;
-    } else if (s == "ClearedChargingLimit") {
+    }
+    if (s == "ClearedChargingLimit") {
         return MessageType::ClearedChargingLimit;
-    } else if (s == "ClearedChargingLimitResponse") {
+    }
+    if (s == "ClearedChargingLimitResponse") {
         return MessageType::ClearedChargingLimitResponse;
-    } else if (s == "ClearVariableMonitoring") {
+    }
+    if (s == "ClearVariableMonitoring") {
         return MessageType::ClearVariableMonitoring;
-    } else if (s == "ClearVariableMonitoringResponse") {
+    }
+    if (s == "ClearVariableMonitoringResponse") {
         return MessageType::ClearVariableMonitoringResponse;
-    } else if (s == "CostUpdated") {
+    }
+    if (s == "CostUpdated") {
         return MessageType::CostUpdated;
-    } else if (s == "CostUpdatedResponse") {
+    }
+    if (s == "CostUpdatedResponse") {
         return MessageType::CostUpdatedResponse;
-    } else if (s == "CustomerInformation") {
+    }
+    if (s == "CustomerInformation") {
         return MessageType::CustomerInformation;
-    } else if (s == "CustomerInformationResponse") {
+    }
+    if (s == "CustomerInformationResponse") {
         return MessageType::CustomerInformationResponse;
-    } else if (s == "DataTransfer") {
+    }
+    if (s == "DataTransfer") {
         return MessageType::DataTransfer;
-    } else if (s == "DataTransferResponse") {
+    }
+    if (s == "DataTransferResponse") {
         return MessageType::DataTransferResponse;
-    } else if (s == "DeleteCertificate") {
+    }
+    if (s == "DeleteCertificate") {
         return MessageType::DeleteCertificate;
-    } else if (s == "DeleteCertificateResponse") {
+    }
+    if (s == "DeleteCertificateResponse") {
         return MessageType::DeleteCertificateResponse;
-    } else if (s == "FirmwareStatusNotification") {
+    }
+    if (s == "FirmwareStatusNotification") {
         return MessageType::FirmwareStatusNotification;
-    } else if (s == "FirmwareStatusNotificationResponse") {
+    }
+    if (s == "FirmwareStatusNotificationResponse") {
         return MessageType::FirmwareStatusNotificationResponse;
-    } else if (s == "Get15118EVCertificate") {
+    }
+    if (s == "Get15118EVCertificate") {
         return MessageType::Get15118EVCertificate;
-    } else if (s == "Get15118EVCertificateResponse") {
+    }
+    if (s == "Get15118EVCertificateResponse") {
         return MessageType::Get15118EVCertificateResponse;
-    } else if (s == "GetBaseReport") {
+    }
+    if (s == "GetBaseReport") {
         return MessageType::GetBaseReport;
-    } else if (s == "GetBaseReportResponse") {
+    }
+    if (s == "GetBaseReportResponse") {
         return MessageType::GetBaseReportResponse;
-    } else if (s == "GetCertificateStatus") {
+    }
+    if (s == "GetCertificateStatus") {
         return MessageType::GetCertificateStatus;
-    } else if (s == "GetCertificateStatusResponse") {
+    }
+    if (s == "GetCertificateStatusResponse") {
         return MessageType::GetCertificateStatusResponse;
-    } else if (s == "GetChargingProfiles") {
+    }
+    if (s == "GetChargingProfiles") {
         return MessageType::GetChargingProfiles;
-    } else if (s == "GetChargingProfilesResponse") {
+    }
+    if (s == "GetChargingProfilesResponse") {
         return MessageType::GetChargingProfilesResponse;
-    } else if (s == "GetCompositeSchedule") {
+    }
+    if (s == "GetCompositeSchedule") {
         return MessageType::GetCompositeSchedule;
-    } else if (s == "GetCompositeScheduleResponse") {
+    }
+    if (s == "GetCompositeScheduleResponse") {
         return MessageType::GetCompositeScheduleResponse;
-    } else if (s == "GetDisplayMessages") {
+    }
+    if (s == "GetDisplayMessages") {
         return MessageType::GetDisplayMessages;
-    } else if (s == "GetDisplayMessagesResponse") {
+    }
+    if (s == "GetDisplayMessagesResponse") {
         return MessageType::GetDisplayMessagesResponse;
-    } else if (s == "GetInstalledCertificateIds") {
+    }
+    if (s == "GetInstalledCertificateIds") {
         return MessageType::GetInstalledCertificateIds;
-    } else if (s == "GetInstalledCertificateIdsResponse") {
+    }
+    if (s == "GetInstalledCertificateIdsResponse") {
         return MessageType::GetInstalledCertificateIdsResponse;
-    } else if (s == "GetLocalListVersion") {
+    }
+    if (s == "GetLocalListVersion") {
         return MessageType::GetLocalListVersion;
-    } else if (s == "GetLocalListVersionResponse") {
+    }
+    if (s == "GetLocalListVersionResponse") {
         return MessageType::GetLocalListVersionResponse;
-    } else if (s == "GetLog") {
+    }
+    if (s == "GetLog") {
         return MessageType::GetLog;
-    } else if (s == "GetLogResponse") {
+    }
+    if (s == "GetLogResponse") {
         return MessageType::GetLogResponse;
-    } else if (s == "GetMonitoringReport") {
+    }
+    if (s == "GetMonitoringReport") {
         return MessageType::GetMonitoringReport;
-    } else if (s == "GetMonitoringReportResponse") {
+    }
+    if (s == "GetMonitoringReportResponse") {
         return MessageType::GetMonitoringReportResponse;
-    } else if (s == "GetReport") {
+    }
+    if (s == "GetReport") {
         return MessageType::GetReport;
-    } else if (s == "GetReportResponse") {
+    }
+    if (s == "GetReportResponse") {
         return MessageType::GetReportResponse;
-    } else if (s == "GetTransactionStatus") {
+    }
+    if (s == "GetTransactionStatus") {
         return MessageType::GetTransactionStatus;
-    } else if (s == "GetTransactionStatusResponse") {
+    }
+    if (s == "GetTransactionStatusResponse") {
         return MessageType::GetTransactionStatusResponse;
-    } else if (s == "GetVariables") {
+    }
+    if (s == "GetVariables") {
         return MessageType::GetVariables;
-    } else if (s == "GetVariablesResponse") {
+    }
+    if (s == "GetVariablesResponse") {
         return MessageType::GetVariablesResponse;
-    } else if (s == "Heartbeat") {
+    }
+    if (s == "Heartbeat") {
         return MessageType::Heartbeat;
-    } else if (s == "HeartbeatResponse") {
+    }
+    if (s == "HeartbeatResponse") {
         return MessageType::HeartbeatResponse;
-    } else if (s == "InstallCertificate") {
+    }
+    if (s == "InstallCertificate") {
         return MessageType::InstallCertificate;
-    } else if (s == "InstallCertificateResponse") {
+    }
+    if (s == "InstallCertificateResponse") {
         return MessageType::InstallCertificateResponse;
-    } else if (s == "LogStatusNotification") {
+    }
+    if (s == "LogStatusNotification") {
         return MessageType::LogStatusNotification;
-    } else if (s == "LogStatusNotificationResponse") {
+    }
+    if (s == "LogStatusNotificationResponse") {
         return MessageType::LogStatusNotificationResponse;
-    } else if (s == "MeterValues") {
+    }
+    if (s == "MeterValues") {
         return MessageType::MeterValues;
-    } else if (s == "MeterValuesResponse") {
+    }
+    if (s == "MeterValuesResponse") {
         return MessageType::MeterValuesResponse;
-    } else if (s == "NotifyChargingLimit") {
+    }
+    if (s == "NotifyChargingLimit") {
         return MessageType::NotifyChargingLimit;
-    } else if (s == "NotifyChargingLimitResponse") {
+    }
+    if (s == "NotifyChargingLimitResponse") {
         return MessageType::NotifyChargingLimitResponse;
-    } else if (s == "NotifyCustomerInformation") {
+    }
+    if (s == "NotifyCustomerInformation") {
         return MessageType::NotifyCustomerInformation;
-    } else if (s == "NotifyCustomerInformationResponse") {
+    }
+    if (s == "NotifyCustomerInformationResponse") {
         return MessageType::NotifyCustomerInformationResponse;
-    } else if (s == "NotifyDisplayMessages") {
+    }
+    if (s == "NotifyDisplayMessages") {
         return MessageType::NotifyDisplayMessages;
-    } else if (s == "NotifyDisplayMessagesResponse") {
+    }
+    if (s == "NotifyDisplayMessagesResponse") {
         return MessageType::NotifyDisplayMessagesResponse;
-    } else if (s == "NotifyEVChargingNeeds") {
+    }
+    if (s == "NotifyEVChargingNeeds") {
         return MessageType::NotifyEVChargingNeeds;
-    } else if (s == "NotifyEVChargingNeedsResponse") {
+    }
+    if (s == "NotifyEVChargingNeedsResponse") {
         return MessageType::NotifyEVChargingNeedsResponse;
-    } else if (s == "NotifyEVChargingSchedule") {
+    }
+    if (s == "NotifyEVChargingSchedule") {
         return MessageType::NotifyEVChargingSchedule;
-    } else if (s == "NotifyEVChargingScheduleResponse") {
+    }
+    if (s == "NotifyEVChargingScheduleResponse") {
         return MessageType::NotifyEVChargingScheduleResponse;
-    } else if (s == "NotifyEvent") {
+    }
+    if (s == "NotifyEvent") {
         return MessageType::NotifyEvent;
-    } else if (s == "NotifyEventResponse") {
+    }
+    if (s == "NotifyEventResponse") {
         return MessageType::NotifyEventResponse;
-    } else if (s == "NotifyMonitoringReport") {
+    }
+    if (s == "NotifyMonitoringReport") {
         return MessageType::NotifyMonitoringReport;
-    } else if (s == "NotifyMonitoringReportResponse") {
+    }
+    if (s == "NotifyMonitoringReportResponse") {
         return MessageType::NotifyMonitoringReportResponse;
-    } else if (s == "NotifyReport") {
+    }
+    if (s == "NotifyReport") {
         return MessageType::NotifyReport;
-    } else if (s == "NotifyReportResponse") {
+    }
+    if (s == "NotifyReportResponse") {
         return MessageType::NotifyReportResponse;
-    } else if (s == "PublishFirmware") {
+    }
+    if (s == "PublishFirmware") {
         return MessageType::PublishFirmware;
-    } else if (s == "PublishFirmwareResponse") {
+    }
+    if (s == "PublishFirmwareResponse") {
         return MessageType::PublishFirmwareResponse;
-    } else if (s == "PublishFirmwareStatusNotification") {
+    }
+    if (s == "PublishFirmwareStatusNotification") {
         return MessageType::PublishFirmwareStatusNotification;
-    } else if (s == "PublishFirmwareStatusNotificationResponse") {
+    }
+    if (s == "PublishFirmwareStatusNotificationResponse") {
         return MessageType::PublishFirmwareStatusNotificationResponse;
-    } else if (s == "ReportChargingProfiles") {
+    }
+    if (s == "ReportChargingProfiles") {
         return MessageType::ReportChargingProfiles;
-    } else if (s == "ReportChargingProfilesResponse") {
+    }
+    if (s == "ReportChargingProfilesResponse") {
         return MessageType::ReportChargingProfilesResponse;
-    } else if (s == "RequestStartTransaction") {
+    }
+    if (s == "RequestStartTransaction") {
         return MessageType::RequestStartTransaction;
-    } else if (s == "RequestStartTransactionResponse") {
+    }
+    if (s == "RequestStartTransactionResponse") {
         return MessageType::RequestStartTransactionResponse;
-    } else if (s == "RequestStopTransaction") {
+    }
+    if (s == "RequestStopTransaction") {
         return MessageType::RequestStopTransaction;
-    } else if (s == "RequestStopTransactionResponse") {
+    }
+    if (s == "RequestStopTransactionResponse") {
         return MessageType::RequestStopTransactionResponse;
-    } else if (s == "ReservationStatusUpdate") {
+    }
+    if (s == "ReservationStatusUpdate") {
         return MessageType::ReservationStatusUpdate;
-    } else if (s == "ReservationStatusUpdateResponse") {
+    }
+    if (s == "ReservationStatusUpdateResponse") {
         return MessageType::ReservationStatusUpdateResponse;
-    } else if (s == "ReserveNow") {
+    }
+    if (s == "ReserveNow") {
         return MessageType::ReserveNow;
-    } else if (s == "ReserveNowResponse") {
+    }
+    if (s == "ReserveNowResponse") {
         return MessageType::ReserveNowResponse;
-    } else if (s == "Reset") {
+    }
+    if (s == "Reset") {
         return MessageType::Reset;
-    } else if (s == "ResetResponse") {
+    }
+    if (s == "ResetResponse") {
         return MessageType::ResetResponse;
-    } else if (s == "SecurityEventNotification") {
+    }
+    if (s == "SecurityEventNotification") {
         return MessageType::SecurityEventNotification;
-    } else if (s == "SecurityEventNotificationResponse") {
+    }
+    if (s == "SecurityEventNotificationResponse") {
         return MessageType::SecurityEventNotificationResponse;
-    } else if (s == "SendLocalList") {
+    }
+    if (s == "SendLocalList") {
         return MessageType::SendLocalList;
-    } else if (s == "SendLocalListResponse") {
+    }
+    if (s == "SendLocalListResponse") {
         return MessageType::SendLocalListResponse;
-    } else if (s == "SetChargingProfile") {
+    }
+    if (s == "SetChargingProfile") {
         return MessageType::SetChargingProfile;
-    } else if (s == "SetChargingProfileResponse") {
+    }
+    if (s == "SetChargingProfileResponse") {
         return MessageType::SetChargingProfileResponse;
-    } else if (s == "SetDisplayMessage") {
+    }
+    if (s == "SetDisplayMessage") {
         return MessageType::SetDisplayMessage;
-    } else if (s == "SetDisplayMessageResponse") {
+    }
+    if (s == "SetDisplayMessageResponse") {
         return MessageType::SetDisplayMessageResponse;
-    } else if (s == "SetMonitoringBase") {
+    }
+    if (s == "SetMonitoringBase") {
         return MessageType::SetMonitoringBase;
-    } else if (s == "SetMonitoringBaseResponse") {
+    }
+    if (s == "SetMonitoringBaseResponse") {
         return MessageType::SetMonitoringBaseResponse;
-    } else if (s == "SetMonitoringLevel") {
+    }
+    if (s == "SetMonitoringLevel") {
         return MessageType::SetMonitoringLevel;
-    } else if (s == "SetMonitoringLevelResponse") {
+    }
+    if (s == "SetMonitoringLevelResponse") {
         return MessageType::SetMonitoringLevelResponse;
-    } else if (s == "SetNetworkProfile") {
+    }
+    if (s == "SetNetworkProfile") {
         return MessageType::SetNetworkProfile;
-    } else if (s == "SetNetworkProfileResponse") {
+    }
+    if (s == "SetNetworkProfileResponse") {
         return MessageType::SetNetworkProfileResponse;
-    } else if (s == "SetVariableMonitoring") {
+    }
+    if (s == "SetVariableMonitoring") {
         return MessageType::SetVariableMonitoring;
-    } else if (s == "SetVariableMonitoringResponse") {
+    }
+    if (s == "SetVariableMonitoringResponse") {
         return MessageType::SetVariableMonitoringResponse;
-    } else if (s == "SetVariables") {
+    }
+    if (s == "SetVariables") {
         return MessageType::SetVariables;
-    } else if (s == "SetVariablesResponse") {
+    }
+    if (s == "SetVariablesResponse") {
         return MessageType::SetVariablesResponse;
-    } else if (s == "SignCertificate") {
+    }
+    if (s == "SignCertificate") {
         return MessageType::SignCertificate;
-    } else if (s == "SignCertificateResponse") {
+    }
+    if (s == "SignCertificateResponse") {
         return MessageType::SignCertificateResponse;
-    } else if (s == "StatusNotification") {
+    }
+    if (s == "StatusNotification") {
         return MessageType::StatusNotification;
-    } else if (s == "StatusNotificationResponse") {
+    }
+    if (s == "StatusNotificationResponse") {
         return MessageType::StatusNotificationResponse;
-    } else if (s == "TransactionEvent") {
+    }
+    if (s == "TransactionEvent") {
         return MessageType::TransactionEvent;
-    } else if (s == "TransactionEventResponse") {
+    }
+    if (s == "TransactionEventResponse") {
         return MessageType::TransactionEventResponse;
-    } else if (s == "TriggerMessage") {
+    }
+    if (s == "TriggerMessage") {
         return MessageType::TriggerMessage;
-    } else if (s == "TriggerMessageResponse") {
+    }
+    if (s == "TriggerMessageResponse") {
         return MessageType::TriggerMessageResponse;
-    } else if (s == "UnlockConnector") {
+    }
+    if (s == "UnlockConnector") {
         return MessageType::UnlockConnector;
-    } else if (s == "UnlockConnectorResponse") {
+    }
+    if (s == "UnlockConnectorResponse") {
         return MessageType::UnlockConnectorResponse;
-    } else if (s == "UnpublishFirmware") {
+    }
+    if (s == "UnpublishFirmware") {
         return MessageType::UnpublishFirmware;
-    } else if (s == "UnpublishFirmwareResponse") {
+    }
+    if (s == "UnpublishFirmwareResponse") {
         return MessageType::UnpublishFirmwareResponse;
-    } else if (s == "UpdateFirmware") {
+    }
+    if (s == "UpdateFirmware") {
         return MessageType::UpdateFirmware;
-    } else if (s == "UpdateFirmwareResponse") {
+    }
+    if (s == "UpdateFirmwareResponse") {
         return MessageType::UpdateFirmwareResponse;
-    } else if (s == "InternalError") {
+    }
+    if (s == "InternalError") {
         return MessageType::InternalError;
-    } else if (s == "AdjustPeriodicEventStream") {
+    }
+    if (s == "AdjustPeriodicEventStream") {
         return MessageType::AdjustPeriodicEventStream;
-    } else if (s == "AdjustPeriodicEventStreamResponse") {
+    }
+    if (s == "AdjustPeriodicEventStreamResponse") {
         return MessageType::AdjustPeriodicEventStreamResponse;
-    } else if (s == "AFRRSignal") {
+    }
+    if (s == "AFRRSignal") {
         return MessageType::AFRRSignal;
-    } else if (s == "AFRRSignalResponse") {
+    }
+    if (s == "AFRRSignalResponse") {
         return MessageType::AFRRSignalResponse;
-    } else if (s == "BatterySwap") {
+    }
+    if (s == "BatterySwap") {
         return MessageType::BatterySwap;
-    } else if (s == "BatterySwapResponse") {
+    }
+    if (s == "BatterySwapResponse") {
         return MessageType::BatterySwapResponse;
-    } else if (s == "ChangeTransactionTariff") {
+    }
+    if (s == "ChangeTransactionTariff") {
         return MessageType::ChangeTransactionTariff;
-    } else if (s == "ChangeTransactionTariffResponse") {
+    }
+    if (s == "ChangeTransactionTariffResponse") {
         return MessageType::ChangeTransactionTariffResponse;
-    } else if (s == "ClearDERControl") {
+    }
+    if (s == "ClearDERControl") {
         return MessageType::ClearDERControl;
-    } else if (s == "ClearDERControlResponse") {
+    }
+    if (s == "ClearDERControlResponse") {
         return MessageType::ClearDERControlResponse;
-    } else if (s == "ClearTariffs") {
+    }
+    if (s == "ClearTariffs") {
         return MessageType::ClearTariffs;
-    } else if (s == "ClearTariffsResponse") {
+    }
+    if (s == "ClearTariffsResponse") {
         return MessageType::ClearTariffsResponse;
-    } else if (s == "ClosePeriodicEventStream") {
+    }
+    if (s == "ClosePeriodicEventStream") {
         return MessageType::ClosePeriodicEventStream;
-    } else if (s == "ClosePeriodicEventStreamResponse") {
+    }
+    if (s == "ClosePeriodicEventStreamResponse") {
         return MessageType::ClosePeriodicEventStreamResponse;
-    } else if (s == "GetCRL") {
+    }
+    if (s == "GetCRL") {
         return MessageType::GetCRL;
-    } else if (s == "GetCRLResponse") {
+    }
+    if (s == "GetCRLResponse") {
         return MessageType::GetCRLResponse;
-    } else if (s == "GetDERControl") {
+    }
+    if (s == "GetDERControl") {
         return MessageType::GetDERControl;
-    } else if (s == "GetDERControlResponse") {
+    }
+    if (s == "GetDERControlResponse") {
         return MessageType::GetDERControlResponse;
-    } else if (s == "GetPeriodicEventStream") {
+    }
+    if (s == "GetPeriodicEventStream") {
         return MessageType::GetPeriodicEventStream;
-    } else if (s == "GetPeriodicEventStreamResponse") {
+    }
+    if (s == "GetPeriodicEventStreamResponse") {
         return MessageType::GetPeriodicEventStreamResponse;
-    } else if (s == "GetTariffs") {
+    }
+    if (s == "GetTariffs") {
         return MessageType::GetTariffs;
-    } else if (s == "GetTariffsResponse") {
+    }
+    if (s == "GetTariffsResponse") {
         return MessageType::GetTariffsResponse;
-    } else if (s == "NotifyAllowedEnergyTransfer") {
+    }
+    if (s == "NotifyAllowedEnergyTransfer") {
         return MessageType::NotifyAllowedEnergyTransfer;
-    } else if (s == "NotifyAllowedEnergyTransferResponse") {
+    }
+    if (s == "NotifyAllowedEnergyTransferResponse") {
         return MessageType::NotifyAllowedEnergyTransferResponse;
-    } else if (s == "NotifyDERAlarm") {
+    }
+    if (s == "NotifyDERAlarm") {
         return MessageType::NotifyDERAlarm;
-    } else if (s == "NotifyDERAlarmResponse") {
+    }
+    if (s == "NotifyDERAlarmResponse") {
         return MessageType::NotifyDERAlarmResponse;
-    } else if (s == "NotifyDERStartStop") {
+    }
+    if (s == "NotifyDERStartStop") {
         return MessageType::NotifyDERStartStop;
-    } else if (s == "NotifyDERStartStopResponse") {
+    }
+    if (s == "NotifyDERStartStopResponse") {
         return MessageType::NotifyDERStartStopResponse;
-    } else if (s == "NotifyPeriodicEventStream") {
+    }
+    if (s == "NotifyPeriodicEventStream") {
         return MessageType::NotifyPeriodicEventStream;
-    } else if (s == "NotifyPeriodicEventStreamResponse") {
+    }
+    if (s == "NotifyPeriodicEventStreamResponse") {
         return MessageType::NotifyPeriodicEventStreamResponse;
-    } else if (s == "NotifyPriorityCharging") {
+    }
+    if (s == "NotifyPriorityCharging") {
         return MessageType::NotifyPriorityCharging;
-    } else if (s == "NotifyPriorityChargingResponse") {
+    }
+    if (s == "NotifyPriorityChargingResponse") {
         return MessageType::NotifyPriorityChargingResponse;
-    } else if (s == "NotifySettlement") {
+    }
+    if (s == "NotifySettlement") {
         return MessageType::NotifySettlement;
-    } else if (s == "NotifySettlementResponse") {
+    }
+    if (s == "NotifySettlementResponse") {
         return MessageType::NotifySettlementResponse;
-    } else if (s == "OpenPeriodicEventStream") {
+    }
+    if (s == "OpenPeriodicEventStream") {
         return MessageType::OpenPeriodicEventStream;
-    } else if (s == "OpenPeriodicEventStreamResponse") {
+    }
+    if (s == "OpenPeriodicEventStreamResponse") {
         return MessageType::OpenPeriodicEventStreamResponse;
-    } else if (s == "PullDynamicScheduleUpdate") {
+    }
+    if (s == "PullDynamicScheduleUpdate") {
         return MessageType::PullDynamicScheduleUpdate;
-    } else if (s == "PullDynamicScheduleUpdateResponse") {
+    }
+    if (s == "PullDynamicScheduleUpdateResponse") {
         return MessageType::PullDynamicScheduleUpdateResponse;
-    } else if (s == "RequestBatterySwap") {
+    }
+    if (s == "RequestBatterySwap") {
         return MessageType::RequestBatterySwap;
-    } else if (s == "RequestBatterySwapResponse") {
+    }
+    if (s == "RequestBatterySwapResponse") {
         return MessageType::RequestBatterySwapResponse;
-    } else if (s == "SetDefaultTariff") {
+    }
+    if (s == "SetDefaultTariff") {
         return MessageType::SetDefaultTariff;
-    } else if (s == "SetDefaultTariffResponse") {
+    }
+    if (s == "SetDefaultTariffResponse") {
         return MessageType::SetDefaultTariffResponse;
-    } else if (s == "SetDERControl") {
+    }
+    if (s == "SetDERControl") {
         return MessageType::SetDERControl;
-    } else if (s == "SetDERControlResponse") {
+    }
+    if (s == "SetDERControlResponse") {
         return MessageType::SetDERControlResponse;
-    } else if (s == "UpdateDynamicSchedule") {
+    }
+    if (s == "UpdateDynamicSchedule") {
         return MessageType::UpdateDynamicSchedule;
-    } else if (s == "UpdateDynamicScheduleResponse") {
+    }
+    if (s == "UpdateDynamicScheduleResponse") {
         return MessageType::UpdateDynamicScheduleResponse;
-    } else if (s == "UsePriorityCharging") {
+    }
+    if (s == "UsePriorityCharging") {
         return MessageType::UsePriorityCharging;
-    } else if (s == "UsePriorityChargingResponse") {
+    }
+    if (s == "UsePriorityChargingResponse") {
         return MessageType::UsePriorityChargingResponse;
-    } else if (s == "VatNumberValidation") {
+    }
+    if (s == "VatNumberValidation") {
         return MessageType::VatNumberValidation;
-    } else if (s == "VatNumberValidationResponse") {
+    }
+    if (s == "VatNumberValidationResponse") {
         return MessageType::VatNumberValidationResponse;
     }
     throw StringToEnumException{s, "MessageType"};

@@ -3,6 +3,7 @@
 #ifndef OCPP_WEBSOCKET_URI_HPP
 #define OCPP_WEBSOCKET_URI_HPP
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -10,10 +11,10 @@
 
 namespace ocpp {
 
-typedef ocpp::uri ev_uri;
+using ev_uri = ocpp::uri;
 class Uri {
 public:
-    Uri(){};
+    Uri() = default;
 
     // clang-format off
     /// \brief parse_and_validate parses the \p uri and checks
@@ -46,7 +47,7 @@ public:
         return this->path_without_chargepoint_id;
     }
 
-    uint16_t get_port() {
+    uint16_t get_port() const {
         return this->port;
     }
 
@@ -70,9 +71,9 @@ private:
         chargepoint_id(chargepoint_id) {
     }
 
-    bool secure;
+    bool secure = false;
     std::string host;
-    uint16_t port;
+    uint16_t port = 0;
     std::string path_without_chargepoint_id;
     std::string chargepoint_id;
 };

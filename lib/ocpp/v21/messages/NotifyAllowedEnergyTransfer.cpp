@@ -23,7 +23,7 @@ void to_json(json& j, const NotifyAllowedEnergyTransferRequest& k) {
         {"transactionId", k.transactionId},
         {"allowedEnergyTransfer", json::array()},
     };
-    for (auto val : k.allowedEnergyTransfer) {
+    for (const auto& val : k.allowedEnergyTransfer) {
         j["allowedEnergyTransfer"].push_back(ocpp::v2::conversions::energy_transfer_mode_enum_to_string(val));
     }
     // the optional parts of the message
@@ -35,7 +35,7 @@ void to_json(json& j, const NotifyAllowedEnergyTransferRequest& k) {
 void from_json(const json& j, NotifyAllowedEnergyTransferRequest& k) {
     // the required parts of the message
     k.transactionId = j.at("transactionId");
-    for (auto val : j.at("allowedEnergyTransfer")) {
+    for (const auto& val : j.at("allowedEnergyTransfer")) {
         k.allowedEnergyTransfer.push_back(ocpp::v2::conversions::string_to_energy_transfer_mode_enum(val));
     }
 
@@ -46,7 +46,8 @@ void from_json(const json& j, NotifyAllowedEnergyTransferRequest& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyAllowedEnergyTransferRequest \p k to the given output
-/// stream \p os \returns an output stream with the NotifyAllowedEnergyTransferRequest written to
+/// stream \p os
+/// \returns an output stream with the NotifyAllowedEnergyTransferRequest written to
 std::ostream& operator<<(std::ostream& os, const NotifyAllowedEnergyTransferRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -84,7 +85,8 @@ void from_json(const json& j, NotifyAllowedEnergyTransferResponse& k) {
 }
 
 /// \brief Writes the string representation of the given NotifyAllowedEnergyTransferResponse \p k to the given output
-/// stream \p os \returns an output stream with the NotifyAllowedEnergyTransferResponse written to
+/// stream \p os
+/// \returns an output stream with the NotifyAllowedEnergyTransferResponse written to
 std::ostream& operator<<(std::ostream& os, const NotifyAllowedEnergyTransferResponse& k) {
     os << json(k).dump(4);
     return os;

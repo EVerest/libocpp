@@ -44,11 +44,9 @@ public:
     [[nodiscard]] const char* what() const noexcept override {
         return this->reason.c_str();
     }
-    explicit DeviceModelError(std::string msg) {
-        this->reason = std::move(msg);
+    explicit DeviceModelError(std::string msg) : reason(std::move(msg)) {
     }
-    explicit DeviceModelError(const char* msg) {
-        this->reason = std::string(msg);
+    explicit DeviceModelError(const char* msg) : reason(std::string(msg)) {
     }
 
 private:

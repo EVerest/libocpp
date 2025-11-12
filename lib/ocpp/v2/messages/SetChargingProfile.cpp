@@ -79,7 +79,8 @@ void from_json(const json& j, SetChargingProfileResponse& k) {
 }
 
 /// \brief Writes the string representation of the given SetChargingProfileResponse \p k to the given output stream \p
-/// os \returns an output stream with the SetChargingProfileResponse written to
+/// os
+/// \returns an output stream with the SetChargingProfileResponse written to
 std::ostream& operator<<(std::ostream& os, const SetChargingProfileResponse& k) {
     os << json(k).dump(4);
     return os;

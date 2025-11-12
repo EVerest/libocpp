@@ -22,12 +22,12 @@ void to_json(json& j, const ClearTariffsRequest& k) {
     j = json({}, true);
     // the optional parts of the message
     if (k.tariffIds) {
-        if (j.size() == 0) {
+        if (j.empty()) {
             j = json{{"tariffIds", json::array()}};
         } else {
             j["tariffIds"] = json::array();
         }
-        for (auto val : k.tariffIds.value()) {
+        for (const auto& val : k.tariffIds.value()) {
             j["tariffIds"].push_back(val);
         }
     }
@@ -44,9 +44,9 @@ void from_json(const json& j, ClearTariffsRequest& k) {
 
     // the optional parts of the message
     if (j.contains("tariffIds")) {
-        json arr = j.at("tariffIds");
+        const json& arr = j.at("tariffIds");
         std::vector<CiString<60>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.tariffIds.emplace(vec);
@@ -83,7 +83,7 @@ void to_json(json& j, const ClearTariffsResponse& k) {
 
 void from_json(const json& j, ClearTariffsResponse& k) {
     // the required parts of the message
-    for (auto val : j.at("clearTariffsResult")) {
+    for (const auto& val : j.at("clearTariffsResult")) {
         k.clearTariffsResult.push_back(val);
     }
 

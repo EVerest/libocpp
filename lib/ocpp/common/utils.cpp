@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 
 #include <ocpp/common/utils.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <cmath>
+#include <cstdlib>
 #include <mutex>
 #include <regex>
 #include <sstream>
@@ -21,12 +22,12 @@ bool is_integer(const std::string& value) {
     }
 
     // Check for + or - in the beginning
-    size_t start_pos = 0;
+    auto value_it = value.begin();
     if (value[0] == '+' or value[0] == '-') {
-        start_pos = 1;
+        value_it += 1;
     }
 
-    return std::all_of(value.begin() + start_pos, value.end(), ::isdigit);
+    return std::all_of(value_it, value.end(), ::isdigit);
 }
 
 std::tuple<bool, int> is_positive_integer(const std::string& value) {
@@ -59,7 +60,7 @@ bool is_decimal_number(const std::string& value) {
             if (++decimal_point_count > 1) {
                 return false;
             }
-        } else if (!std::isdigit(value[i])) {
+        } else if (std::isdigit(value[i]) == 0) {
             return false;
         }
     }
@@ -93,11 +94,11 @@ std::vector<std::string> split_string(const std::string& string_to_split, const 
 }
 
 std::string trim_string(const std::string& string_to_trim) {
-    size_t first = string_to_trim.find_first_not_of(' ');
+    const size_t first = string_to_trim.find_first_not_of(' ');
     if (std::string::npos == first) {
         return string_to_trim;
     }
-    size_t last = string_to_trim.find_last_not_of(' ');
+    const size_t last = string_to_trim.find_last_not_of(' ');
     return string_to_trim.substr(first, (last - first + 1));
 }
 
@@ -111,6 +112,13 @@ bool is_equal(const float& value1, const float& value2, const double& epsilon) {
 
 bool is_equal(const double& value1, const double& value2, const double& epsilon) {
     return fabs(value1 - value2) < epsilon;
+}
+
+std::size_t convert_to_positive_size_t(float value) {
+    if (value < 0) {
+        return 0;
+    }
+    return clamp_to<std::size_t>(std::llround(std::ceil(value)));
 }
 
 } // namespace ocpp

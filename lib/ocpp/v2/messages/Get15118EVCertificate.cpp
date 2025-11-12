@@ -30,7 +30,7 @@ void to_json(json& j, const Get15118EVCertificateRequest& k) {
     }
     if (k.prioritizedEMAIDs) {
         j["prioritizedEMAIDs"] = json::array();
-        for (auto val : k.prioritizedEMAIDs.value()) {
+        for (const auto& val : k.prioritizedEMAIDs.value()) {
             j["prioritizedEMAIDs"].push_back(val);
         }
     }
@@ -50,9 +50,9 @@ void from_json(const json& j, Get15118EVCertificateRequest& k) {
         k.maximumContractCertificateChains.emplace(j.at("maximumContractCertificateChains"));
     }
     if (j.contains("prioritizedEMAIDs")) {
-        json arr = j.at("prioritizedEMAIDs");
+        const json& arr = j.at("prioritizedEMAIDs");
         std::vector<CiString<255>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.prioritizedEMAIDs.emplace(vec);
@@ -63,7 +63,8 @@ void from_json(const json& j, Get15118EVCertificateRequest& k) {
 }
 
 /// \brief Writes the string representation of the given Get15118EVCertificateRequest \p k to the given output stream \p
-/// os \returns an output stream with the Get15118EVCertificateRequest written to
+/// os
+/// \returns an output stream with the Get15118EVCertificateRequest written to
 std::ostream& operator<<(std::ostream& os, const Get15118EVCertificateRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -109,7 +110,8 @@ void from_json(const json& j, Get15118EVCertificateResponse& k) {
 }
 
 /// \brief Writes the string representation of the given Get15118EVCertificateResponse \p k to the given output stream
-/// \p os \returns an output stream with the Get15118EVCertificateResponse written to
+/// \p os
+/// \returns an output stream with the Get15118EVCertificateResponse written to
 std::ostream& operator<<(std::ostream& os, const Get15118EVCertificateResponse& k) {
     os << json(k).dump(4);
     return os;

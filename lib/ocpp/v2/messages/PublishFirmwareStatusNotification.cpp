@@ -25,7 +25,7 @@ void to_json(json& j, const PublishFirmwareStatusNotificationRequest& k) {
     // the optional parts of the message
     if (k.location) {
         j["location"] = json::array();
-        for (auto val : k.location.value()) {
+        for (const auto& val : k.location.value()) {
             j["location"].push_back(val);
         }
     }
@@ -46,9 +46,9 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
 
     // the optional parts of the message
     if (j.contains("location")) {
-        json arr = j.at("location");
+        const json& arr = j.at("location");
         std::vector<CiString<2000>> vec;
-        for (auto val : arr) {
+        for (const auto& val : arr) {
             vec.push_back(val);
         }
         k.location.emplace(vec);
@@ -65,7 +65,8 @@ void from_json(const json& j, PublishFirmwareStatusNotificationRequest& k) {
 }
 
 /// \brief Writes the string representation of the given PublishFirmwareStatusNotificationRequest \p k to the given
-/// output stream \p os \returns an output stream with the PublishFirmwareStatusNotificationRequest written to
+/// output stream \p os
+/// \returns an output stream with the PublishFirmwareStatusNotificationRequest written to
 std::ostream& operator<<(std::ostream& os, const PublishFirmwareStatusNotificationRequest& k) {
     os << json(k).dump(4);
     return os;
@@ -94,7 +95,8 @@ void from_json(const json& j, PublishFirmwareStatusNotificationResponse& k) {
 }
 
 /// \brief Writes the string representation of the given PublishFirmwareStatusNotificationResponse \p k to the given
-/// output stream \p os \returns an output stream with the PublishFirmwareStatusNotificationResponse written to
+/// output stream \p os
+/// \returns an output stream with the PublishFirmwareStatusNotificationResponse written to
 std::ostream& operator<<(std::ostream& os, const PublishFirmwareStatusNotificationResponse& k) {
     os << json(k).dump(4);
     return os;

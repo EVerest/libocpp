@@ -1229,7 +1229,7 @@ const Variable ISO15118EvseId = {"ISO15118EvseId"};
 
 ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable) {
     EVSE evse = {evse_id};
-    Component component = {"EVSE", evse};
+    const Component component = {"EVSE", evse};
     ComponentVariable component_variable;
     component_variable.component = component;
     component_variable.variable = variable;
@@ -1246,7 +1246,7 @@ const Variable SupplyPhases = {"SupplyPhases"};
 
 ComponentVariable get_component_variable(const int32_t evse_id, const int32_t connector_id, const Variable& variable) {
     EVSE evse = {evse_id, connector_id};
-    Component component = {"Connector", evse};
+    const Component component = {"Connector", evse};
     ComponentVariable component_variable;
     component_variable.component = component;
     component_variable.variable = variable;
@@ -1298,7 +1298,7 @@ Variable get_v2x_tx_updated_interval(const OperationModeEnum& mode) {
 
 ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable) {
     EVSE evse = {evse_id};
-    Component component = {"V2XChargingCtrlr", evse};
+    const Component component = {"V2XChargingCtrlr", evse};
     ComponentVariable component_variable;
     component_variable.component = component;
     component_variable.variable = variable;
@@ -1318,7 +1318,7 @@ const Variable OrganizationName = {"OrganizationName"};
 
 ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable) {
     EVSE evse = {evse_id};
-    Component component = {"ISO15118Ctrlr", evse};
+    const Component component = {"ISO15118Ctrlr", evse};
     ComponentVariable component_variable;
     component_variable.component = component;
     component_variable.variable = variable;
@@ -1343,7 +1343,7 @@ Variable get_protocol_supported_by_ev(const int32_t priority) {
 
 ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable) {
     EVSE evse = {evse_id};
-    Component component = {"ConnectedEV", evse};
+    const Component component = {"ConnectedEV", evse};
     ComponentVariable component_variable;
     component_variable.component = component;
     component_variable.variable = variable;
