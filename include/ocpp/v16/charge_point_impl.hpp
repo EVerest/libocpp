@@ -926,6 +926,8 @@ public:
     /// \param value
     /// \return Indicates the result of the operation
     ConfigurationStatus set_configuration_key(CiString<50> key, CiString<500> value);
+    std::pair<ConfigurationStatus, std::optional<ChangeConfigurationResponse>>
+    set_configuration_key_internal(CiString<50> key, CiString<500> value, std::optional<MessageId> uniqueId);
 
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)
