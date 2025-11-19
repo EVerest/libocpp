@@ -3172,6 +3172,79 @@ std::optional<KeyValue> ChargePointConfiguration::getWaitForSetUserPriceTimeoutK
     return result;
 }
 
+std::optional<KeyValue> ChargePointConfiguration::getPublicKeyKeyValue(const uint32_t connector_id) {
+    if (!this->config["Internal"].contains("MeterPublicKeys")) {
+        return std::nullopt;
+    }
+
+    const auto& meter_public_keys = this->config["Internal"].at("MeterPublicKeys");
+
+    if (!meter_public_keys.is_array()) {
+        return std::nullopt;
+    }
+
+    const auto& keys_array = meter_public_keys;
+    if (keys_array.size() < connector_id or connector_id < 1) {
+        return std::nullopt;
+    }
+
+    KeyValue kv;
+    kv.key = "MeterPublicKey[" + std::to_string(connector_id) + "]";
+    kv.readonly = true;
+    kv.value = keys_array.at(connector_id - 1).get<std::string>();
+    return kv;
+}
+
+std::optional<std::vector<KeyValue>> ChargePointConfiguration::getAllMeterPublicKeyKeyValues() {
+    if (!this->config["Internal"].contains("MeterPublicKeys")) {
+        return std::nullopt;
+    }
+
+    const auto& meter_public_keys = this->config["Internal"].at("MeterPublicKeys");
+
+    if (!meter_public_keys.is_array()) {
+        return std::nullopt;
+    }
+
+    std::vector<KeyValue> key_values;
+    const auto& keys_array = meter_public_keys;
+    for (size_t i = 0; i < keys_array.size(); i++) {
+        KeyValue kv;
+        kv.key = "MeterPublicKey[" + std::to_string(i + 1) + "]";
+        kv.readonly = true;
+        kv.value = keys_array.at(i).get<std::string>();
+        key_values.push_back(kv);
+    }
+
+    return key_values;
+}
+
+bool ChargePointConfiguration::setMeterPublicKey(const int32_t connector_id, const std::string& public_key_pem) {
+    if (connector_id > this->getNumberOfConnectors() or connector_id < 1) {
+        EVLOG_warning << "Cannot set MeterPublicKey for connector " << connector_id
+                      << ", because the connector id does not exist.";
+        return false;
+    }
+
+    if (!this->config["Internal"].contains("MeterPublicKeys") or this->config["Internal"]["MeterPublicKeys"].empty()) {
+        this->config["Internal"]["MeterPublicKeys"] = json::array();
+        for (size_t i = 0; i < this->getNumberOfConnectors(); i++) {
+            this->config["Internal"]["MeterPublicKeys"].push_back("");
+        }
+    }
+
+    auto& meter_public_keys = this->config["Internal"]["MeterPublicKeys"];
+    if (!meter_public_keys.is_array() or meter_public_keys.size() < static_cast<size_t>(connector_id)) {
+        EVLOG_warning << "Cannot set MeterPublicKey for connector " << connector_id
+                      << ", because the MeterPublicKeys array is not valid.";
+        return false;
+    }
+    meter_public_keys[connector_id - 1] = public_key_pem;
+
+    this->setInUserConfig("Internal", "MeterPublicKeys", this->config["Internal"]["MeterPublicKeys"]);
+    return true;
+}
+
 void ChargePointConfiguration::setLanguage(const std::string& language) {
     this->config["CostAndPrice"]["Language"] = language;
     this->setInUserConfig("CostAndPrice", "Language", language);
@@ -3253,6 +3326,53 @@ void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri)
     this->config["Internal"]["CentralSystemURI"] = centralSystemUri;
     this->setInUserConfig("Internal", "CentralSystemURI", centralSystemUri);
 }
+
+namespace {
+template <typename T> std::optional<T> parse_meter_public_key_index(const std::string& input) {
+    const std::string prefix = "MeterPublicKey[";
+    const std::string suffix = "]";
+
+    if (input.size() <= prefix.size() + suffix.size()) {
+        return std::nullopt;
+    }
+
+    if (input.rfind(prefix, 0) != 0) {
+        return std::nullopt;
+    }
+
+    if (input.substr(input.size() - suffix.size()) != suffix) {
+        return std::nullopt;
+    }
+
+    std::string number_str = input.substr(prefix.size(), input.size() - prefix.size() - suffix.size());
+
+    if (number_str.empty()) {
+        return std::nullopt;
+    }
+
+    for (char c : number_str) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
+            return std::nullopt;
+        }
+    }
+
+    unsigned long long temp = 0;
+    try {
+        temp = std::stoull(number_str);
+    } catch (...) {
+        return std::nullopt;
+    }
+
+    if constexpr (std::is_same_v<T, uint32_t>) {
+        if (temp > std::numeric_limits<uint32_t>::max()) {
+            return std::nullopt;
+        }
+        return static_cast<uint32_t>(temp);
+    } else {
+        static_assert(sizeof(T) == 0, "Unsupported type");
+    }
+}
+} // namespace
 
 std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
@@ -3502,6 +3622,24 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     if (key == "WebSocketPingInterval") {
         return this->getWebsocketPingIntervalKeyValue();
     }
+    if (key.get().rfind("MeterPublicKey[", 0) == 0) {
+        const std::string& s = key.get();
+        const auto connector_id_opt = parse_meter_public_key_index<uint32_t>(s);
+
+        if (connector_id_opt.has_value() == false) {
+            EVLOG_error << "Invalid MeterPublicKey format for key '" << s << "'";
+            return std::nullopt;
+        }
+
+        const uint32_t connector_id = connector_id_opt.value();
+
+        if (connector_id == 0) {
+            EVLOG_error << "MeterPublicKey key '" << s << "' contains connectorId=0 which is invalid.";
+            return std::nullopt;
+        }
+
+        return this->getPublicKeyKeyValue(connector_id);
+    }
 
     // Firmware Management
     if (this->supported_feature_profiles.count(SupportedFeatureProfiles::FirmwareManagement)) {
@@ -3659,6 +3797,16 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
                             all.push_back(kv);
                         }
                     }
+                    // MeterPublicKey is a special here, as it has multiple possible connector ids which are all
+                    // separate key value pairs.
+                } else if (config_key.get() == "MeterPublicKeys") {
+                    const auto meter_public_key_kvs = getAllMeterPublicKeyKeyValues();
+                    if (meter_public_key_kvs.has_value()) {
+                        for (const auto& kv : meter_public_key_kvs.value()) {
+                            all.push_back(kv);
+                        }
+                    }
+
                 } else {
                     auto config_value = this->get(config_key);
                     if (config_value != std::nullopt) {

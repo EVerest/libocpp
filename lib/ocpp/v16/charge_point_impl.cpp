@@ -1975,6 +1975,10 @@ ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> 
     return {result, response};
 }
 
+bool ChargePointImpl::set_powermeter_public_key(const int32_t connector, const std::string& public_key_pem) {
+    return this->configuration->setMeterPublicKey(connector, public_key_pem);
+}
+
 void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabilityRequest> call) {
     EVLOG_debug << "Received ChangeAvailabilityRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 

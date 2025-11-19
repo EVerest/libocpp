@@ -383,5 +383,9 @@ void ChargePoint::set_message_queue_resume_delay(std::chrono::seconds delay) {
     this->charge_point->set_message_queue_resume_delay(delay);
 }
 
+bool ChargePoint::set_powermeter_public_key(const int32_t connector, const std::string& public_key_pem) {
+    return this->charge_point->set_powermeter_public_key(connector, public_key_pem);
+}
+
 } // namespace v16
 } // namespace ocpp

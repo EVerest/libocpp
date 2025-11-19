@@ -943,6 +943,12 @@ public:
     void set_message_queue_resume_delay(std::chrono::seconds delay) {
         this->message_queue_resume_delay = delay;
     }
+
+    /// \brief Sets the public key of the powermeter for the given connector
+    /// \param connector The connector for which the public key is set
+    /// \param public_key_pem The public key in PEM format
+    /// \return true if the public key was set successfully, false otherwise
+    bool set_powermeter_public_key(const int32_t connector, const std::string& public_key_pem);
 };
 
 } // namespace v16

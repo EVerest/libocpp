@@ -373,6 +373,14 @@
             "type": "boolean",
             "readOnly": false,
             "default": false
+        },
+        "MeterPublicKeys": {
+            "$comment": "The public key of the meter in formatted according the Signed Meter Values Whitepaper of OCPP. The first element represents the public key for connector id 1, the second for connector id 2, and so on.",
+            "type": "array",
+            "readOnly": true,
+            "items": {
+                "type": "string"
+            }
         }
     },
     "additionalProperties": false
