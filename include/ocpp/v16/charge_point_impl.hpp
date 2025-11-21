@@ -921,11 +921,13 @@ public:
     /// \return a response containing the requested key(s) including the values and unkown keys if present
     GetConfigurationResponse get_configuration_key(const GetConfigurationRequest& request);
 
-    /// \brief Sets a custom configuration key
+    /// \brief Sets a configuration key
     /// \param key
     /// \param value
     /// \return Indicates the result of the operation
-    ConfigurationStatus set_custom_configuration_key(CiString<50> key, CiString<500> value);
+    ConfigurationStatus set_configuration_key(CiString<50> key, CiString<500> value);
+    std::pair<ConfigurationStatus, std::optional<ChangeConfigurationResponse>>
+    set_configuration_key_internal(CiString<50> key, CiString<500> value, std::optional<MessageId> uniqueId);
 
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)

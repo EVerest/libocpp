@@ -528,7 +528,7 @@ public:
 
     std::vector<KeyValue> get_all_key_value();
 
-    ConfigurationStatus set(CiString<50> key, CiString<500> value);
+    std::optional<ConfigurationStatus> set(CiString<50> key, CiString<500> value);
 };
 
 } // namespace v16
