@@ -1838,7 +1838,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
 void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigurationRequest> call) {
     EVLOG_debug << "Received ChangeConfigurationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
-    auto [result, response] = set_configuration_key_internal(call.msg.key, call.msg.value, call.uniqueId);
+    auto [_, response] = set_configuration_key_internal(call.msg.key, call.msg.value, call.uniqueId);
 
     if (response) {
         ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(), call.uniqueId);
@@ -4762,7 +4762,14 @@ ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> 
             result = ConfigurationStatus::Rejected;
         } else {
             // TODO(kai): how to signal RebootRequired? or what does need reboot required?
-            result = configuration->set(key, value);
+
+            // to get here get() has returned a valid key/value result
+            // set can fail for many reasons and std::nullopt is returned when
+            // there is no match for the key. As a result the key name is valid
+            // but not for set, hence using Rejected.
+            const auto set_result = configuration->set(key, value);
+            result = set_result.value_or(ConfigurationStatus::Rejected);
+
             if (result == ConfigurationStatus::Accepted) {
                 if (key == "HeartbeatInterval") {
                     update_heartbeat_interval();

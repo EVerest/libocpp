@@ -3671,7 +3671,7 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
     return all;
 }
 
-ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
+std::optional<ConfigurationStatus> ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
     std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (key == "IgnoredProfilePurposesOffline") {
         if (this->setIgnoredProfilePurposesOffline(value) == false) {
@@ -4163,8 +4163,11 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         return ConfigurationStatus::RebootRequired;
     } else if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {
         return this->setCustomKey(key, value, false);
+    } else if (key == "SecurityProfile") {
+        // do nothing here (key is valid!)
     } else {
-        return ConfigurationStatus::NotSupported;
+        // the key is not one that is recognised for setting
+        return std::nullopt;
     }
 
     return ConfigurationStatus::Accepted;

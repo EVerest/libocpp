@@ -31,7 +31,7 @@ TEST_F(ConfigurationTester, SetUnknown) {
     auto set_result = config->set("HeartBeatInterval", "352");
     EXPECT_EQ(set_result, ConfigurationStatus::Accepted);
     set_result = config->set("DoesNotExist", "never-set");
-    EXPECT_EQ(set_result, ConfigurationStatus::NotSupported);
+    EXPECT_FALSE(set_result.has_value()); // std::nullopt indicates key not known
 }
 
 TEST_F(ConfigurationTester, BrokenChain) {
@@ -40,9 +40,9 @@ TEST_F(ConfigurationTester, BrokenChain) {
     // IgnoredProfilePurposesOffline is the fist key
 
     // actually returns rejected rather than accepted
-    // this is fine since the error case would be NotSupported - see SetUnknown
+    // this is fine since the error case would be std::nullopt
     auto set_result = config->set("IgnoredProfilePurposesOffline", "TxProfile");
-    EXPECT_NE(set_result, ConfigurationStatus::NotSupported);
+    EXPECT_TRUE(set_result.has_value());
 }
 
 } // namespace
