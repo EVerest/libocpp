@@ -375,8 +375,8 @@ GetConfigurationResponse ChargePoint::get_configuration_key(const GetConfigurati
     return this->charge_point->get_configuration_key(request);
 }
 
-ConfigurationStatus ChargePoint::set_custom_configuration_key(CiString<50> key, CiString<500> value) {
-    return this->charge_point->set_custom_configuration_key(key, value);
+ConfigurationStatus ChargePoint::set_configuration_key(CiString<50> key, CiString<500> value) {
+    return this->charge_point->set_configuration_key(key, value);
 }
 
 void ChargePoint::set_message_queue_resume_delay(std::chrono::seconds delay) {
