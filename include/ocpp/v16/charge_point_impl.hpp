@@ -392,6 +392,16 @@ private:
     /// \param connector for which availability change shall be checked and executed
     void execute_queued_availability_change(const int32_t connector);
 
+    /// \brief Sets a configuration key (internal implementation)
+    /// \param key
+    /// \param value
+    /// \param uniqueId used when an OCPP response is sent
+    /// \return Indicates the result of the operation with an optional response message
+    /// \note the optional response message will be nullopt when a response has
+    ///       been sent by this method
+    std::pair<ConfigurationStatus, std::optional<ChangeConfigurationResponse>>
+    set_configuration_key_internal(CiString<50> key, CiString<500> value, std::optional<MessageId> uniqueId);
+
 public:
     /// \brief The main entrypoint for libOCPP for OCPP 1.6
     /// \param config a nlohmann json config object that contains the libocpp 1.6 config. There are example configs that
@@ -926,8 +936,6 @@ public:
     /// \param value
     /// \return Indicates the result of the operation
     ConfigurationStatus set_configuration_key(CiString<50> key, CiString<500> value);
-    std::pair<ConfigurationStatus, std::optional<ChangeConfigurationResponse>>
-    set_configuration_key_internal(CiString<50> key, CiString<500> value, std::optional<MessageId> uniqueId);
 
     /// \brief Delay draining the message queue after reconnecting, so the CSMS can perform post-reconnect checks first
     /// \param delay The delay period (seconds)

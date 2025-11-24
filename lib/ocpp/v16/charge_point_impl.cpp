@@ -1815,6 +1815,155 @@ void ChargePointImpl::execute_queued_availability_change(const int32_t connector
     }
 }
 
+std::pair<ConfigurationStatus, std::optional<ChangeConfigurationResponse>>
+ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> value,
+                                                std::optional<MessageId> uniqueId) {
+    ConfigurationStatus result{ConfigurationStatus::NotSupported};
+    std::optional<ChangeConfigurationResponse> response = ChangeConfigurationResponse();
+    const auto kv = configuration->get(key);
+
+    if (kv || key == "AuthorizationKey") {
+        if (key != "AuthorizationKey" && kv.value().readonly) {
+            // supported but could not be changed
+            result = ConfigurationStatus::Rejected;
+        } else {
+            // TODO(kai): how to signal RebootRequired? or what does need reboot required?
+
+            // to get here get() has returned a valid key/value result
+            // set can fail for many reasons and std::nullopt is returned when
+            // there is no match for the key. As a result the key name is valid
+            // but not for set, hence using Rejected.
+            const auto set_result = configuration->set(key, value);
+            result = set_result.value_or(ConfigurationStatus::Rejected);
+
+            if (result == ConfigurationStatus::Accepted) {
+                if (key == "HeartbeatInterval") {
+                    update_heartbeat_interval();
+                } else if (key == "MeterValueSampleInterval") {
+                    update_meter_values_sample_interval();
+                } else if (key == "ClockAlignedDataInterval") {
+                    update_clock_aligned_meter_values_interval();
+                } else if (key == "AuthorizationKey") {
+                    EVLOG_info << "AuthorizationKey was changed by central system";
+                    websocket->set_authorization_key(configuration->getAuthorizationKey().value());
+                    if (configuration->getSecurityProfile() == 0) {
+                        EVLOG_info << "AuthorizationKey was changed while on security profile 0.";
+                    } else if (configuration->getSecurityProfile() == 1 || configuration->getSecurityProfile() == 2) {
+                        EVLOG_info
+                            << "AuthorizationKey was changed while on security profile 1 or 2. Reconnect Websocket.";
+                        if (uniqueId) {
+                            response.value().status = result;
+                            ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
+                                                                                      uniqueId.value());
+                            message_dispatcher->dispatch_call_result(call_result);
+                        }
+                        response.reset(); // response has been sent
+                        websocket->reconnect(1000);
+                    } else {
+                        EVLOG_info << "AuthorizationKey was changed while on security profile 3. Nothing to do.";
+                    }
+                } else if (key == "SecurityProfile") {
+                    try {
+                        const auto security_profile = std::stoi(value);
+                        const auto current_security_profile = configuration->getSecurityProfile();
+                        if (security_profile <= current_security_profile) {
+                            EVLOG_warning << "New security profile is <= current security profile. Rejecting request.";
+                            result = ConfigurationStatus::Rejected;
+                        } else if ((security_profile == 1 || security_profile == 2) &&
+                                   configuration->getAuthorizationKey() == std::nullopt) {
+                            EVLOG_warning << "New security level set to 1 or 2 but no authorization key is set. "
+                                             "Rejecting request.";
+                            result = ConfigurationStatus::Rejected;
+                        } else if ((security_profile == 2 || security_profile == 3) &&
+                                   !evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
+                            EVLOG_warning
+                                << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
+                            result = ConfigurationStatus::Rejected;
+                        } else if (security_profile == 3 &&
+                                   evse_security
+                                           ->get_leaf_certificate_info(
+                                               ocpp::CertificateSigningUseEnum::ChargingStationCertificate)
+                                           .status != ocpp::GetCertificateInfoStatus::Accepted) {
+                            EVLOG_warning << "New security level set to 3 but no Client Certificate is installed";
+                            result = ConfigurationStatus::Rejected;
+                        } else if (security_profile > 3) {
+                            result = ConfigurationStatus::Rejected;
+                        } else {
+                            // valid set of security profile
+                            if (uniqueId) {
+                                response.value().status = result;
+                                ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
+                                                                                          uniqueId.value());
+                                message_dispatcher->dispatch_call_result(call_result);
+                            }
+                            response.reset(); // response has been sent
+                            int32_t security_profile = std::stoi(value);
+                            switch_security_profile_callback = [this, security_profile]() {
+                                switchSecurityProfile(security_profile, 1);
+                            };
+                            // disconnected_callback will trigger security_profile_callback when it is set
+                            websocket->disconnect(WebsocketCloseReason::Normal);
+                        }
+                    } catch (const std::invalid_argument& e) {
+                        result = ConfigurationStatus::Rejected;
+                    }
+                } else if (key == "ConnectionTimeout") {
+                    call_set_connection_timeout();
+                } else if (key == "TransactionMessageAttempts") {
+                    message_queue->update_transaction_message_attempts(configuration->getTransactionMessageAttempts());
+                } else if (key == "TransactionMessageRetryInterval") {
+                    message_queue->update_transaction_message_retry_interval(
+                        configuration->getTransactionMessageRetryInterval());
+                } else if (key == "WebSocketPingInterval") {
+                    auto websocket_ping_interval_option = configuration->getWebsocketPingInterval();
+
+                    if (websocket_ping_interval_option.has_value()) {
+                        auto websocket_ping_interval = websocket_ping_interval_option.value();
+                        auto websocket_pong_timeout = configuration->getWebsocketPongTimeout();
+
+                        websocket->set_websocket_ping_interval(websocket_ping_interval, websocket_pong_timeout);
+                    }
+                } else if (key == "ISO15118CertificateManagementEnabled") {
+                    if (ocpp::conversions::string_to_bool(value)) {
+                        ocsp_request_timer->stop();
+                        ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
+                        v2g_certificate_timer->stop();
+                        v2g_certificate_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
+                    } else {
+                        ocsp_request_timer->stop();
+                        v2g_certificate_timer->stop();
+                    }
+                } else if (key == "OcspRequestInterval") {
+                    if (is_iso15118_certificate_management_enabled()) {
+                        ocsp_request_timer->stop();
+                        ocsp_request_timer->interval(std::chrono::seconds(configuration->getOcspRequestInterval()));
+                    }
+                } else if (key == "NextTimeOffsetTransitionDateTime") {
+                    if (configuration->getNextTimeOffsetTransitionDateTime().has_value()) {
+                        set_time_offset_timer(configuration->getNextTimeOffsetTransitionDateTime().value());
+                    }
+                }
+            }
+        }
+    }
+
+    if (response) {
+        response.value().status = result;
+    }
+
+    if (result == ConfigurationStatus::Accepted) {
+        // notify callback if registered and change was accepted
+        KeyValue key_value = {key, false, value};
+        if (configuration_key_changed_callbacks.count(key) and configuration_key_changed_callbacks[key] != nullptr) {
+            configuration_key_changed_callbacks[key](key_value);
+        } else if (generic_configuration_key_changed_callback != nullptr) {
+            generic_configuration_key_changed_callback(key_value);
+        }
+    }
+
+    return {result, response};
+}
+
 void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabilityRequest> call) {
     EVLOG_debug << "Received ChangeAvailabilityRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
@@ -4747,155 +4896,6 @@ ConfigurationStatus ChargePointImpl::set_configuration_key(CiString<50> key, CiS
     // const auto result = this->configuration->set(key, value);
     const auto [result, _] = set_configuration_key_internal(key, value, {});
     return result;
-}
-
-std::pair<ConfigurationStatus, std::optional<ChangeConfigurationResponse>>
-ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> value,
-                                                std::optional<MessageId> uniqueId) {
-    ConfigurationStatus result{ConfigurationStatus::NotSupported};
-    std::optional<ChangeConfigurationResponse> response = ChangeConfigurationResponse();
-    const auto kv = configuration->get(key);
-
-    if (kv || key == "AuthorizationKey") {
-        if (key != "AuthorizationKey" && kv.value().readonly) {
-            // supported but could not be changed
-            result = ConfigurationStatus::Rejected;
-        } else {
-            // TODO(kai): how to signal RebootRequired? or what does need reboot required?
-
-            // to get here get() has returned a valid key/value result
-            // set can fail for many reasons and std::nullopt is returned when
-            // there is no match for the key. As a result the key name is valid
-            // but not for set, hence using Rejected.
-            const auto set_result = configuration->set(key, value);
-            result = set_result.value_or(ConfigurationStatus::Rejected);
-
-            if (result == ConfigurationStatus::Accepted) {
-                if (key == "HeartbeatInterval") {
-                    update_heartbeat_interval();
-                } else if (key == "MeterValueSampleInterval") {
-                    update_meter_values_sample_interval();
-                } else if (key == "ClockAlignedDataInterval") {
-                    update_clock_aligned_meter_values_interval();
-                } else if (key == "AuthorizationKey") {
-                    EVLOG_info << "AuthorizationKey was changed by central system";
-                    websocket->set_authorization_key(configuration->getAuthorizationKey().value());
-                    if (configuration->getSecurityProfile() == 0) {
-                        EVLOG_info << "AuthorizationKey was changed while on security profile 0.";
-                    } else if (configuration->getSecurityProfile() == 1 || configuration->getSecurityProfile() == 2) {
-                        EVLOG_info
-                            << "AuthorizationKey was changed while on security profile 1 or 2. Reconnect Websocket.";
-                        if (uniqueId) {
-                            response.value().status = result;
-                            ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
-                                                                                      uniqueId.value());
-                            message_dispatcher->dispatch_call_result(call_result);
-                        }
-                        response.reset(); // response has been sent
-                        websocket->reconnect(1000);
-                    } else {
-                        EVLOG_info << "AuthorizationKey was changed while on security profile 3. Nothing to do.";
-                    }
-                } else if (key == "SecurityProfile") {
-                    try {
-                        const auto security_profile = std::stoi(value);
-                        const auto current_security_profile = configuration->getSecurityProfile();
-                        if (security_profile <= current_security_profile) {
-                            EVLOG_warning << "New security profile is <= current security profile. Rejecting request.";
-                            result = ConfigurationStatus::Rejected;
-                        } else if ((security_profile == 1 || security_profile == 2) &&
-                                   configuration->getAuthorizationKey() == std::nullopt) {
-                            EVLOG_warning << "New security level set to 1 or 2 but no authorization key is set. "
-                                             "Rejecting request.";
-                            result = ConfigurationStatus::Rejected;
-                        } else if ((security_profile == 2 || security_profile == 3) &&
-                                   !evse_security->is_ca_certificate_installed(ocpp::CaCertificateType::CSMS)) {
-                            EVLOG_warning
-                                << "New security level set to 2 or 3 but no CentralSystemRootCertificateInstalled";
-                            result = ConfigurationStatus::Rejected;
-                        } else if (security_profile == 3 &&
-                                   evse_security
-                                           ->get_leaf_certificate_info(
-                                               ocpp::CertificateSigningUseEnum::ChargingStationCertificate)
-                                           .status != ocpp::GetCertificateInfoStatus::Accepted) {
-                            EVLOG_warning << "New security level set to 3 but no Client Certificate is installed";
-                            result = ConfigurationStatus::Rejected;
-                        } else if (security_profile > 3) {
-                            result = ConfigurationStatus::Rejected;
-                        } else {
-                            // valid set of security profile
-                            if (uniqueId) {
-                                response.value().status = result;
-                                ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
-                                                                                          uniqueId.value());
-                                message_dispatcher->dispatch_call_result(call_result);
-                            }
-                            response.reset(); // response has been sent
-                            int32_t security_profile = std::stoi(value);
-                            switch_security_profile_callback = [this, security_profile]() {
-                                switchSecurityProfile(security_profile, 1);
-                            };
-                            // disconnected_callback will trigger security_profile_callback when it is set
-                            websocket->disconnect(WebsocketCloseReason::Normal);
-                        }
-                    } catch (const std::invalid_argument& e) {
-                        result = ConfigurationStatus::Rejected;
-                    }
-                } else if (key == "ConnectionTimeout") {
-                    call_set_connection_timeout();
-                } else if (key == "TransactionMessageAttempts") {
-                    message_queue->update_transaction_message_attempts(configuration->getTransactionMessageAttempts());
-                } else if (key == "TransactionMessageRetryInterval") {
-                    message_queue->update_transaction_message_retry_interval(
-                        configuration->getTransactionMessageRetryInterval());
-                } else if (key == "WebSocketPingInterval") {
-                    auto websocket_ping_interval_option = configuration->getWebsocketPingInterval();
-
-                    if (websocket_ping_interval_option.has_value()) {
-                        auto websocket_ping_interval = websocket_ping_interval_option.value();
-                        auto websocket_pong_timeout = configuration->getWebsocketPongTimeout();
-
-                        websocket->set_websocket_ping_interval(websocket_ping_interval, websocket_pong_timeout);
-                    }
-                } else if (key == "ISO15118CertificateManagementEnabled") {
-                    if (ocpp::conversions::string_to_bool(value)) {
-                        ocsp_request_timer->stop();
-                        ocsp_request_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
-                        v2g_certificate_timer->stop();
-                        v2g_certificate_timer->timeout(INITIAL_CERTIFICATE_REQUESTS_DELAY);
-                    } else {
-                        ocsp_request_timer->stop();
-                        v2g_certificate_timer->stop();
-                    }
-                } else if (key == "OcspRequestInterval") {
-                    if (is_iso15118_certificate_management_enabled()) {
-                        ocsp_request_timer->stop();
-                        ocsp_request_timer->interval(std::chrono::seconds(configuration->getOcspRequestInterval()));
-                    }
-                } else if (key == "NextTimeOffsetTransitionDateTime") {
-                    if (configuration->getNextTimeOffsetTransitionDateTime().has_value()) {
-                        set_time_offset_timer(configuration->getNextTimeOffsetTransitionDateTime().value());
-                    }
-                }
-            }
-        }
-    }
-
-    if (response) {
-        response.value().status = result;
-    }
-
-    if (result == ConfigurationStatus::Accepted) {
-        // notify callback if registered and change was accepted
-        KeyValue key_value = {key, false, value};
-        if (configuration_key_changed_callbacks.count(key) and configuration_key_changed_callbacks[key] != nullptr) {
-            configuration_key_changed_callbacks[key](key_value);
-        } else if (generic_configuration_key_changed_callback != nullptr) {
-            generic_configuration_key_changed_callback(key_value);
-        }
-    }
-
-    return {result, response};
 }
 
 } // namespace v16
