@@ -59,7 +59,6 @@ public:
 
 namespace ocpp {
 
-using evse_security::is_custom_private_key_file;
 using evse_security::OpenSSLProvider;
 
 enum class EConnectionState {
@@ -445,7 +444,7 @@ static const struct lws_protocols protocols[] = {{local_protocol_name, callback_
                                                  LWS_PROTOCOL_LIST_TERM};
 
 bool WebsocketLibwebsockets::tls_init(SSL_CTX* ctx, const std::string& path_chain, const std::string& path_key,
-                                      bool custom_key, std::optional<std::string>& password) {
+                                      std::optional<std::string>& password) {
     auto rc = SSL_CTX_set_cipher_list(ctx, this->connection_options.supported_ciphers_12.c_str());
     if (rc != 1) {
         EVLOG_debug << "SSL_CTX_set_cipher_list return value: " << rc;
@@ -653,22 +652,9 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
             private_key_password = certificate_info.password;
         }
 
-        bool custom_key = false;
-
-        if (!path_key.empty()) {
-            custom_key = is_custom_private_key_file(path_key);
-        }
-
         OpenSSLProvider provider;
-
-        if (custom_key) {
-            provider.set_tls_mode(OpenSSLProvider::mode_t::custom_provider);
-        } else {
-            provider.set_tls_mode(OpenSSLProvider::mode_t::default_provider);
-        }
-
         const SSL_METHOD* method = SSLv23_client_method();
-        ssl_ctx = SSL_CTX_new_ex(provider, provider.propquery_tls_str(), method);
+        ssl_ctx = SSL_CTX_new_ex(provider, provider.propquery_default(), method);
 
         if (ssl_ctx == nullptr) {
             ERR_print_errors_fp(stderr);
@@ -683,7 +669,7 @@ bool WebsocketLibwebsockets::initialize_connection_options(std::shared_ptr<Conne
         }
 
         // Init TLS data
-        if (!tls_init(ssl_ctx, path_chain, path_key, custom_key, private_key_password)) {
+        if (!tls_init(ssl_ctx, path_chain, path_key, private_key_password)) {
             EVLOG_error << "Unable to init tls security options for websocket";
             return false;
         }
