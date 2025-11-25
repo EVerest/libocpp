@@ -106,6 +106,7 @@ private:
     int32_t heartbeat_interval;
     bool stopped;
     bool initialized;
+    bool InvalidCSMSCertificate_logged;
     std::chrono::time_point<date::utc_clock> boot_time;
     std::set<MessageType> allowed_message_types;
     std::mutex allowed_message_types_mutex;

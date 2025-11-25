@@ -44,6 +44,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     ocpp::ChargingStationBase(evse_security, security_configuration),
     bootreason(BootReasonEnum::PowerUp),
     initialized(false),
+    InvalidCSMSCertificate_logged(false),
     connection_state(ChargePointConnectionState::Disconnected),
     registration_status(RegistrationStatus::Pending),
     diagnostics_status(DiagnosticsStatus::Idle),
@@ -298,6 +299,10 @@ void ChargePointImpl::init_websocket() {
         this->message_queue->resume(this->message_queue_resume_delay);
         this->connected_callback();
 
+        // There has been a successful connection so a subsequent
+        // InvalidCSMSCertificate should be logged
+        InvalidCSMSCertificate_logged = false;
+
         // signal_set_charging_profiles_callback since composite schedule could have changed if
         // IgnoredProfilePurposesOffline are configured when becoming online
         if (this->signal_set_charging_profiles_callback != nullptr and
@@ -341,14 +346,20 @@ void ChargePointImpl::init_websocket() {
                                             std::nullopt, true);
         }
         if (reason == ocpp::ConnectionFailedReason::InvalidCSMSCertificate) {
-            // This event is forced to accomodate for for TC_078_CS even if this event is not critical
-            this->securityEventNotification(CiString<50>(ocpp::security_events::INVALIDCENTRALSYSTEMCERTIFICATE),
-                                            std::nullopt, true, true);
+            if (InvalidCSMSCertificate_logged) {
+                EVLOG_warning << "Connection failed: InvalidCSMSCertificate";
+            } else {
+                // This event is forced to accommodate TC_078_CS despite this event being not critical
+                this->securityEventNotification(CiString<50>(ocpp::security_events::INVALIDCENTRALSYSTEMCERTIFICATE),
+                                                std::nullopt, true, true);
+                InvalidCSMSCertificate_logged = true;
+            }
         }
     });
 
     this->websocket->register_message_callback([this](const std::string& message) { this->message_callback(message); });
 }
+
 void ChargePointImpl::init_state_machine(const std::map<int, ChargePointStatus>& connector_status_map) {
     // if connector_status_map empty it retrieves the last availablity states from the database
     if (connector_status_map.empty()) {
