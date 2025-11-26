@@ -56,7 +56,7 @@ private:
     /// \return True if it was successful, false otherwise
     bool initialize_connection_options(std::shared_ptr<ConnectionData>& new_connection_data);
 
-    bool tls_init(struct ssl_ctx_st* ctx, const std::string& path_chain, const std::string& path_key, bool custom_key,
+    bool tls_init(struct ssl_ctx_st* ctx, const std::string& path_chain, const std::string& path_key,
                   std::optional<std::string>& password);
 
     /// \brief Websocket processing thread loop
