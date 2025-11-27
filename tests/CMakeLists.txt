@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/libocpp-unittests.cmake)
+include(ProcessorCount)
 
 # For libocpp tests, there is one big executable, which links against the ocpp lib and all other libs.
 # When it is useful to link only to the tested cpp files, a separate executable can be created for each file.
@@ -23,6 +24,7 @@ endif()
 
 set(TEST_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(GCOVR_DEPENDENCIES)
+append_coverage_compiler_flags_to_target(ocpp)
 
 
 add_libocpp_unittest(NAME libocpp_unit_tests PATH "")
@@ -79,6 +81,32 @@ add_custom_command(TARGET libocpp_unit_tests POST_BUILD
 )
 
 set(GCOVR_ADDITIONAL_ARGS "--gcov-ignore-parse-errors=negative_hits.warn")
+
+set(GCOVR_DEPENDENCIES libocpp_unit_tests)
+
+# If ev-coverage is installed, remove gcda files and orphaned object / gcno files.
+find_program(EV_COVERAGE ev-coverage)
+
+if (NOT EV_COVERAGE)
+    message("The \"ev-dev-tools\" Python3 package is not installed. You can install it going to
+        `everest-utils/ev-dev-tools` and type `pip install .`")
+else()
+    if(LIBOCPP_ENABLE_COVERAGE_CLEANUP)
+        add_custom_target(cleanup_coverage
+            COMMAND
+                ${EV_COVERAGE}
+                    remove_files
+                    --build-dir=${LIBOCPP_ROOT_BUILD_DIR})
+        list(APPEND GCOVR_DEPENDENCIES cleanup_coverage)
+    endif() # LIBOCPP_ENABLE_COVERAGE_CLEANUP
+endif() # EV_COVERAGE
+
+# Run gcovr with the number of processors in this system
+ProcessorCount(number_of_procs)
+if(number_of_procs EQUAL 0)
+    set(number_of_procs 1)
+endif()
+set(GCOVR_ADDITIONAL_ARGS "-j;${number_of_procs}")
 
 setup_target_for_coverage_gcovr_html(
     NAME ${PROJECT_NAME}_gcovr_coverage

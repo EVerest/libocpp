@@ -20,6 +20,7 @@ option(LIBOCPP_ENABLE_DEPRECATED_WEBSOCKETPP "Websocket++ has been removed from 
 
 option(LIBOCPP_ENABLE_V16 "Enable OCPP 1.6 in the ocpp library" ON)
 option(LIBOCPP_ENABLE_V2 "Enable OCPP 2.0.1 and OCPP2.1 in the ocpp library" ON)
+option(LIBOCPP_ENABLE_COVERAGE_CLEANUP "Cleanup 'old' coverage files before running coverage again" ON)
 
 if((NOT LIBOCPP_ENABLE_V16) AND (NOT LIBOCPP_ENABLE_V2))
     message(FATAL_ERROR "At least one of LIBOCPP_ENABLE_V16 and LIBOCPP_ENABLE_V2 needs to be ON")
@@ -32,8 +33,6 @@ endif()
 if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
     set(LIBOCPP_BUILD_TESTING ON)
     evc_include(CodeCoverage)
-
-    append_coverage_compiler_flags()
 endif()
 
 # this policy allows us to continue using the removed FindBoost module for now
@@ -131,6 +130,8 @@ endif()
 
 if(LIBOCPP_BUILD_TESTING)
     include(CTest)
+    set(LIBOCPP_ROOT_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    set(LIBOCPP_ROOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
     add_subdirectory(tests)
 endif()
 
