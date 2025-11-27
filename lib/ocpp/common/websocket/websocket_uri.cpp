@@ -46,7 +46,11 @@ Uri Uri::parse_and_validate(std::string uri, std::string chargepoint_id, int sec
     bool scheme_added_workaround = false;
     if (uri.find("://") == std::string::npos) {
         scheme_added_workaround = true;
-        uri = "ws://" + uri;
+        if (security_profile >= security::SecurityProfile::TLS_WITH_BASIC_AUTHENTICATION) {
+            uri = "wss://" + uri;
+        } else {
+            uri = "ws://" + uri;
+        }
     }
 
     auto uri_temp = ev_uri(uri);
