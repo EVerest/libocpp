@@ -33,7 +33,27 @@ namespace {
 /// \param evse Evse to check.
 /// \return True if at least one connector is not faulted or unavailable.
 ///
-bool is_evse_connector_available(EvseInterface& evse);
+bool is_evse_connector_available(EvseInterface& evse) {
+    if (evse.has_active_transaction()) {
+        // If an EV is connected and has no authorization yet then the status is 'Occupied' and the
+        // RemoteStartRequest should still be accepted. So this is the 'occupied' check instead.
+        return false;
+    }
+
+    const std::uint32_t connectors = evse.get_number_of_connectors();
+    for (std::uint32_t i = 1; i <= connectors; ++i) {
+        const ConnectorStatusEnum status =
+            evse.get_connector(static_cast<std::int32_t>(i))->get_effective_connector_status();
+
+        // At least one of the connectors is available / not faulted.
+        if (status != ConnectorStatusEnum::Faulted and status != ConnectorStatusEnum::Unavailable) {
+            return true;
+        }
+    }
+
+    // Connectors are faulted or unavailable.
+    return false;
+}
 } // namespace
 
 RemoteTransactionControl::RemoteTransactionControl(
@@ -411,30 +431,6 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
         break;
     }
 }
-
-namespace {
-bool is_evse_connector_available(EvseInterface& evse) {
-    if (evse.has_active_transaction()) {
-        // If an EV is connected and has no authorization yet then the status is 'Occupied' and the
-        // RemoteStartRequest should still be accepted. So this is the 'occupied' check instead.
-        return false;
-    }
-
-    const std::uint32_t connectors = evse.get_number_of_connectors();
-    for (std::uint32_t i = 1; i <= connectors; ++i) {
-        const ConnectorStatusEnum status =
-            evse.get_connector(static_cast<std::int32_t>(i))->get_effective_connector_status();
-
-        // At least one of the connectors is available / not faulted.
-        if (status != ConnectorStatusEnum::Faulted and status != ConnectorStatusEnum::Unavailable) {
-            return true;
-        }
-    }
-
-    // Connectors are faulted or unavailable.
-    return false;
-}
-} // namespace
 
 ReservationCheckStatus
 RemoteTransactionControl::is_evse_reserved_for_other(EvseInterface& evse, const IdToken& id_token,

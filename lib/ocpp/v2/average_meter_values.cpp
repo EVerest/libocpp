@@ -8,7 +8,14 @@
 namespace ocpp {
 namespace v2 {
 namespace {
-bool is_avg_meas(const SampledValue& sample);
+bool is_avg_meas(const SampledValue& sample) {
+    if (sample.measurand.has_value() and (sample.measurand == MeasurandEnum::Current_Import) or
+        (sample.measurand == MeasurandEnum::Voltage) or (sample.measurand == MeasurandEnum::Power_Active_Import) or
+        (sample.measurand == MeasurandEnum::Frequency)) {
+        return true;
+    }
+    return false;
+}
 }
 
 void AverageMeterValues::clear_values() {
@@ -60,16 +67,5 @@ void AverageMeterValues::average_meter_value() {
         }
     }
 }
-
-namespace {
-bool is_avg_meas(const SampledValue& sample) {
-    if (sample.measurand.has_value() and (sample.measurand == MeasurandEnum::Current_Import) or
-        (sample.measurand == MeasurandEnum::Voltage) or (sample.measurand == MeasurandEnum::Power_Active_Import) or
-        (sample.measurand == MeasurandEnum::Frequency)) {
-        return true;
-    }
-    return false;
-}
-} // namespace
 } // namespace v2
 } // namespace ocpp
