@@ -17,7 +17,7 @@ protected:
     DeviceModelTestHelper device_model_test_helper;
     DeviceModel* dm;
     const RequiredComponentVariable cv = ControllerComponentVariables::AlignedDataInterval;
-    const std::map<int32_t, int32_t> evse_connector_structure{{1, 1}, {2, 1}};
+    const std::map<std::int32_t, std::int32_t> evse_connector_structure{{1, 1}, {2, 1}};
 
     DeviceModelTest() : device_model_test_helper(), dm(device_model_test_helper.get_device_model()) {
     }
@@ -74,7 +74,7 @@ TEST_F(DeviceModelTest, test_min_limit_and_allow_zero) {
 }
 
 TEST_F(DeviceModelTest, test_component_as_key_in_map) {
-    std::map<Component, int32_t> components_to_ints;
+    std::map<Component, std::int32_t> components_to_ints;
 
     Component base_comp;
     base_comp.name = "Foo";
@@ -137,7 +137,7 @@ TEST_F(DeviceModelTest, test_set_monitors) {
     // Clear all existing monitors for a clean test state
     auto existing_monitors = dm->get_monitors({}, components);
     for (auto& result : existing_monitors) {
-        std::vector<int32_t> ids;
+        std::vector<std::int32_t> ids;
         for (auto& monitor : result.variableMonitoring) {
             ids.push_back(monitor.id);
         }
@@ -402,13 +402,13 @@ TEST_F(DeviceModelTest, test_check_integrity_no_supported_versions_found) {
 }
 
 TEST_F(DeviceModelTest, test_check_integrity_wrong_connector_structure) {
-    std::map<int32_t, int32_t> evse_connector_structure{{1, 3}, {2, 1}, {3, 1}};
+    std::map<std::int32_t, std::int32_t> evse_connector_structure{{1, 3}, {2, 1}, {3, 1}};
     EXPECT_THROW(dm->check_integrity(evse_connector_structure), DeviceModelError);
 
-    evse_connector_structure = std::map<int32_t, int32_t>{{1, 3}, {2, 1}};
+    evse_connector_structure = std::map<std::int32_t, std::int32_t>{{1, 3}, {2, 1}};
     EXPECT_THROW(dm->check_integrity(evse_connector_structure), DeviceModelError);
 
-    evse_connector_structure = std::map<int32_t, int32_t>{{1, 1}};
+    evse_connector_structure = std::map<std::int32_t, std::int32_t>{{1, 1}};
     EXPECT_THROW(dm->check_integrity(evse_connector_structure), DeviceModelError);
 }
 

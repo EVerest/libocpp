@@ -13,8 +13,8 @@ class MeterValuesInterface;
 
 struct CostUpdatedRequest;
 
-using SetRunningCostCallback = std::function<void(const RunningCost& running_cost, const uint32_t number_of_decimals,
-                                                  std::optional<std::string> currency_code)>;
+using SetRunningCostCallback = std::function<void(
+    const RunningCost& running_cost, const std::uint32_t number_of_decimals, std::optional<std::string> currency_code)>;
 using TariffMessageCallback = std::function<void(const TariffMessage& message)>;
 
 class TariffAndCostInterface : public MessageHandlerInterface {

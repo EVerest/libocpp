@@ -16,10 +16,10 @@ namespace v16 {
 
 /// \brief Contains a OCPP SignedUpdateFirmware message
 struct SignedUpdateFirmwareRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     FirmwareType firmware;
-    std::optional<int32_t> retries;
-    std::optional<int32_t> retryInterval;
+    std::optional<std::int32_t> retries;
+    std::optional<std::int32_t> retryInterval;
 
     /// \brief Provides the type of this SignedUpdateFirmware message as a human readable string
     /// \returns the message type as a human readable string

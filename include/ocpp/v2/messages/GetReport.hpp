@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP GetReport message
 struct GetReportRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<std::vector<ComponentVariable>> componentVariable;
     std::optional<std::vector<ComponentCriterionEnum>> componentCriteria;
     std::optional<CustomData> customData;

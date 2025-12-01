@@ -19,14 +19,14 @@ public:
         EXPECT_TRUE(this->database->open_connection());
     }
 
-    void ExpectUserVersion(uint32_t expected_version) {
+    void ExpectUserVersion(std::uint32_t expected_version) {
         auto statement = this->database->new_statement("PRAGMA user_version");
 
         EXPECT_EQ(statement->step(), SQLITE_ROW);
         EXPECT_EQ(statement->column_int(0), expected_version);
     }
 
-    void SetUserVersion(uint32_t user_version) {
+    void SetUserVersion(std::uint32_t user_version) {
         EXPECT_TRUE(this->database->execute_statement("PRAGMA user_version = "s + std::to_string(user_version)));
     }
 

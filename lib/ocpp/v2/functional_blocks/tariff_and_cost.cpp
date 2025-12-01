@@ -97,7 +97,7 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
                 }
             }
             if (max_meter_value.has_value()) {
-                running_cost.meter_value = static_cast<int32_t>(max_meter_value.value());
+                running_cost.meter_value = static_cast<std::int32_t>(max_meter_value.value());
             }
         }
 
@@ -173,8 +173,8 @@ void TariffAndCost::handle_cost_and_tariff(const TransactionEventResponse& respo
             this->context.device_model
                 .get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
                 .value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
-        const uint32_t decimals =
-            (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<uint32_t>(number_of_decimals));
+        const std::uint32_t decimals = (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS
+                                                               : static_cast<std::uint32_t>(number_of_decimals));
         const std::optional<std::string> currency =
             this->context.device_model.get_value<std::string>(ControllerComponentVariables::TariffCostCtrlrCurrency);
         this->set_running_cost_callback.value()(running_cost, decimals, currency);
@@ -214,7 +214,7 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
     running_cost.cost = static_cast<double>(call.msg.totalCost);
     running_cost.transaction_id = call.msg.transactionId;
 
-    const std::optional<int32_t> transaction_evse_id =
+    const std::optional<std::int32_t> transaction_evse_id =
         this->context.evse_manager.get_transaction_evseid(running_cost.transaction_id);
     if (!transaction_evse_id.has_value()) {
         // We just put an error in the log as the spec does not define what to do here. It is not possible to return
@@ -225,8 +225,8 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
     const int number_of_decimals =
         this->context.device_model.get_optional_value<int>(ControllerComponentVariables::NumberOfDecimalsForCostValues)
             .value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
-    const uint32_t decimals =
-        (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<uint32_t>(number_of_decimals));
+    const std::uint32_t decimals =
+        (number_of_decimals < 0 ? DEFAULT_PRICE_NUMBER_OF_DECIMALS : static_cast<std::uint32_t>(number_of_decimals));
     const std::optional<std::string> currency =
         this->context.device_model.get_value<std::string>(ControllerComponentVariables::TariffCostCtrlrCurrency);
     this->set_running_cost_callback.value()(running_cost, decimals, currency);
@@ -238,7 +238,7 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
         return;
     }
 
-    const std::optional<int32_t> evse_id_opt =
+    const std::optional<std::int32_t> evse_id_opt =
         this->context.evse_manager.get_transaction_evseid(running_cost.transaction_id);
     if (!evse_id_opt.has_value()) {
         EVLOG_warning << "Can not set running cost triggers as there is no evse id found with the transaction id from "
@@ -246,7 +246,7 @@ void TariffAndCost::handle_costupdated_req(const Call<CostUpdatedRequest> call) 
         return;
     }
 
-    const int32_t evse_id = evse_id_opt.value();
+    const std::int32_t evse_id = evse_id_opt.value();
     auto& evse = this->context.evse_manager.get_evse(evse_id);
     evse.set_meter_value_pricing_triggers(
         triggers.at_power_kw, triggers.at_energy_kwh, triggers.at_time,

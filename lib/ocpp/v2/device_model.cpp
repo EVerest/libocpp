@@ -533,14 +533,14 @@ DeviceModel::get_custom_report_data(const std::optional<std::vector<ComponentVar
     return report_data_vec;
 }
 
-void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure) {
+void DeviceModel::check_integrity(const std::map<std::int32_t, std::int32_t>& evse_connector_structure) {
     EVLOG_debug << "Checking integrity of device model in storage";
     try {
         this->check_required_variables();
         this->device_model->check_integrity();
 
-        int32_t nr_evse_components = 0;
-        std::map<int32_t, int32_t> evse_id_nr_connector_components;
+        std::int32_t nr_evse_components = 0;
+        std::map<std::int32_t, std::int32_t> evse_id_nr_connector_components;
 
         for (const auto& [component, variable_map] : this->device_model_map) {
             if (component.name == "EVSE") {
@@ -623,7 +623,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
 
                 for (const auto& required_variable : required_connector_variables) {
                     const auto& variable = ConnectorComponentVariables::get_component_variable(
-                        evse_id, clamp_to<int32_t>(connector_id), required_variable);
+                        evse_id, clamp_to<std::int32_t>(connector_id), required_variable);
                     check_variable_has_value(variable);
                 }
             }
@@ -634,7 +634,7 @@ void DeviceModel::check_integrity(const std::map<int32_t, int32_t>& evse_connect
     }
 }
 
-bool DeviceModel::update_monitor_reference(int32_t monitor_id, const std::string& reference_value) {
+bool DeviceModel::update_monitor_reference(std::int32_t monitor_id, const std::string& reference_value) {
     bool found_monitor = false;
     VariableMonitoringMeta* monitor_meta = nullptr;
 
@@ -988,7 +988,7 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
                 // Clear from memory too
                 for (auto& [component, variable_map] : this->device_model_map) {
                     for (auto& [variable, variable_metadata] : variable_map) {
-                        variable_metadata.monitors.erase(static_cast<int64_t>(id));
+                        variable_metadata.monitors.erase(static_cast<std::int64_t>(id));
                     }
                 }
             }
@@ -1005,9 +1005,9 @@ std::vector<ClearMonitoringResult> DeviceModel::clear_monitors(const std::vector
     return clear_monitors_vec;
 }
 
-int32_t DeviceModel::clear_custom_monitors() {
+std::int32_t DeviceModel::clear_custom_monitors() {
     try {
-        const int32_t deleted = this->device_model->clear_custom_variable_monitors();
+        const std::int32_t deleted = this->device_model->clear_custom_variable_monitors();
 
         // Clear from memory too
         for (auto& [component, variable_map] : this->device_model_map) {

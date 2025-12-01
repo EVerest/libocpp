@@ -15,7 +15,7 @@ namespace v16 {
 
 /// \brief Contains a OCPP UnlockConnector message
 struct UnlockConnectorRequest : public ocpp::Message {
-    int32_t connectorId;
+    std::int32_t connectorId;
 
     /// \brief Provides the type of this UnlockConnector message as a human readable string
     /// \returns the message type as a human readable string

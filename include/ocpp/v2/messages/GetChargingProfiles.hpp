@@ -17,9 +17,9 @@ namespace v2 {
 
 /// \brief Contains a OCPP GetChargingProfiles message
 struct GetChargingProfilesRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     ChargingProfileCriterion chargingProfile;
-    std::optional<int32_t> evseId;
+    std::optional<std::int32_t> evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetChargingProfiles message as a human readable string

@@ -18,7 +18,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP ReportDERControl message
 struct ReportDERControlRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<std::vector<DERCurveGet>> curve;
     std::optional<std::vector<EnterServiceGet>> enterService;
     std::optional<std::vector<FixedPFGet>> fixedPFAbsorb;

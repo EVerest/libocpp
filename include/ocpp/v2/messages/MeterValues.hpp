@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP MeterValues message
 struct MeterValuesRequest : public ocpp::Message {
-    int32_t evseId;
+    std::int32_t evseId;
     std::vector<MeterValue> meterValue;
     std::optional<CustomData> customData;
 

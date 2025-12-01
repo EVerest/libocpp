@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP NotifyDisplayMessages message
 struct NotifyDisplayMessagesRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<std::vector<MessageInfo>> messageInfo;
     std::optional<bool> tbc;
     std::optional<CustomData> customData;

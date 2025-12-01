@@ -51,11 +51,14 @@ void TransactionBlock::handle_message(const ocpp::EnhancedMessage<MessageType>& 
     }
 }
 
-void TransactionBlock::on_transaction_started(
-    const int32_t evse_id, const int32_t connector_id, const std::string& session_id, const DateTime& timestamp,
-    const TriggerReasonEnum trigger_reason, const MeterValue& meter_start, const std::optional<IdToken>& id_token,
-    const std::optional<IdToken>& group_id_token, const std::optional<int32_t>& reservation_id,
-    const std::optional<int32_t>& remote_start_id, const ChargingStateEnum charging_state) {
+void TransactionBlock::on_transaction_started(const std::int32_t evse_id, const std::int32_t connector_id,
+                                              const std::string& session_id, const DateTime& timestamp,
+                                              const TriggerReasonEnum trigger_reason, const MeterValue& meter_start,
+                                              const std::optional<IdToken>& id_token,
+                                              const std::optional<IdToken>& group_id_token,
+                                              const std::optional<std::int32_t>& reservation_id,
+                                              const std::optional<std::int32_t>& remote_start_id,
+                                              const ChargingStateEnum charging_state) {
     auto& evse_handle = this->context.evse_manager.get_evse(evse_id);
     evse_handle.open_transaction(session_id, connector_id, timestamp, meter_start, id_token, group_id_token,
                                  reservation_id, charging_state);
@@ -84,7 +87,7 @@ void TransactionBlock::on_transaction_started(
                                 reservation_id);
 }
 
-void TransactionBlock::on_transaction_finished(const int32_t evse_id, const DateTime& timestamp,
+void TransactionBlock::on_transaction_finished(const std::int32_t evse_id, const DateTime& timestamp,
                                                const MeterValue& meter_stop, const ReasonEnum reason,
                                                const TriggerReasonEnum trigger_reason,
                                                const std::optional<IdToken>& id_token,
@@ -192,11 +195,12 @@ void TransactionBlock::on_transaction_finished(const int32_t evse_id, const Date
 
 void TransactionBlock::transaction_event_req(const TransactionEventEnum& event_type, const DateTime& timestamp,
                                              const Transaction& transaction, const TriggerReasonEnum& trigger_reason,
-                                             const int32_t seq_no, const std::optional<int32_t>& cable_max_current,
+                                             const std::int32_t seq_no,
+                                             const std::optional<std::int32_t>& cable_max_current,
                                              const std::optional<EVSE>& evse, const std::optional<IdToken>& id_token,
                                              const std::optional<std::vector<MeterValue>>& meter_value,
-                                             const std::optional<int32_t>& number_of_phases_used, const bool offline,
-                                             const std::optional<int32_t>& reservation_id,
+                                             const std::optional<std::int32_t>& number_of_phases_used,
+                                             const bool offline, const std::optional<std::int32_t>& reservation_id,
                                              const bool initiated_by_trigger_message) {
     TransactionEventRequest req;
     req.eventType = event_type;
@@ -219,7 +223,7 @@ void TransactionBlock::transaction_event_req(const TransactionEventEnum& event_t
     // always contain trigger reason 'RemoteStart'.
     auto it = std::find_if(
         remote_start_id_per_evse.begin(), remote_start_id_per_evse.end(),
-        [&id_token, &evse](const std::pair<int32_t, std::pair<IdToken, int32_t>>& remote_start_per_evse) {
+        [&id_token, &evse](const std::pair<std::int32_t, std::pair<IdToken, std::int32_t>>& remote_start_per_evse) {
             if (id_token.has_value() and remote_start_per_evse.second.first.idToken == id_token.value().idToken) {
 
                 if (remote_start_per_evse.first == 0) {
@@ -248,12 +252,12 @@ void TransactionBlock::transaction_event_req(const TransactionEventEnum& event_t
     }
 }
 
-void TransactionBlock::set_remote_start_id_for_evse(const int32_t evse_id, const IdToken id_token,
-                                                    const int32_t remote_start_id) {
+void TransactionBlock::set_remote_start_id_for_evse(const std::int32_t evse_id, const IdToken id_token,
+                                                    const std::int32_t remote_start_id) {
     remote_start_id_per_evse[evse_id] = {id_token, remote_start_id};
 }
 
-void TransactionBlock::schedule_reset(const std::optional<int32_t> reset_scheduled_evseid) {
+void TransactionBlock::schedule_reset(const std::optional<std::int32_t> reset_scheduled_evseid) {
     reset_scheduled = true;
     if (reset_scheduled_evseid.has_value()) {
         this->reset_scheduled_evseids.insert(reset_scheduled_evseid.value());
@@ -317,7 +321,7 @@ void TransactionBlock::handle_transaction_event_response(const EnhancedMessage<M
                 this->stop_transaction_callback(evse_id, ReasonEnum::DeAuthorized);
             } else {
                 if (this->context.device_model
-                        .get_optional_value<int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId)
+                        .get_optional_value<std::int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId)
                         .has_value()) {
                     // Energy delivery to the EV SHALL be allowed until the amount of energy specified in
                     // MaxEnergyOnInvalidId has been reached.

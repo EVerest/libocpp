@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP ReservationStatusUpdate message
 struct ReservationStatusUpdateRequest : public ocpp::Message {
-    int32_t reservationId;
+    std::int32_t reservationId;
     ReservationUpdateStatusEnum reservationUpdateStatus;
     std::optional<CustomData> customData;
 

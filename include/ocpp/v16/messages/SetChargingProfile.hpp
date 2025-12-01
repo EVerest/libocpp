@@ -16,7 +16,7 @@ namespace v16 {
 
 /// \brief Contains a OCPP SetChargingProfile message
 struct SetChargingProfileRequest : public ocpp::Message {
-    int32_t connectorId;
+    std::int32_t connectorId;
     ChargingProfile csChargingProfiles;
 
     /// \brief Provides the type of this SetChargingProfile message as a human readable string

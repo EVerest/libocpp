@@ -16,10 +16,10 @@ namespace v16 {
 
 /// \brief Contains a OCPP ClearChargingProfile message
 struct ClearChargingProfileRequest : public ocpp::Message {
-    std::optional<int32_t> id;
-    std::optional<int32_t> connectorId;
+    std::optional<std::int32_t> id;
+    std::optional<std::int32_t> connectorId;
     std::optional<ChargingProfilePurposeType> chargingProfilePurpose;
-    std::optional<int32_t> stackLevel;
+    std::optional<std::int32_t> stackLevel;
 
     /// \brief Provides the type of this ClearChargingProfile message as a human readable string
     /// \returns the message type as a human readable string

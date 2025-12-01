@@ -18,8 +18,8 @@ namespace v2 {
 /// \brief Contains a OCPP StartTransaction message
 struct RequestStartTransactionRequest : public ocpp::Message {
     IdToken idToken;
-    int32_t remoteStartId;
-    std::optional<int32_t> evseId;
+    std::int32_t remoteStartId;
+    std::optional<std::int32_t> evseId;
     std::optional<IdToken> groupIdToken;
     std::optional<ChargingProfile> chargingProfile;
     std::optional<CustomData> customData;

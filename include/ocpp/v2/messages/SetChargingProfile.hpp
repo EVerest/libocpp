@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP SetChargingProfile message
 struct SetChargingProfileRequest : public ocpp::Message {
-    int32_t evseId;
+    std::int32_t evseId;
     ChargingProfile chargingProfile;
     std::optional<CustomData> customData;
 

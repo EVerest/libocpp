@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP ClearChargingProfile message
 struct ClearChargingProfileRequest : public ocpp::Message {
-    std::optional<int32_t> chargingProfileId;
+    std::optional<std::int32_t> chargingProfileId;
     std::optional<ClearChargingProfile> chargingProfileCriteria;
     std::optional<CustomData> customData;
 

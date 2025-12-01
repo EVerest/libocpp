@@ -66,7 +66,7 @@ public:
 
     /// \brief set the websocket ping interval \p ping_interval_s in seconds and pong timeout \p pong_interval_s in
     /// seconds
-    void set_websocket_ping_interval(int32_t ping_interval_s, int32_t pong_interval_s);
+    void set_websocket_ping_interval(std::int32_t ping_interval_s, std::int32_t pong_interval_s);
 
     /// \brief set the \p authorization_key of the connection_options
     void set_authorization_key(const std::string& authorization_key);

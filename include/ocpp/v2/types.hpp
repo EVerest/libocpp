@@ -198,10 +198,10 @@ enum class MessageType {
 /// ReportChargingProfilesRequest (EvseId, ChargingLimitSource)
 struct ReportedChargingProfile {
     ChargingProfile profile;
-    int32_t evse_id;
+    std::int32_t evse_id;
     CiString<20> source;
 
-    ReportedChargingProfile(const ChargingProfile& profile, const int32_t evse_id, const CiString<20> source) :
+    ReportedChargingProfile(const ChargingProfile& profile, const std::int32_t evse_id, const CiString<20> source) :
         profile(profile), evse_id(evse_id), source(source) {
     }
 };

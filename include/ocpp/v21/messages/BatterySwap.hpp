@@ -21,7 +21,7 @@ struct BatterySwapRequest : public ocpp::Message {
     std::vector<BatteryData> batteryData;
     BatterySwapEventEnum eventType;
     IdToken idToken;
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this BatterySwap message as a human readable string

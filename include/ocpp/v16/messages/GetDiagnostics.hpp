@@ -17,8 +17,8 @@ namespace v16 {
 /// \brief Contains a OCPP GetDiagnostics message
 struct GetDiagnosticsRequest : public ocpp::Message {
     std::string location;
-    std::optional<int32_t> retries;
-    std::optional<int32_t> retryInterval;
+    std::optional<std::int32_t> retries;
+    std::optional<std::int32_t> retryInterval;
     std::optional<ocpp::DateTime> startTime;
     std::optional<ocpp::DateTime> stopTime;
 

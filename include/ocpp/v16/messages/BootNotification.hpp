@@ -46,7 +46,7 @@ std::ostream& operator<<(std::ostream& os, const BootNotificationRequest& k);
 struct BootNotificationResponse : public ocpp::Message {
     RegistrationStatus status;
     ocpp::DateTime currentTime;
-    int32_t interval;
+    std::int32_t interval;
 
     /// \brief Provides the type of this BootNotificationResponse message as a human readable string
     /// \returns the message type as a human readable string

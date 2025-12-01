@@ -13,19 +13,19 @@ struct ReserveNowRequest;
 struct CancelReservationRequest;
 
 using ReserveNowCallback = std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)>;
-using CancelReservationCallback = std::function<bool(const int32_t reservationId)>;
+using CancelReservationCallback = std::function<bool(const std::int32_t reservationId)>;
 using IsReservationForTokenCallback = std::function<ocpp::ReservationCheckStatus(
-    const int32_t evse_id, const CiString<255> idToken, const std::optional<CiString<255>> groupIdToken)>;
+    const std::int32_t evse_id, const CiString<255> idToken, const std::optional<CiString<255>> groupIdToken)>;
 
 class ReservationInterface : public MessageHandlerInterface {
 public:
     ~ReservationInterface() override = default;
-    virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
+    virtual void on_reservation_status(const std::int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
     virtual ocpp::ReservationCheckStatus
     is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,
                                const std::optional<IdToken>& group_id_token) const = 0;
-    virtual void on_reserved(const int32_t evse_id, const int32_t connector_id) = 0;
-    virtual void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_reserved(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
+    virtual void on_reservation_cleared(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 };
 
 class Reservation : public ReservationInterface {
@@ -53,12 +53,12 @@ public:
                 const IsReservationForTokenCallback is_reservation_for_token_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
-    void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
+    void on_reservation_status(const std::int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
     ocpp::ReservationCheckStatus
     is_evse_reserved_for_other(const EvseInterface& evse, const IdToken& id_token,
                                const std::optional<IdToken>& group_id_token) const override;
-    void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
-    void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
+    void on_reserved(const std::int32_t evse_id, const std::int32_t connector_id) override;
+    void on_reservation_cleared(const std::int32_t evse_id, const std::int32_t connector_id) override;
 };
 
 } // namespace ocpp::v2

@@ -69,7 +69,7 @@ private:
 
     // Functions
     /* OCPP message requests */
-    void notify_customer_information_req(const std::string& data, const int32_t request_id);
+    void notify_customer_information_req(const std::string& data, const std::int32_t request_id);
     void notify_monitoring_report_req(const int request_id, std::vector<MonitoringData>& montoring_data);
 
     /* OCPP message handlers */

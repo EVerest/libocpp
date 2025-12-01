@@ -17,8 +17,8 @@ namespace v2 {
 
 /// \brief Contains a OCPP GetDisplayMessages message
 struct GetDisplayMessagesRequest : public ocpp::Message {
-    int32_t requestId;
-    std::optional<std::vector<int32_t>> id;
+    std::int32_t requestId;
+    std::optional<std::vector<std::int32_t>> id;
     std::optional<MessagePriorityEnum> priority;
     std::optional<MessageStateEnum> state;
     std::optional<CustomData> customData;

@@ -170,11 +170,8 @@ protected:
     template <typename R> auto MarkAndReturn(R value, bool respond = false) {
         return testing::Invoke([this, value, respond](const json::array_t& s) -> R {
             if (respond) {
-                reception_timer.timeout(
-                    [this, s]() {
-                        this->message_queue->receive(json{3, s[1], ""}.dump());
-                    },
-                    std::chrono::milliseconds(0));
+                reception_timer.timeout([this, s]() { this->message_queue->receive(json{3, s[1], ""}.dump()); },
+                                        std::chrono::milliseconds(0));
             }
             std::lock_guard<std::mutex> lock(call_marker_mutex);
             this->call_count++;

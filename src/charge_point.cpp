@@ -140,45 +140,45 @@ int main(int argc, char* argv[]) {
 
     /************************************** START REGISTERING CALLBACKS **************************************/
 
-    charge_point->register_enable_evse_callback([](int32_t connector) {
+    charge_point->register_enable_evse_callback([](std::int32_t connector) {
         std::cout << "Callback: "
                   << "Enabling chargepoint at connector#" << connector;
         return true;
     });
 
-    charge_point->register_disable_evse_callback([](int32_t connector) {
+    charge_point->register_disable_evse_callback([](std::int32_t connector) {
         std::cout << "Callback: "
                   << "Disabling chargepoint at connector#" << connector;
         return true;
     });
 
-    charge_point->register_pause_charging_callback([](int32_t connector) {
+    charge_point->register_pause_charging_callback([](std::int32_t connector) {
         std::cout << "Callback: "
                   << "Pausing charging at connector#" << connector;
         return true;
     });
 
-    charge_point->register_resume_charging_callback([](int32_t connector) {
+    charge_point->register_resume_charging_callback([](std::int32_t connector) {
         std::cout << "Callback: "
                   << "Resuming charging at connector#" << connector;
         return true;
     });
 
     charge_point->register_provide_token_callback(
-        [](const std::string& id_token, const std::vector<int32_t>& referenced_connectors, bool prevalidated) {
+        [](const std::string& id_token, const std::vector<std::int32_t>& referenced_connectors, bool prevalidated) {
             std::cout << "Callback: "
                       << "Received token " << id_token << " for further validation" << std::endl;
         });
 
-    charge_point->register_stop_transaction_callback([](int32_t connector, ocpp::v16::Reason reason) {
+    charge_point->register_stop_transaction_callback([](std::int32_t connector, ocpp::v16::Reason reason) {
         std::cout << "Callback: "
                   << "Stopping transaction with  at connector#" << connector
                   << " with reason: " << ocpp::v16::conversions::reason_to_string(reason);
         return true;
     });
 
-    charge_point->register_reserve_now_callback([](int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
-                                                   ocpp::CiString<20> idTag,
+    charge_point->register_reserve_now_callback([](std::int32_t reservation_id, std::int32_t connector,
+                                                   ocpp::DateTime expiryDate, ocpp::CiString<20> idTag,
                                                    std::optional<ocpp::CiString<20>> parent_id) {
         std::cout << "Callback: "
                   << "Reserving connector# " << connector << " for id token: " << idTag.get() << " until "
@@ -186,13 +186,13 @@ int main(int argc, char* argv[]) {
         return ocpp::v16::ReservationStatus::Accepted;
     });
 
-    charge_point->register_cancel_reservation_callback([](int32_t reservation_id) {
+    charge_point->register_cancel_reservation_callback([](std::int32_t reservation_id) {
         std::cout << "Callback: "
                   << "Cancelling reservation with id: " << reservation_id;
         return true;
     });
 
-    charge_point->register_unlock_connector_callback([](int32_t connector) {
+    charge_point->register_unlock_connector_callback([](std::int32_t connector) {
         std::cout << "Callback: "
                   << "Unlock connector#" << connector;
         return ocpp::v16::UnlockStatus::Unlocked;
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
         return r;
     });
 
-    charge_point->register_set_connection_timeout_callback([](int32_t connection_timeout) {
+    charge_point->register_set_connection_timeout_callback([](std::int32_t connection_timeout) {
         std::cout << "Callback: "
                   << "Setting connection timeout" << std::endl;
     });
@@ -247,8 +247,8 @@ int main(int argc, char* argv[]) {
                   << "Setting charging profiles" << std::endl;
     });
 
-    charge_point->register_transaction_updated_callback([](const int32_t connector, const std::string& session_id,
-                                                           const int32_t transaction_id,
+    charge_point->register_transaction_updated_callback([](const std::int32_t connector, const std::string& session_id,
+                                                           const std::int32_t transaction_id,
                                                            const ocpp::v16::IdTagInfo& id_tag_info) {
         std::cout << "Callback: Transaction updated at connector# " << connector
                   << " and transaction id: " << transaction_id << std::endl;
@@ -264,7 +264,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::thread t1([&] {
-        int32_t value = 0;
+        std::int32_t value = 0;
         bool transaction_running = false;
         while (!std::cin.fail() && running) {
             std::string command;

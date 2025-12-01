@@ -53,7 +53,7 @@ public:
 };
 
 TEST_F(DatabaseHandlerTest, TransactionInsertAndGet) {
-    constexpr int32_t evse_id = 1;
+    constexpr std::int32_t evse_id = 1;
 
     auto transaction = default_transaction();
 
@@ -71,13 +71,13 @@ TEST_F(DatabaseHandlerTest, TransactionInsertAndGet) {
 }
 
 TEST_F(DatabaseHandlerTest, TransactionGetNotFound) {
-    constexpr int32_t evse_id = 1;
+    constexpr std::int32_t evse_id = 1;
     auto transaction_get = this->database_handler.transaction_get(evse_id);
     EXPECT_EQ(transaction_get, nullptr);
 }
 
 TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateTransactionId) {
-    constexpr int32_t evse_id = 1;
+    constexpr std::int32_t evse_id = 1;
 
     auto transaction = default_transaction();
 
@@ -87,7 +87,7 @@ TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateTransactionId) {
 }
 
 TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateEvseId) {
-    constexpr int32_t evse_id = 1;
+    constexpr std::int32_t evse_id = 1;
 
     auto transaction = default_transaction();
 
@@ -99,8 +99,8 @@ TEST_F(DatabaseHandlerTest, TransactionInsertDuplicateEvseId) {
 }
 
 TEST_F(DatabaseHandlerTest, TransactionUpdateSeqNo) {
-    constexpr int32_t evse_id = 1;
-    constexpr int32_t new_seq_no = 20;
+    constexpr std::int32_t evse_id = 1;
+    constexpr std::int32_t new_seq_no = 20;
 
     auto transaction = default_transaction();
 
@@ -116,7 +116,7 @@ TEST_F(DatabaseHandlerTest, TransactionUpdateSeqNo) {
 }
 
 TEST_F(DatabaseHandlerTest, TransactionUpdateChargingState) {
-    constexpr int32_t evse_id = 1;
+    constexpr std::int32_t evse_id = 1;
     constexpr auto new_state = ChargingStateEnum::Charging;
 
     auto transaction = default_transaction();
@@ -133,7 +133,7 @@ TEST_F(DatabaseHandlerTest, TransactionUpdateChargingState) {
 }
 
 TEST_F(DatabaseHandlerTest, TransactionUpdateIdTokenSent) {
-    constexpr int32_t evse_id = 1;
+    constexpr std::int32_t evse_id = 1;
     constexpr bool new_state = true;
 
     auto transaction = default_transaction();
@@ -150,7 +150,7 @@ TEST_F(DatabaseHandlerTest, TransactionUpdateIdTokenSent) {
 }
 
 TEST_F(DatabaseHandlerTest, TransactionDelete) {
-    constexpr int32_t evse_id = 1;
+    constexpr std::int32_t evse_id = 1;
 
     auto transaction = default_transaction();
 
@@ -778,7 +778,7 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_NoMatchingIdsRet
     EXPECT_EQ(profiles.size(), 1);
 
     ChargingProfileCriterion criteria;
-    criteria.chargingProfileId = std::vector<int32_t>{2};
+    criteria.chargingProfileId = std::vector<std::int32_t>{2};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);
@@ -809,7 +809,7 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingIdReturn
     EXPECT_EQ(profiles.size(), 2);
 
     ChargingProfileCriterion criteria;
-    criteria.chargingProfileId = std::vector<int32_t>{profile_id_1};
+    criteria.chargingProfileId = std::vector<std::int32_t>{profile_id_1};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);
@@ -838,7 +838,7 @@ TEST_F(DatabaseHandlerTest, GetChargingProfilesMatchingCriteria_MatchingIdsRetur
     EXPECT_EQ(profiles.size(), 2);
 
     ChargingProfileCriterion criteria;
-    criteria.chargingProfileId = std::vector<int32_t>{profile_id_1, profile_id_2};
+    criteria.chargingProfileId = std::vector<std::int32_t>{profile_id_1, profile_id_2};
 
     std::vector<ReportedChargingProfile> sut =
         this->database_handler.get_charging_profiles_matching_criteria(std::nullopt, criteria);

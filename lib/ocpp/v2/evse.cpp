@@ -47,12 +47,12 @@ float get_normalized_energy_value(SampledValue sampled_value) {
 
 EvseInterface::~EvseInterface() = default;
 
-Evse::Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
+Evse::Evse(const std::int32_t evse_id, const std::int32_t number_of_connectors, DeviceModel& device_model,
            std::shared_ptr<DatabaseHandler> database_handler,
            std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
            const std::function<void(const MeterValue& meter_value, EnhancedTransaction& transaction)>&
                transaction_meter_value_req,
-           const std::function<void(int32_t evse_id)>& pause_charging_callback) :
+           const std::function<void(std::int32_t evse_id)>& pause_charging_callback) :
     evse_id(evse_id),
     device_model(device_model),
     transaction_meter_value_req(transaction_meter_value_req),
@@ -84,16 +84,16 @@ Evse::~Evse() {
     }
 }
 
-int32_t Evse::get_id() const {
+std::int32_t Evse::get_id() const {
     return this->evse_id;
 }
 
-uint32_t Evse::get_number_of_connectors() const {
-    return static_cast<uint32_t>(this->id_connector_map.size());
+std::uint32_t Evse::get_number_of_connectors() const {
+    return static_cast<std::uint32_t>(this->id_connector_map.size());
 }
 
 bool Evse::does_connector_exist(const CiString<20> connector_type) const {
-    const uint32_t number_of_connectors = this->get_number_of_connectors();
+    const std::uint32_t number_of_connectors = this->get_number_of_connectors();
     if (number_of_connectors == 0) {
         return false;
     }
@@ -102,10 +102,10 @@ bool Evse::does_connector_exist(const CiString<20> connector_type) const {
         return true;
     }
 
-    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+    for (std::uint32_t i = 1; i <= number_of_connectors; ++i) {
         const Connector* connector = nullptr;
         try {
-            connector = this->get_connector(static_cast<int32_t>(i));
+            connector = this->get_connector(static_cast<std::int32_t>(i));
         } catch (const std::logic_error&) {
             EVLOG_error << "Connector with id " << i << " does not exist";
             continue;
@@ -128,15 +128,15 @@ bool Evse::does_connector_exist(const CiString<20> connector_type) const {
 std::optional<ConnectorStatusEnum> Evse::get_connector_status(std::optional<CiString<20>> connector_type) {
     bool type_found = false;
     ConnectorStatusEnum found_status = ConnectorStatusEnum::Unavailable;
-    const uint32_t number_of_connectors = this->get_number_of_connectors();
+    const std::uint32_t number_of_connectors = this->get_number_of_connectors();
     if (number_of_connectors == 0) {
         return std::nullopt;
     }
 
-    for (uint32_t i = 1; i <= number_of_connectors; ++i) {
+    for (std::uint32_t i = 1; i <= number_of_connectors; ++i) {
         Connector* connector = nullptr;
         try {
-            connector = this->get_connector(static_cast<int32_t>(i));
+            connector = this->get_connector(static_cast<std::int32_t>(i));
         } catch (const std::logic_error&) {
             EVLOG_error << "Connector with id " << i << " does not exist";
             continue;
@@ -212,19 +212,19 @@ void Evse::delete_database_transaction() {
     }
 }
 
-std::optional<CiString<20>> Evse::get_evse_connector_type(const uint32_t connector_id) const {
+std::optional<CiString<20>> Evse::get_evse_connector_type(const std::uint32_t connector_id) const {
 
-    auto connector = this->get_connector(static_cast<int32_t>(connector_id));
+    auto connector = this->get_connector(static_cast<std::int32_t>(connector_id));
     if (connector == nullptr) {
         return std::nullopt;
     }
 
-    if (connector_id > std::numeric_limits<int32_t>::max()) {
+    if (connector_id > std::numeric_limits<std::int32_t>::max()) {
         return std::nullopt;
     }
 
     const ComponentVariable connector_cv = ConnectorComponentVariables::get_component_variable(
-        this->evse_id, clamp_to<int32_t>(connector_id), ConnectorComponentVariables::Type);
+        this->evse_id, clamp_to<std::int32_t>(connector_id), ConnectorComponentVariables::Type);
 
     const std::optional<std::string> connector_type =
         this->device_model.get_optional_value<std::string>(connector_cv, AttributeEnum::Actual);
@@ -235,10 +235,11 @@ std::optional<CiString<20>> Evse::get_evse_connector_type(const uint32_t connect
     return connector_type.value();
 }
 
-void Evse::open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
-                            const MeterValue& meter_start, const std::optional<IdToken>& id_token,
-                            const std::optional<IdToken>& /*group_id_token*/,
-                            const std::optional<int32_t> /*reservation_id*/, const ChargingStateEnum charging_state) {
+void Evse::open_transaction(const std::string& transaction_id, const std::int32_t connector_id,
+                            const DateTime& timestamp, const MeterValue& meter_start,
+                            const std::optional<IdToken>& id_token, const std::optional<IdToken>& /*group_id_token*/,
+                            const std::optional<std::int32_t> /*reservation_id*/,
+                            const ChargingStateEnum charging_state) {
     if (this->id_connector_map.count(connector_id) == 0) {
         EVLOG_AND_THROW(std::runtime_error("Attempt to start transaction at invalid connector_id"));
     }
@@ -319,7 +320,7 @@ bool Evse::has_active_transaction() const {
     return this->transaction != nullptr;
 }
 
-bool Evse::has_active_transaction(int32_t connector_id) const {
+bool Evse::has_active_transaction(std::int32_t connector_id) const {
     if (this->id_connector_map.count(connector_id) == 0) {
         EVLOG_warning << "has_active_transaction called for invalid connector_id";
         return false;
@@ -348,7 +349,7 @@ std::unique_ptr<EnhancedTransaction>& Evse::get_transaction() {
     return this->transaction;
 }
 
-void Evse::submit_event(const int32_t connector_id, ConnectorEvent event) {
+void Evse::submit_event(const std::int32_t connector_id, ConnectorEvent event) {
     this->id_connector_map.at(connector_id)->submit_event(event);
 }
 
@@ -389,7 +390,7 @@ std::optional<float> Evse::get_active_import_register_meter_value() {
 void Evse::check_max_energy_on_invalid_id() {
     // Handle E05.02
     auto max_energy_on_invalid_id =
-        this->device_model.get_optional_value<int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId);
+        this->device_model.get_optional_value<std::int32_t>(ControllerComponentVariables::MaxEnergyOnInvalidId);
     auto& transaction = this->transaction;
     if (transaction != nullptr and max_energy_on_invalid_id.has_value() and
         transaction->check_max_active_import_energy) {
@@ -666,15 +667,15 @@ void Evse::set_evse_operative_status(OperationalStatusEnum new_status, bool pers
     this->component_state_manager->set_evse_individual_operational_status(this->evse_id, new_status, persist);
 }
 
-void Evse::set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status, bool persist) {
+void Evse::set_connector_operative_status(std::int32_t connector_id, OperationalStatusEnum new_status, bool persist) {
     this->id_connector_map.at(connector_id)->set_connector_operative_status(new_status, persist);
 }
 
-void Evse::restore_connector_operative_status(int32_t connector_id) {
+void Evse::restore_connector_operative_status(std::int32_t connector_id) {
     this->id_connector_map.at(connector_id)->restore_connector_operative_status();
 }
 
-OperationalStatusEnum Evse::get_connector_effective_operational_status(const int32_t connector_id) {
+OperationalStatusEnum Evse::get_connector_effective_operational_status(const std::int32_t connector_id) {
     return this->component_state_manager->get_connector_effective_operational_status(this->get_id(), connector_id);
 }
 
@@ -682,7 +683,7 @@ OperationalStatusEnum Evse::get_effective_operational_status() {
     return this->component_state_manager->get_evse_effective_operational_status(this->evse_id);
 }
 
-Connector* Evse::get_connector(int32_t connector_id) const {
+Connector* Evse::get_connector(std::int32_t connector_id) const {
     if (connector_id <= 0 or connector_id > this->get_number_of_connectors()) {
         std::stringstream err_msg;
         err_msg << "ConnectorID " << connector_id << " out of bounds for EVSE " << this->evse_id;
@@ -694,7 +695,7 @@ Connector* Evse::get_connector(int32_t connector_id) const {
 CurrentPhaseType Evse::get_current_phase_type() {
     const ComponentVariable evse_variable =
         EvseComponentVariables::get_component_variable(this->evse_id, EvseComponentVariables::SupplyPhases);
-    auto supply_phases = this->device_model.get_optional_value<int32_t>(evse_variable);
+    auto supply_phases = this->device_model.get_optional_value<std::int32_t>(evse_variable);
     if (supply_phases == std::nullopt) {
         return CurrentPhaseType::Unknown;
     }

@@ -18,7 +18,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP GetDERControl message
 struct GetDERControlRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<bool> isDefault;
     std::optional<DERControlEnum> controlType;
     std::optional<CiString<36>> controlId;

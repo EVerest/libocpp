@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, const BootNotificationRequest& k);
 /// \brief Contains a OCPP BootNotificationResponse message
 struct BootNotificationResponse : public ocpp::Message {
     ocpp::DateTime currentTime;
-    int32_t interval;
+    std::int32_t interval;
     RegistrationStatusEnum status;
     std::optional<StatusInfo> statusInfo;
     std::optional<CustomData> customData;

@@ -32,7 +32,7 @@ public:
     /// \param status                       Status to send.
     /// \param initiated_by_trigger_message True if sending of the request was triggered by a trigger message.
     ///
-    virtual void status_notification_req(const int32_t evse_id, const int32_t connector_id,
+    virtual void status_notification_req(const std::int32_t evse_id, const std::int32_t connector_id,
                                          const ConnectorStatusEnum status,
                                          const bool initiated_by_trigger_message = false) = 0;
 
@@ -46,7 +46,7 @@ public:
     /// \brief Handle / send the scheduled change availability requests.
     /// \param evse_id  The evse id of the change availability request.
     ///
-    virtual void handle_scheduled_change_availability_requests(const int32_t evse_id) = 0;
+    virtual void handle_scheduled_change_availability_requests(const std::int32_t evse_id) = 0;
 
     ///
     /// \brief Set scheduled change availability requests, that should be sent later (for example because of a
@@ -54,7 +54,7 @@ public:
     /// \param evse_id              The evse id.
     /// \param availability_change  The availability change request.
     ///
-    virtual void set_scheduled_change_availability_requests(const int32_t evse_id,
+    virtual void set_scheduled_change_availability_requests(const std::int32_t evse_id,
                                                             AvailabilityChange availability_change) = 0;
 
     ///
@@ -81,7 +81,7 @@ private: // Members
 
     std::chrono::time_point<std::chrono::steady_clock> heartbeat_request_time;
 
-    std::map<int32_t, AvailabilityChange> scheduled_change_availability_requests;
+    std::map<std::int32_t, AvailabilityChange> scheduled_change_availability_requests;
     Everest::SteadyTimer heartbeat_timer;
 
 public:
@@ -92,12 +92,13 @@ public:
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
     // Functional Block G: Availability
-    void status_notification_req(const int32_t evse_id, const int32_t connector_id, const ConnectorStatusEnum status,
+    void status_notification_req(const std::int32_t evse_id, const std::int32_t connector_id,
+                                 const ConnectorStatusEnum status,
                                  const bool initiated_by_trigger_message = false) override;
     void heartbeat_req(const bool initiated_by_trigger_message = false) override;
 
-    void handle_scheduled_change_availability_requests(const int32_t evse_id) override;
-    void set_scheduled_change_availability_requests(const int32_t evse_id,
+    void handle_scheduled_change_availability_requests(const std::int32_t evse_id) override;
+    void set_scheduled_change_availability_requests(const std::int32_t evse_id,
                                                     AvailabilityChange availability_change) override;
 
     void set_heartbeat_timer_interval(const std::chrono::seconds& interval) override;
@@ -135,14 +136,14 @@ private: // Functions
     /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
     /// \param new_status: The new operative status to switch to
     /// \param persist: True if the updated state should be persisted in the database
-    void set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist);
+    void set_evse_operative_status(std::int32_t evse_id, OperationalStatusEnum new_status, bool persist);
 
     /// \brief Switches the operative status of the CS, an EVSE, or a connector, and recomputes effective statuses
     /// \param evse_id: The ID of the EVSE, empty if the CS is addressed
     /// \param connector_id: The ID of the connector, empty if an EVSE or the CS is addressed
     /// \param new_status: The new operative status to switch to
     /// \param persist: True if the updated state should be persisted in the database
-    void set_connector_operative_status(int32_t evse_id, int32_t connector_id, OperationalStatusEnum new_status,
-                                        bool persist);
+    void set_connector_operative_status(std::int32_t evse_id, std::int32_t connector_id,
+                                        OperationalStatusEnum new_status, bool persist);
 };
 } // namespace ocpp::v2

@@ -33,7 +33,7 @@ std::ostream& operator<<(std::ostream& os, const GetLocalListVersionRequest& k);
 
 /// \brief Contains a OCPP GetLocalListVersionResponse message
 struct GetLocalListVersionResponse : public ocpp::Message {
-    int32_t listVersion;
+    std::int32_t listVersion;
 
     /// \brief Provides the type of this GetLocalListVersionResponse message as a human readable string
     /// \returns the message type as a human readable string

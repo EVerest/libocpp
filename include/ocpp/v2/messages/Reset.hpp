@@ -18,7 +18,7 @@ namespace v2 {
 /// \brief Contains a OCPP Reset message
 struct ResetRequest : public ocpp::Message {
     ResetEnum type;
-    std::optional<int32_t> evseId;
+    std::optional<std::int32_t> evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this Reset message as a human readable string

@@ -19,8 +19,8 @@ namespace v2 {
 struct StatusNotificationRequest : public ocpp::Message {
     ocpp::DateTime timestamp;
     ConnectorStatusEnum connectorStatus;
-    int32_t evseId;
-    int32_t connectorId;
+    std::int32_t evseId;
+    std::int32_t connectorId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this StatusNotification message as a human readable string

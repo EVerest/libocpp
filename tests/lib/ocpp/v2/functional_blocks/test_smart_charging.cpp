@@ -143,7 +143,7 @@ protected:
     ocpp::EvseSecurityMock evse_security;
     ComponentStateManagerMock component_state_manager;
     MockFunction<void()> set_charging_profiles_callback_mock;
-    MockFunction<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+    MockFunction<RequestStartStopStatusEnum(const std::int32_t evse_id, const ReasonEnum& stop_reason)>
         stop_transaction_callback_mock;
     std::unique_ptr<FunctionalBlockContext> functional_block_context;
     TestSmartCharging smart_charging = create_smart_charging();
@@ -1260,7 +1260,7 @@ TEST_F(SmartChargingTest, K09_GetChargingProfiles_ProfileId) {
     auto profiles = database_handler->get_all_charging_profiles();
     EXPECT_THAT(profiles, testing::SizeIs(2));
 
-    std::vector<int32_t> requested_profile_ids{1};
+    std::vector<std::int32_t> requested_profile_ids{1};
     auto reported_profiles = smart_charging.get_reported_profiles(create_get_charging_profile_request(
         DEFAULT_REQUEST_ID, create_charging_profile_criteria(std::nullopt, requested_profile_ids)));
     EXPECT_THAT(reported_profiles, testing::SizeIs(1));
@@ -1364,7 +1364,7 @@ TEST_F(SmartChargingTest, K09_GetChargingProfiles_ReportsProfileWithSource) {
     auto response = smart_charging.conform_validate_and_add_profile(profile, DEFAULT_EVSE_ID, charging_limit_source);
     EXPECT_THAT(response.status, testing::Eq(ChargingProfileStatusEnum::Accepted));
 
-    std::vector<int32_t> requested_profile_ids{1};
+    std::vector<std::int32_t> requested_profile_ids{1};
     auto reported_profiles = smart_charging.get_reported_profiles(create_get_charging_profile_request(
         DEFAULT_REQUEST_ID, create_charging_profile_criteria(std::nullopt, requested_profile_ids)));
     EXPECT_THAT(reported_profiles, testing::SizeIs(1));

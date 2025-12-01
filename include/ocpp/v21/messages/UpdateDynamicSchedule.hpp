@@ -18,7 +18,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP UpdateDynamicSchedule message
 struct UpdateDynamicScheduleRequest : public ocpp::Message {
-    int32_t chargingProfileId;
+    std::int32_t chargingProfileId;
     ChargingScheduleUpdate scheduleUpdate;
     std::optional<CustomData> customData;
 

@@ -18,8 +18,8 @@ namespace v21 {
 /// \brief Contains a OCPP NotifyPeriodicEventStream message
 struct NotifyPeriodicEventStream : public ocpp::Message {
     std::vector<StreamDataElement> data;
-    int32_t id;
-    int32_t pending;
+    std::int32_t id;
+    std::int32_t pending;
     ocpp::DateTime basetime;
     std::optional<CustomData> customData;
 

@@ -38,7 +38,7 @@ struct PeriodDateTimePair {
 /// to calculate the composite schedules
 class SmartChargingHandler {
 private:
-    std::map<int32_t, std::shared_ptr<Connector>> connectors;
+    std::map<std::int32_t, std::shared_ptr<Connector>> connectors;
     std::shared_ptr<ocpp::v16::DatabaseHandler> database_handler;
     ChargePointConfiguration& configuration;
     std::map<int, ChargingProfile> stack_level_charge_point_max_profiles_map;
@@ -48,8 +48,9 @@ private:
 
     std::unique_ptr<Everest::SteadyTimer> clear_profiles_timer;
 
-    bool clear_profiles(std::map<int32_t, ChargingProfile>& stack_level_profiles_map, std::optional<int> profile_id_opt,
-                        std::optional<int> connector_id_opt, const int connector_id, std::optional<int> stack_level_opt,
+    bool clear_profiles(std::map<std::int32_t, ChargingProfile>& stack_level_profiles_map,
+                        std::optional<int> profile_id_opt, std::optional<int> connector_id_opt, const int connector_id,
+                        std::optional<int> stack_level_opt,
                         std::optional<ChargingProfilePurposeType> charging_profile_purpose_opt, bool check_id_only);
 
 protected:
@@ -57,7 +58,7 @@ protected:
     void clear_expired_profiles(const date::utc_clock::time_point& now);
 
 public:
-    SmartChargingHandler(std::map<int32_t, std::shared_ptr<Connector>>& connectors,
+    SmartChargingHandler(std::map<std::int32_t, std::shared_ptr<Connector>>& connectors,
                          std::shared_ptr<DatabaseHandler> database_handler, ChargePointConfiguration& configuration);
 
     ///
@@ -110,12 +111,12 @@ public:
     ///
     EnhancedChargingSchedule calculate_enhanced_composite_schedule(const ocpp::DateTime& start_time,
                                                                    const ocpp::DateTime& end_time,
-                                                                   const int32_t evse_id,
+                                                                   const std::int32_t evse_id,
                                                                    ChargingRateUnit charging_rate_unit, bool is_offline,
                                                                    bool simulate_transaction_active);
 
     ChargingSchedule calculate_composite_schedule(const ocpp::DateTime& start_time, const ocpp::DateTime& end_time,
-                                                  const int32_t evse_id, ChargingRateUnit charging_rate_unit,
+                                                  const std::int32_t evse_id, ChargingRateUnit charging_rate_unit,
                                                   bool is_offline, bool simulate_transaction_active);
 };
 

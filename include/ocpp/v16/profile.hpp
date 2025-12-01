@@ -20,13 +20,13 @@ constexpr float no_limit_specified = -1.0;
 using ocpp::DateTime;
 
 struct IntermediatePeriod {
-    int32_t startPeriod;
+    std::int32_t startPeriod;
     float current_limit;
     float power_limit;
-    int32_t stack_level_current;
-    int32_t stack_level_power;
-    std::optional<int32_t> numberPhases;
-    std::optional<int32_t> phaseToUse;
+    std::int32_t stack_level_current;
+    std::int32_t stack_level_power;
+    std::optional<std::int32_t> numberPhases;
+    std::optional<std::int32_t> phaseToUse;
 };
 
 using IntermediateProfile = std::vector<IntermediatePeriod>;
@@ -46,7 +46,7 @@ struct period_entry_t {
 };
 
 /// \brief Calculate the number of seconds elapsed between \param to and \param from
-int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from);
+std::int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from);
 
 /// \brief Rounds down the \param dt to the nearest second
 ocpp::DateTime floor_seconds(const ocpp::DateTime& dt);
@@ -101,7 +101,7 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
 /// limit
 std::vector<EnhancedChargingSchedulePeriod>
 convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingRateUnit charging_rate_unit,
-                                   float default_limit, int32_t default_number_phases, float supply_voltage);
+                                   float default_limit, std::int32_t default_number_phases, float supply_voltage);
 
 } // namespace ocpp::v16
 

@@ -74,8 +74,8 @@ void update_itt(const int schedule_duration, std::vector<EnhancedChargingSchedul
 
 namespace ocpp::v16 {
 
-int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
-    return clamp_to<int32_t>(duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count());
+std::int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
+    return clamp_to<std::int32_t>(duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count());
 }
 
 ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
@@ -454,8 +454,8 @@ IntermediateProfile generate_profile_from_periods(std::vector<period_entry_t>& p
             // there is a schedule to use
             float current_limit = NO_LIMIT_SPECIFIED;
             float power_limit = NO_LIMIT_SPECIFIED;
-            int32_t stack_level_current = 0;
-            int32_t stack_level_power = 0;
+            std::int32_t stack_level_current = 0;
+            std::int32_t stack_level_power = 0;
 
             if (chosen->charging_rate_unit == ChargingRateUnit::A) {
                 current_limit = chosen->limit;
@@ -514,7 +514,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
         }
     }
 
-    int32_t current_period = 0;
+    std::int32_t current_period = 0;
     while (std::any_of(profile_iterators.begin(), profile_iterators.end(),
                        [](const std::pair<period_iterator, period_iterator>& it) { return it.first != it.second; })) {
 
@@ -530,7 +530,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
         }
 
         // Determine the next earliest period
-        int32_t next_lowest_period = std::numeric_limits<int32_t>::max();
+        std::int32_t next_lowest_period = std::numeric_limits<std::int32_t>::max();
 
         for (const auto& [it, end] : profile_iterators) {
             auto next = it + 1;
@@ -540,7 +540,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
         }
 
         // If there is none, we are done
-        if (next_lowest_period == std::numeric_limits<int32_t>::max()) {
+        if (next_lowest_period == std::numeric_limits<std::int32_t>::max()) {
             break;
         }
 
@@ -659,7 +659,7 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
 
 std::vector<EnhancedChargingSchedulePeriod>
 convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingRateUnit charging_rate_unit,
-                                   float default_limit, int32_t default_number_phases, float supply_voltage) {
+                                   float default_limit, std::int32_t default_number_phases, float supply_voltage) {
 
     std::vector<EnhancedChargingSchedulePeriod> output{};
 

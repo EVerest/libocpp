@@ -17,7 +17,7 @@ namespace v16 {
 /// \brief Contains a OCPP ExtendedTriggerMessage message
 struct ExtendedTriggerMessageRequest : public ocpp::Message {
     MessageTriggerEnumType requestedMessage;
-    std::optional<int32_t> connectorId;
+    std::optional<std::int32_t> connectorId;
 
     /// \brief Provides the type of this ExtendedTriggerMessage message as a human readable string
     /// \returns the message type as a human readable string

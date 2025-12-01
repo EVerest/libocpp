@@ -19,7 +19,7 @@ namespace v21 {
 /// \brief Contains a OCPP VatNumberValidation message
 struct VatNumberValidationRequest : public ocpp::Message {
     CiString<20> vatNumber;
-    std::optional<int32_t> evseId;
+    std::optional<std::int32_t> evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this VatNumberValidation message as a human readable string
@@ -44,7 +44,7 @@ struct VatNumberValidationResponse : public ocpp::Message {
     GenericStatusEnum status;
     std::optional<Address> company;
     std::optional<StatusInfo> statusInfo;
-    std::optional<int32_t> evseId;
+    std::optional<std::int32_t> evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this VatNumberValidationResponse message as a human readable string

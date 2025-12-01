@@ -19,7 +19,7 @@
 #include <ocpp/v2/messages/SecurityEventNotification.hpp>
 #include <ocpp/v2/messages/SignCertificate.hpp>
 
-constexpr int32_t minimum_cert_signing_wait_time_seconds = 250;
+constexpr std::int32_t minimum_cert_signing_wait_time_seconds = 250;
 
 namespace ocpp::v2 {
 

@@ -52,9 +52,9 @@ constexpr int DEFAULT_EVSE_ID = 1;
 constexpr int DEFAULT_PROFILE_ID = 1;
 constexpr int DEFAULT_STACK_LEVEL = 1;
 constexpr int DEFAULT_REQUEST_ID = 1;
-constexpr int32_t DEFAULT_LIMIT_AMPERE = 57;
-constexpr int32_t DEFAULT_LIMIT_WATT = 55612;
-constexpr int32_t DEFAULT_NR_PHASES = 3;
+constexpr std::int32_t DEFAULT_LIMIT_AMPERE = 57;
+constexpr std::int32_t DEFAULT_LIMIT_WATT = 55612;
+constexpr std::int32_t DEFAULT_NR_PHASES = 3;
 static const std::string DEFAULT_TX_ID = "10c75ff7-74f5-44f5-9d01-f649f3ac7b78";
 
 // Operator overloads
@@ -76,14 +76,14 @@ std::ostream& operator<<(std::ostream& os, const period_entry_t& entry);
 ocpp::DateTime dt(const std::string& dt_string);
 
 ChargingProfile
-create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
+create_charging_profile(std::int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
                         const std::vector<ChargingSchedule>& charging_schedules,
                         std::optional<std::string> transaction_id = {},
                         ChargingProfileKindEnum charging_profile_kind = ChargingProfileKindEnum::Absolute,
                         int stack_level = DEFAULT_STACK_LEVEL, std::optional<ocpp::DateTime> validFrom = {},
                         std::optional<ocpp::DateTime> validTo = {});
 ChargingProfile
-create_charging_profile(int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
+create_charging_profile(std::int32_t charging_profile_id, ChargingProfilePurposeEnum charging_profile_purpose,
                         ChargingSchedule charging_schedule, std::optional<std::string> transaction_id = {},
                         ChargingProfileKindEnum charging_profile_kind = ChargingProfileKindEnum::Absolute,
                         int stack_level = DEFAULT_STACK_LEVEL, std::optional<ocpp::DateTime> validFrom = {},
@@ -92,27 +92,29 @@ ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit)
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                         const std::vector<ChargingSchedulePeriod>& charging_schedule_period,
                                         std::optional<ocpp::DateTime> start_schedule = std::nullopt,
-                                        std::optional<int32_t> duration = std::nullopt);
+                                        std::optional<std::int32_t> duration = std::nullopt);
 std::vector<ChargingSchedulePeriod>
-create_charging_schedule_periods(int32_t start_period, std::optional<int32_t> number_phases = std::nullopt,
-                                 std::optional<int32_t> phase_to_use = std::nullopt,
+create_charging_schedule_periods(std::int32_t start_period, std::optional<std::int32_t> number_phases = std::nullopt,
+                                 std::optional<std::int32_t> phase_to_use = std::nullopt,
                                  std::optional<float> limit = std::nullopt);
-std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(const std::vector<int32_t>& start_periods);
-std::vector<ChargingSchedulePeriod>
-create_charging_schedule_periods_with_phases(int32_t start_period, int32_t numberPhases, int32_t phaseToUse);
+std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(const std::vector<std::int32_t>& start_periods);
+std::vector<ChargingSchedulePeriod> create_charging_schedule_periods_with_phases(std::int32_t start_period,
+                                                                                 std::int32_t numberPhases,
+                                                                                 std::int32_t phaseToUse);
 ChargingProfileCriterion
 create_charging_profile_criteria(std::optional<std::vector<ocpp::CiString<20>>> sources = std::nullopt,
-                                 std::optional<std::vector<int32_t>> ids = std::nullopt,
+                                 std::optional<std::vector<std::int32_t>> ids = std::nullopt,
                                  std::optional<ChargingProfilePurposeEnum> purpose = std::nullopt,
-                                 std::optional<int32_t> stack_level = std::nullopt);
-GetChargingProfilesRequest create_get_charging_profile_request(int32_t request_id, ChargingProfileCriterion criteria,
-                                                               std::optional<int32_t> evse_id = std::nullopt);
+                                 std::optional<std::int32_t> stack_level = std::nullopt);
+GetChargingProfilesRequest create_get_charging_profile_request(std::int32_t request_id,
+                                                               ChargingProfileCriterion criteria,
+                                                               std::optional<std::int32_t> evse_id = std::nullopt);
 ClearChargingProfileRequest
-create_clear_charging_profile_request(std::optional<int32_t> id = std::nullopt,
+create_clear_charging_profile_request(std::optional<std::int32_t> id = std::nullopt,
                                       std::optional<ClearChargingProfile> criteria = std::nullopt);
-ClearChargingProfile create_clear_charging_profile(std::optional<int32_t> evse_id = std::nullopt,
+ClearChargingProfile create_clear_charging_profile(std::optional<std::int32_t> evse_id = std::nullopt,
                                                    std::optional<ChargingProfilePurposeEnum> purpose = std::nullopt,
-                                                   std::optional<int32_t> stack_level = std::nullopt);
+                                                   std::optional<std::int32_t> stack_level = std::nullopt);
 namespace SmartChargingTestUtils {
 std::vector<ChargingProfile> get_charging_profiles_from_directory(const std::string& path);
 ChargingProfile get_charging_profile_from_path(const std::string& path);
@@ -142,13 +144,13 @@ class CompositeScheduleTestFixtureV2 : public DatabaseTestingUtils {
 protected:
     void SetUp() override;
     void TearDown() override;
-    void load_charging_profiles_for_evse(const std::filesystem::path& path, int32_t evse_id);
+    void load_charging_profiles_for_evse(const std::filesystem::path& path, std::int32_t evse_id);
     std::unique_ptr<TestSmartCharging>
     create_smart_charging_handler(const OcppProtocolVersion ocpp_version = OcppProtocolVersion::v201);
 
 public:
     CompositeScheduleTestFixtureV2();
-    void reconfigure_for_nr_of_evses(int32_t nr_of_evses);
+    void reconfigure_for_nr_of_evses(std::int32_t nr_of_evses);
 
     std::unique_ptr<EvseManagerFake> evse_manager;
     DeviceModelTestHelper device_model_test_helper;
@@ -160,7 +162,7 @@ public:
     std::unique_ptr<FunctionalBlockContext> functional_block_context;
     std::unique_ptr<DatabaseHandlerFake> database_handler;
     MockFunction<void()> set_charging_profiles_callback_mock;
-    MockFunction<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+    MockFunction<RequestStartStopStatusEnum(const std::int32_t evse_id, const ReasonEnum& stop_reason)>
         stop_transaction_callback_mock;
     std::unique_ptr<TestSmartCharging> handler;
     boost::uuids::random_generator uuid_generator;

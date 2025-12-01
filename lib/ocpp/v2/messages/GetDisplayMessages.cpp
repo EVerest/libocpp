@@ -47,7 +47,7 @@ void from_json(const json& j, GetDisplayMessagesRequest& k) {
     // the optional parts of the message
     if (j.contains("id")) {
         const json& arr = j.at("id");
-        std::vector<int32_t> vec;
+        std::vector<std::int32_t> vec;
         for (const auto& val : arr) {
             vec.push_back(val);
         }

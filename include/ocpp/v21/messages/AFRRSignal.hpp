@@ -19,7 +19,7 @@ namespace v21 {
 /// \brief Contains a OCPP AFRRSignal message
 struct AFRRSignalRequest : public ocpp::Message {
     ocpp::DateTime timestamp;
-    int32_t signal;
+    std::int32_t signal;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this AFRRSignal message as a human readable string

@@ -6,12 +6,12 @@
 TEST_P(DatabaseMigrationFilesTest, ApplyMigrationFilesStepByStep) {
     everest::db::sqlite::SchemaUpdater updater{this->database.get()};
 
-    for (uint32_t i = 1; i <= this->max_version; i++) {
+    for (std::uint32_t i = 1; i <= this->max_version; i++) {
         EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, i));
         this->ExpectUserVersion(i);
     }
 
-    for (uint32_t i = this->max_version; i > 0; i--) {
+    for (std::uint32_t i = this->max_version; i > 0; i--) {
         EXPECT_TRUE(updater.apply_migration_files(this->migration_files_path, i));
         this->ExpectUserVersion(i);
     }

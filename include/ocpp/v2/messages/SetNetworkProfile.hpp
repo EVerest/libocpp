@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP SetNetworkProfile message
 struct SetNetworkProfileRequest : public ocpp::Message {
-    int32_t configurationSlot;
+    std::int32_t configurationSlot;
     NetworkConnectionProfile connectionData;
     std::optional<CustomData> customData;
 

@@ -303,7 +303,7 @@ void from_json(const json& j, IdTokenInfo& k) {
     }
     if (j.contains("evseId")) {
         const json& arr = j.at("evseId");
-        std::vector<int32_t> vec;
+        std::vector<std::int32_t> vec;
         for (const auto& val : arr) {
             vec.push_back(val);
         }
@@ -1459,7 +1459,7 @@ void from_json(const json& j, ChargingProfileCriterion& k) {
     }
     if (j.contains("chargingProfileId")) {
         const json& arr = j.at("chargingProfileId");
-        std::vector<int32_t> vec;
+        std::vector<std::int32_t> vec;
         for (const auto& val : arr) {
             vec.push_back(val);
         }
@@ -2031,7 +2031,7 @@ void from_json(const json& j, TariffAssignment& k) {
     }
     if (j.contains("evseIds")) {
         const json& arr = j.at("evseIds");
-        std::vector<int32_t> vec;
+        std::vector<std::int32_t> vec;
         for (const auto& val : arr) {
             vec.push_back(val);
         }

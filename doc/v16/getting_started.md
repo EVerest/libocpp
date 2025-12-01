@@ -208,19 +208,19 @@ Some general notes: the "connector" parameter of some of the callbacks refers to
 
 #### Functions that need to be triggered from the outside after new information is availble (on_... functions in the charge point API)
 
-- on_log_status_notification(int32_t request_id, std::string log_status)
+- on_log_status_notification(std::int32_t request_id, std::string log_status)
 
   can be used to notify libocpp of a log status notification
 
-- on_firmware_update_status_notification(int32_t request_id, std::string firmware_update_status)
+- on_firmware_update_status_notification(std::int32_t request_id, std::string firmware_update_status)
 
   can be used to notify libocpp of a firmware update status notification
 
-- on_meter_values(int32_t connector, const Powermeter& powermeter)
+- on_meter_values(std::int32_t connector, const Powermeter& powermeter)
 
   provides a Powermeter struct to libocpp (for sending meter values during charging sessions or periodically)
 
-- on_max_current_offered(int32_t connector, int32_t max_current)
+- on_max_current_offered(std::int32_t connector, std::int32_t max_current)
 
   the maximum current offered to the EV on this connector (in ampere)
 
@@ -228,11 +228,11 @@ Some general notes: the "connector" parameter of some of the callbacks refers to
 
 each of these functions will have a small note what the Session Event was and what it triggers in libocpp
 
-- on_enabled(int32_t connector)
+- on_enabled(std::int32_t connector)
 
   Notifies libocpp that the connector is functional and operational
 
-- on_disabled(int32_t connector)
+- on_disabled(std::int32_t connector)
 
   Notifies libocpp that the connector is disabled
 

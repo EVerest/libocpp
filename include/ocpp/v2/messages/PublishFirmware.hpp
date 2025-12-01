@@ -19,9 +19,9 @@ namespace v2 {
 struct PublishFirmwareRequest : public ocpp::Message {
     CiString<2000> location;
     CiString<32> checksum;
-    int32_t requestId;
-    std::optional<int32_t> retries;
-    std::optional<int32_t> retryInterval;
+    std::int32_t requestId;
+    std::optional<std::int32_t> retries;
+    std::optional<std::int32_t> retryInterval;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this PublishFirmware message as a human readable string

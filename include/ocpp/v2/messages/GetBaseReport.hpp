@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP GetBaseReport message
 struct GetBaseReportRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     ReportBaseEnum reportBase;
     std::optional<CustomData> customData;
 

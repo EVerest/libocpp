@@ -104,7 +104,7 @@ public:
                       const std::optional<CiString<50>>& info = std::nullopt);
     void submit_error(const int connector_id, const ErrorInfo& error_info);
     void submit_error_cleared(const int connector_id, const std::string uuid);
-    void submit_all_errors_cleared(const int32_t connector_id);
+    void submit_all_errors_cleared(const std::int32_t connector_id);
     void trigger_status_notification(const int connector_id);
     void trigger_status_notifications();
 

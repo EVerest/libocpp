@@ -17,7 +17,7 @@ namespace v2 {
 /// \brief Contains a OCPP ClearedChargingLimit message
 struct ClearedChargingLimitRequest : public ocpp::Message {
     CiString<20> chargingLimitSource;
-    std::optional<int32_t> evseId;
+    std::optional<std::int32_t> evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClearedChargingLimit message as a human readable string

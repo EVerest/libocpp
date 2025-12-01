@@ -18,7 +18,7 @@ namespace v2 {
 /// \brief Contains a OCPP NotifyEvent message
 struct NotifyEventRequest : public ocpp::Message {
     ocpp::DateTime generatedAt;
-    int32_t seqNo;
+    std::int32_t seqNo;
     std::vector<EventData> eventData;
     std::optional<bool> tbc;
     std::optional<CustomData> customData;

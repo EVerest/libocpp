@@ -17,10 +17,10 @@ namespace v16 {
 
 /// \brief Contains a OCPP ReserveNow message
 struct ReserveNowRequest : public ocpp::Message {
-    int32_t connectorId;
+    std::int32_t connectorId;
     ocpp::DateTime expiryDate;
     CiString<20> idTag;
-    int32_t reservationId;
+    std::int32_t reservationId;
     std::optional<CiString<20>> parentIdTag;
 
     /// \brief Provides the type of this ReserveNow message as a human readable string

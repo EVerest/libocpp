@@ -23,11 +23,11 @@ namespace ocpp {
 using namespace common;
 
 namespace {
-int64_t to_unix_milliseconds(const DateTime& dt) {
+std::int64_t to_unix_milliseconds(const DateTime& dt) {
     return std::chrono::duration_cast<std::chrono::milliseconds>(dt.to_time_point().time_since_epoch()).count();
 }
 
-DateTime from_unix_milliseconds(int64_t ms_since_epoch) {
+DateTime from_unix_milliseconds(std::int64_t ms_since_epoch) {
     return DateTime(date::utc_clock::time_point(std::chrono::milliseconds(ms_since_epoch)));
 }
 } // namespace
@@ -224,7 +224,7 @@ size_t DatabaseHandler::authorization_cache_get_binary_size() {
     return stmt->column_int(0);
 }
 
-void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
+void DatabaseHandler::insert_availability(std::int32_t evse_id, std::int32_t connector_id,
                                           OperationalStatusEnum operational_status, bool replace) {
     std::string sql;
 
@@ -249,7 +249,7 @@ void DatabaseHandler::insert_availability(int32_t evse_id, int32_t connector_id,
     }
 }
 
-OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t connector_id) {
+OperationalStatusEnum DatabaseHandler::get_availability(std::int32_t evse_id, std::int32_t connector_id) {
     const std::string sql =
         "SELECT OPERATIONAL_STATUS FROM AVAILABILITY WHERE EVSE_ID = @evse_id AND CONNECTOR_ID = @connector_id;";
     auto select_stmt = this->database->new_statement(sql);
@@ -269,7 +269,7 @@ OperationalStatusEnum DatabaseHandler::get_availability(int32_t evse_id, int32_t
     return conversions::string_to_operational_status_enum(select_stmt->column_text(0));
 }
 
-void DatabaseHandler::insert_or_update_local_authorization_list_version(int32_t version) {
+void DatabaseHandler::insert_or_update_local_authorization_list_version(std::int32_t version) {
     const std::string sql = "INSERT OR REPLACE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
     auto stmt = this->database->new_statement(sql);
 
@@ -281,7 +281,7 @@ void DatabaseHandler::insert_or_update_local_authorization_list_version(int32_t 
     }
 }
 
-int32_t DatabaseHandler::get_local_authorization_list_version() {
+std::int32_t DatabaseHandler::get_local_authorization_list_version() {
     const std::string sql = "SELECT VERSION FROM AUTH_LIST_VERSION WHERE ID = 0";
     auto stmt = this->database->new_statement(sql);
 
@@ -368,7 +368,7 @@ void DatabaseHandler::clear_local_authorization_list() {
     }
 }
 
-int32_t DatabaseHandler::get_local_authorization_list_number_of_entries() {
+std::int32_t DatabaseHandler::get_local_authorization_list_number_of_entries() {
     const std::string sql = "SELECT COUNT(*) FROM AUTH_LIST;";
     auto stmt = this->database->new_statement(sql);
 
@@ -634,32 +634,32 @@ OperationalStatusEnum DatabaseHandler::get_cs_availability() {
     return this->get_availability(0, 0);
 }
 
-void DatabaseHandler::insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status,
+void DatabaseHandler::insert_evse_availability(std::int32_t evse_id, OperationalStatusEnum operational_status,
                                                bool replace) {
     assert(evse_id > 0);
     this->insert_availability(evse_id, 0, operational_status, replace);
 }
 
-OperationalStatusEnum DatabaseHandler::get_evse_availability(int32_t evse_id) {
+OperationalStatusEnum DatabaseHandler::get_evse_availability(std::int32_t evse_id) {
     assert(evse_id > 0);
     return this->get_availability(evse_id, 0);
 }
 
-void DatabaseHandler::insert_connector_availability(int32_t evse_id, int32_t connector_id,
+void DatabaseHandler::insert_connector_availability(std::int32_t evse_id, std::int32_t connector_id,
                                                     OperationalStatusEnum operational_status, bool replace) {
     assert(evse_id > 0);
     assert(connector_id > 0);
     this->insert_availability(evse_id, connector_id, operational_status, replace);
 }
 
-OperationalStatusEnum DatabaseHandler::get_connector_availability(int32_t evse_id, int32_t connector_id) {
+OperationalStatusEnum DatabaseHandler::get_connector_availability(std::int32_t evse_id, std::int32_t connector_id) {
     assert(evse_id > 0);
     assert(connector_id > 0);
     return this->get_availability(evse_id, connector_id);
 }
 
 // transactions
-void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction, int32_t evse_id) {
+void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction, std::int32_t evse_id) {
     const std::string sql =
         "INSERT INTO TRANSACTIONS "
         "(TRANSACTION_ID, EVSE_ID, CONNECTOR_ID, TIME_START, SEQ_NO, CHARGING_STATE, ID_TAG_SENT) VALUES"
@@ -682,7 +682,7 @@ void DatabaseHandler::transaction_insert(const EnhancedTransaction& transaction,
     }
 }
 
-std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int32_t evse_id) {
+std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const std::int32_t evse_id) {
     const std::string sql = "SELECT TRANSACTION_ID, CONNECTOR_ID, TIME_START, SEQ_NO, CHARGING_STATE, ID_TAG_SENT FROM "
                             "TRANSACTIONS WHERE EVSE_ID = @evse_id";
     auto get_stmt = this->database->new_statement(sql);
@@ -711,7 +711,7 @@ std::unique_ptr<EnhancedTransaction> DatabaseHandler::transaction_get(const int3
     return transaction;
 }
 
-void DatabaseHandler::transaction_update_seq_no(const std::string& transaction_id, int32_t seq_no) {
+void DatabaseHandler::transaction_update_seq_no(const std::string& transaction_id, std::int32_t seq_no) {
     const std::string sql = "UPDATE TRANSACTIONS SET SEQ_NO = @seq_no WHERE TRANSACTION_ID = @transaction_id";
     auto update_stmt = this->database->new_statement(sql);
 
@@ -816,7 +816,7 @@ bool DatabaseHandler::clear_charging_profiles() {
     return this->database->clear_table("CHARGING_PROFILES");
 }
 
-bool DatabaseHandler::clear_charging_profiles_matching_criteria(const std::optional<int32_t> profile_id,
+bool DatabaseHandler::clear_charging_profiles_matching_criteria(const std::optional<std::int32_t> profile_id,
                                                                 const std::optional<ClearChargingProfile>& criteria) {
     // K10.FR.03, K10.FR.09
     if (profile_id.has_value()) {
@@ -875,7 +875,7 @@ bool DatabaseHandler::clear_charging_profiles_matching_criteria(const std::optio
 }
 
 std::vector<ReportedChargingProfile>
-DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int32_t> evse_id,
+DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<std::int32_t> evse_id,
                                                          const ChargingProfileCriterion& criteria) {
     auto results = std::vector<ReportedChargingProfile>();
 
@@ -889,7 +889,7 @@ DatabaseHandler::get_charging_profiles_matching_criteria(const std::optional<int
     if (criteria.chargingProfileId.has_value() && !criteria.chargingProfileId->empty()) {
         const std::string profile_ids =
             boost::algorithm::join(criteria.chargingProfileId.value() |
-                                       boost::adaptors::transformed([](int32_t id) { return std::to_string(id); }),
+                                       boost::adaptors::transformed([](std::int32_t id) { return std::to_string(id); }),
                                    ", ");
 
         where_clauses.push_back("ID IN (" + profile_ids + ")");
@@ -990,8 +990,8 @@ std::vector<v2::ChargingProfile> DatabaseHandler::get_all_charging_profiles() {
     return profiles;
 }
 
-std::map<int32_t, std::vector<v2::ChargingProfile>> DatabaseHandler::get_all_charging_profiles_group_by_evse() {
-    std::map<int32_t, std::vector<v2::ChargingProfile>> map;
+std::map<std::int32_t, std::vector<v2::ChargingProfile>> DatabaseHandler::get_all_charging_profiles_group_by_evse() {
+    std::map<std::int32_t, std::vector<v2::ChargingProfile>> map;
 
     const std::string sql = "SELECT EVSE_ID, PROFILE FROM CHARGING_PROFILES";
 

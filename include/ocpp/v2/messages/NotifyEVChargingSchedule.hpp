@@ -19,8 +19,8 @@ namespace v2 {
 struct NotifyEVChargingScheduleRequest : public ocpp::Message {
     ocpp::DateTime timeBase;
     ChargingSchedule chargingSchedule;
-    int32_t evseId;
-    std::optional<int32_t> selectedChargingScheduleId;
+    std::int32_t evseId;
+    std::optional<std::int32_t> selectedChargingScheduleId;
     std::optional<bool> powerToleranceAcceptance;
     std::optional<CustomData> customData;
 

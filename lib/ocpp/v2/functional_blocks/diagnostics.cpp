@@ -93,9 +93,9 @@ void Diagnostics::process_triggered_monitors() {
     monitoring_updater.process_triggered_monitors();
 }
 
-void Diagnostics::notify_customer_information_req(const std::string& data, const int32_t request_id) {
+void Diagnostics::notify_customer_information_req(const std::string& data, const std::int32_t request_id) {
     size_t pos = 0;
-    int32_t seq_no = 0;
+    std::int32_t seq_no = 0;
     while (pos < data.length() or (pos == 0 and data.empty())) {
         const auto req = [&]() {
             NotifyCustomerInformationRequest req;
@@ -116,7 +116,7 @@ void Diagnostics::notify_customer_information_req(const std::string& data, const
 }
 
 void Diagnostics::notify_monitoring_report_req(const int request_id, std::vector<MonitoringData>& montoring_data) {
-    static constexpr int32_t MAXIMUM_VARIABLE_SEND = 10;
+    static constexpr std::int32_t MAXIMUM_VARIABLE_SEND = 10;
 
     for (auto& element : montoring_data) {
         for (auto& variable_monitoring : element.variableMonitoring) {
@@ -140,10 +140,10 @@ void Diagnostics::notify_monitoring_report_req(const int request_id, std::vector
         this->context.message_dispatcher.dispatch_call(call);
     } else {
         // Split for larger message sizes
-        int32_t sequence_num = 0;
+        std::int32_t sequence_num = 0;
         auto generated_at = ocpp::DateTime();
 
-        for (int32_t i = 0; i < montoring_data.size(); i += MAXIMUM_VARIABLE_SEND) {
+        for (std::int32_t i = 0; i < montoring_data.size(); i += MAXIMUM_VARIABLE_SEND) {
             // If our next index is >= than the last index then we're finished
             const bool last_part = ((i + MAXIMUM_VARIABLE_SEND) >= montoring_data.size());
 
@@ -156,7 +156,7 @@ void Diagnostics::notify_monitoring_report_req(const int request_id, std::vector
             // Construct sub-message part
             std::vector<MonitoringData> sub_data;
 
-            for (int32_t j = i; j < MAXIMUM_VARIABLE_SEND and j < montoring_data.size(); ++j) {
+            for (std::int32_t j = i; j < MAXIMUM_VARIABLE_SEND and j < montoring_data.size(); ++j) {
                 sub_data.push_back(std::move(montoring_data[i + j]));
             }
 

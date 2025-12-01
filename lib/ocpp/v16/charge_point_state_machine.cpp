@@ -350,7 +350,7 @@ void ChargePointStates::submit_error_cleared(const int connector_id, const std::
     }
 }
 
-void ChargePointStates::submit_all_errors_cleared(const int32_t connector_id) {
+void ChargePointStates::submit_all_errors_cleared(const std::int32_t connector_id) {
     const std::lock_guard<std::mutex> lck(state_machines_mutex);
     if (connector_id == 0) {
         this->state_machine_connector_zero->handle_all_errors_cleared();

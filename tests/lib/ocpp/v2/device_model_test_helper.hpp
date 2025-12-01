@@ -52,8 +52,9 @@ public:
     ///
     bool remove_variable_from_db(const std::string& component_name,
                                  const std::optional<std::string>& component_instance,
-                                 const std::optional<uint32_t>& evse_id, const std::optional<uint32_t>& connector_id,
-                                 const std::string& variable_name, const std::optional<std::string>& variable_instance);
+                                 const std::optional<std::uint32_t>& evse_id,
+                                 const std::optional<std::uint32_t>& connector_id, const std::string& variable_name,
+                                 const std::optional<std::string>& variable_instance);
 
     ///
     /// \brief Update characteristics of a variable.
@@ -73,8 +74,9 @@ public:
     bool update_variable_characteristics(const VariableCharacteristics& characteristics,
                                          const std::string& component_name,
                                          const std::optional<std::string>& component_instance,
-                                         const std::optional<uint32_t>& evse_id,
-                                         const std::optional<uint32_t>& connector_id, const std::string& variable_name,
+                                         const std::optional<std::uint32_t>& evse_id,
+                                         const std::optional<std::uint32_t>& connector_id,
+                                         const std::string& variable_name,
                                          const std::optional<std::string>& variable_instance);
 
     ///
@@ -90,8 +92,8 @@ public:
     ///
     bool set_variable_attribute_value_null(const std::string& component_name,
                                            const std::optional<std::string>& component_instance,
-                                           const std::optional<uint32_t>& evse_id,
-                                           const std::optional<uint32_t>& connector_id,
+                                           const std::optional<std::uint32_t>& evse_id,
+                                           const std::optional<std::uint32_t>& connector_id,
                                            const std::string& variable_name,
                                            const std::optional<std::string>& variable_instance,
                                            const AttributeEnum& attribute_enum);

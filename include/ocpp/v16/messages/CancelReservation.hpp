@@ -15,7 +15,7 @@ namespace v16 {
 
 /// \brief Contains a OCPP CancelReservation message
 struct CancelReservationRequest : public ocpp::Message {
-    int32_t reservationId;
+    std::int32_t reservationId;
 
     /// \brief Provides the type of this CancelReservation message as a human readable string
     /// \returns the message type as a human readable string

@@ -15,7 +15,7 @@ namespace v16 {
 
 /// \brief Contains a OCPP ChangeAvailability message
 struct ChangeAvailabilityRequest : public ocpp::Message {
-    int32_t connectorId;
+    std::int32_t connectorId;
     AvailabilityType type;
 
     /// \brief Provides the type of this ChangeAvailability message as a human readable string

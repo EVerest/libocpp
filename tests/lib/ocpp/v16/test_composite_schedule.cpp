@@ -82,17 +82,17 @@ protected:
         return cp;
     }
 
-    std::string get_log_duration_string(int32_t duration) {
+    std::string get_log_duration_string(std::int32_t duration) {
         if (duration < 1) {
             return "0 Seconds ";
         }
 
-        int32_t remaining = duration;
+        std::int32_t remaining = duration;
 
         std::string log_str = "";
 
         if (remaining >= 86400) {
-            int32_t days = remaining / 86400;
+            std::int32_t days = remaining / 86400;
             remaining = remaining % 86400;
             if (days > 1) {
                 log_str += std::to_string(days) + " Days ";
@@ -101,12 +101,12 @@ protected:
             }
         }
         if (remaining >= 3600) {
-            int32_t hours = remaining / 3600;
+            std::int32_t hours = remaining / 3600;
             remaining = remaining % 3600;
             log_str += std::to_string(hours) + " Hours ";
         }
         if (remaining >= 60) {
-            int32_t minutes = remaining / 60;
+            std::int32_t minutes = remaining / 60;
             remaining = remaining % 60;
             log_str += std::to_string(minutes) + " Minutes ";
         }
@@ -116,7 +116,7 @@ protected:
         return log_str;
     }
 
-    void log_duration(int32_t duration) {
+    void log_duration(std::int32_t duration) {
         EVLOG_info << get_log_duration_string(duration);
     }
 
@@ -147,10 +147,10 @@ protected:
         log_me(ecs);
         EVLOG_info << "Start Time> " << start_time.to_rfc3339();
 
-        int32_t i = 0;
+        std::int32_t i = 0;
         for (auto& period : ecs.chargingSchedulePeriod) {
             i++;
-            int32_t numberPhases = 0;
+            std::int32_t numberPhases = 0;
             if (period.numberPhases.has_value()) {
                 numberPhases = period.numberPhases.value();
             }
@@ -176,7 +176,7 @@ protected:
     }
 
     // Default values used within the tests
-    std::map<int32_t, std::shared_ptr<Connector>> connectors;
+    std::map<std::int32_t, std::shared_ptr<Connector>> connectors;
     std::shared_ptr<DatabaseHandler> database_handler;
     std::shared_ptr<EvseSecurityMock> evse_security;
     std::unique_ptr<ChargePointConfiguration> configuration;
@@ -453,7 +453,7 @@ TEST_F(CompositeScheduleTestFixture, SingleTxDefaultProfileForEvse0WithMultipleE
     const DateTime start_time = ocpp::DateTime("2024-01-02T08:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-02T09:00:00");
 
-    constexpr int32_t nr_of_evses = 2;
+    constexpr std::int32_t nr_of_evses = 2;
 
     const auto result =
         handler->calculate_composite_schedule(start_time, end_time, STATION_WIDE_ID, ChargingRateUnit::A, false, true);

@@ -136,7 +136,7 @@ public:
 
     /// \brief starts a timer that sends a websocket ping at the given \p ping_interval_s and
     /// waits for a pong response in \p pong_timeout_s
-    void set_websocket_ping_interval(int32_t ping_interval_s, int32_t pong_timeout_s);
+    void set_websocket_ping_interval(std::int32_t ping_interval_s, std::int32_t pong_timeout_s);
 
     /// \brief set the \p authorization_key of the connection_options
     void set_authorization_key(const std::string& authorization_key);

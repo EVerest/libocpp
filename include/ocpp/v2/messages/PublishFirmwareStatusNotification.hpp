@@ -19,7 +19,7 @@ namespace v2 {
 struct PublishFirmwareStatusNotificationRequest : public ocpp::Message {
     PublishFirmwareStatusEnum status;
     std::optional<std::vector<CiString<2000>>> location;
-    std::optional<int32_t> requestId;
+    std::optional<std::int32_t> requestId;
     std::optional<StatusInfo> statusInfo;
     std::optional<CustomData> customData;
 

@@ -27,20 +27,20 @@ public:
 
     /// \brief Get a reference to the evse with \p id
     /// \note If \p id is not present this could throw an EvseOutOfRangeException
-    virtual EvseInterface& get_evse(int32_t id) = 0;
+    virtual EvseInterface& get_evse(std::int32_t id) = 0;
 
     /// \brief Get a const reference to the evse with \p id
     /// \note If \p id is not present this could throw an EvseOutOfRangeException
-    virtual const EvseInterface& get_evse(int32_t id) const = 0;
+    virtual const EvseInterface& get_evse(std::int32_t id) const = 0;
 
     /// \brief Check if the connector exists on the given evse id.
     /// \param evse_id          The evse id to check for.
     /// \param connector_type   The connector type.
     /// \return False if evse id does not exist or evse does not have the given connector type.
-    virtual bool does_connector_exist(const int32_t evse_id, const CiString<20> connector_type) const = 0;
+    virtual bool does_connector_exist(const std::int32_t evse_id, const CiString<20> connector_type) const = 0;
 
     /// \brief Check if an evse with \p id exists
-    virtual bool does_evse_exist(int32_t id) const = 0;
+    virtual bool does_evse_exist(std::int32_t id) const = 0;
 
     /// \brief Checks if all connectors are effectively inoperative.
     /// If this is the case, calls the all_connectors_unavailable_callback
@@ -55,7 +55,7 @@ public:
     /// \return The evse id belonging the the transaction id. std::nullopt if there is no transaction with the given
     ///         transaction id.
     ///
-    virtual std::optional<int32_t> get_transaction_evseid(const CiString<36>& transaction_id) const = 0;
+    virtual std::optional<std::int32_t> get_transaction_evseid(const CiString<36>& transaction_id) const = 0;
 
     /// \brief Helper function to determine if there is any active transaction for the given \p evse
     /// \param evse if optional is not set, this function will check if there is any transaction active for the whole
@@ -81,24 +81,24 @@ private:
     std::vector<std::unique_ptr<EvseInterface>> evses;
 
 public:
-    EvseManager(const std::map<int32_t, int32_t>& evse_connector_structure, DeviceModel& device_model,
+    EvseManager(const std::map<std::int32_t, std::int32_t>& evse_connector_structure, DeviceModel& device_model,
                 std::shared_ptr<DatabaseHandler> database_handler,
                 std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
                 const std::function<void(const MeterValue& meter_value, EnhancedTransaction& transaction)>&
                     transaction_meter_value_req,
-                const std::function<void(int32_t evse_id)>& pause_charging_callback);
+                const std::function<void(std::int32_t evse_id)>& pause_charging_callback);
 
-    EvseInterface& get_evse(int32_t id) override;
-    const EvseInterface& get_evse(const int32_t id) const override;
+    EvseInterface& get_evse(std::int32_t id) override;
+    const EvseInterface& get_evse(const std::int32_t id) const override;
 
-    bool does_connector_exist(const int32_t evse_id, const CiString<20> connector_type) const override;
-    bool does_evse_exist(const int32_t id) const override;
+    bool does_connector_exist(const std::int32_t evse_id, const CiString<20> connector_type) const override;
+    bool does_evse_exist(const std::int32_t id) const override;
 
     bool are_all_connectors_effectively_inoperative() const override;
 
     size_t get_number_of_evses() const override;
 
-    std::optional<int32_t> get_transaction_evseid(const CiString<36>& transaction_id) const override;
+    std::optional<std::int32_t> get_transaction_evseid(const CiString<36>& transaction_id) const override;
 
     bool any_transaction_active(const std::optional<EVSE>& evse) const override;
     bool is_valid_evse(const EVSE& evse) const override;

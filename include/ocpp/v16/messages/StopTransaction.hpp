@@ -17,9 +17,9 @@ namespace v16 {
 
 /// \brief Contains a OCPP StopTransaction message
 struct StopTransactionRequest : public ocpp::Message {
-    int32_t meterStop;
+    std::int32_t meterStop;
     ocpp::DateTime timestamp;
-    int32_t transactionId;
+    std::int32_t transactionId;
     std::optional<CiString<20>> idTag;
     std::optional<Reason> reason;
     std::optional<std::vector<TransactionData>> transactionData;

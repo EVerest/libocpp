@@ -42,7 +42,7 @@ void FirmwareUpdate::handle_message(const ocpp::EnhancedMessage<MessageType>& me
     }
 }
 
-void FirmwareUpdate::on_firmware_update_status_notification(int32_t request_id,
+void FirmwareUpdate::on_firmware_update_status_notification(std::int32_t request_id,
                                                             const FirmwareStatusEnum& firmware_update_status) {
     if (this->firmware_status == firmware_update_status) {
         if (request_id == -1 or
@@ -194,10 +194,10 @@ void FirmwareUpdate::change_all_connectors_to_unavailable_for_firmware_update() 
 
 void FirmwareUpdate::restore_all_connector_states() {
     for (auto& evse : this->context.evse_manager) {
-        const uint32_t number_of_connectors = evse.get_number_of_connectors();
+        const std::uint32_t number_of_connectors = evse.get_number_of_connectors();
 
-        for (uint32_t i = 1; i <= number_of_connectors; ++i) {
-            evse.restore_connector_operative_status(static_cast<int32_t>(i));
+        for (std::uint32_t i = 1; i <= number_of_connectors; ++i) {
+            evse.restore_connector_operative_status(static_cast<std::int32_t>(i));
         }
     }
 }

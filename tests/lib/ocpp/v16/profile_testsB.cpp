@@ -48,22 +48,22 @@ const ChargingProfile profileA{
                 // ChargingSchedulePeriod
                 0,            // startPeriod
                 32.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // ChargingSchedulePeriod
                 6000,         // startPeriod
                 31.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // ChargingSchedulePeriod
                 12000,        // startPeriod
                 30.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,        // optional - int32_t duration
+        std::nullopt,        // optional - std::int32_t duration
         profileA_start_time, // optional - ocpp::DateTime - startSchedule
         std::nullopt,        // optional - float - minChargingRate
     },                       // chargingSchedule
@@ -88,16 +88,16 @@ ChargingProfile profileB{
                 // ChargingSchedulePeriod
                 0,            // startPeriod
                 10.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // ChargingSchedulePeriod
                 7000,         // startPeriod
                 11.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,        // optional - int32_t duration
+        std::nullopt,        // optional - std::int32_t duration
         profileB_start_time, // optional - ocpp::DateTime - startSchedule
         std::nullopt,        // optional - float - minChargingRate
     },                       // chargingSchedule
@@ -122,10 +122,10 @@ ChargingProfile profileNoCharge{
                 // ChargingSchedulePeriod
                 0,            // startPeriod
                 0.0,          // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,           // optional - int32_t duration
+        std::nullopt,           // optional - std::int32_t duration
         std::nullopt,           // optional - ocpp::DateTime - startSchedule
         std::nullopt,           // optional - float - minChargingRate
     },                          // chargingSchedule
@@ -150,10 +150,10 @@ ChargingProfile profileStackA{
                 // ChargingSchedulePeriod
                 0,            // startPeriod
                 24.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,            // optional - int32_t duration
+        std::nullopt,            // optional - std::int32_t duration
         profileStack_start_time, // optional - ocpp::DateTime - startSchedule
         std::nullopt,            // optional - float - minChargingRate
     },                           // chargingSchedule
@@ -176,10 +176,10 @@ ChargingProfile profileStackB{
                 // ChargingSchedulePeriod
                 0,            // startPeriod
                 26.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,            // optional - int32_t duration
+        std::nullopt,            // optional - std::int32_t duration
         profileStack_start_time, // optional - ocpp::DateTime - startSchedule
         std::nullopt,            // optional - float - minChargingRate
     },                           // chargingSchedule
@@ -204,10 +204,10 @@ ChargingProfile profileStackC{
                 // ChargingSchedulePeriod
                 0,            // startPeriod
                 28.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,             // optional - int32_t duration
+        std::nullopt,             // optional - std::int32_t duration
         profileStackC_start_time, // optional - ocpp::DateTime - startSchedule
         std::nullopt,             // optional - float - minChargingRate
     },                            // chargingSchedule
@@ -232,10 +232,10 @@ ChargingProfile profileTime{
                 // ChargingSchedulePeriod
                 0,            // startPeriod
                 8.0,          // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,           // optional - int32_t duration
+        std::nullopt,           // optional - std::int32_t duration
         profileTime_start_time, // optional - ocpp::DateTime - startSchedule
         std::nullopt,           // optional - float - minChargingRate
     },                          // chargingSchedule

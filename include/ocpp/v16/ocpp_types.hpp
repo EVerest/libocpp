@@ -48,9 +48,9 @@ void from_json(const json& j, CertificateHashDataType& k);
 std::ostream& operator<<(std::ostream& os, const CertificateHashDataType& k);
 
 struct ChargingSchedulePeriod {
-    int32_t startPeriod;
+    std::int32_t startPeriod;
     float limit;
-    std::optional<int32_t> numberPhases;
+    std::optional<std::int32_t> numberPhases;
 };
 /// \brief Conversion from a given ChargingSchedulePeriod \p k to a given json object \p j
 void to_json(json& j, const ChargingSchedulePeriod& k);
@@ -65,7 +65,7 @@ std::ostream& operator<<(std::ostream& os, const ChargingSchedulePeriod& k);
 struct ChargingSchedule {
     ChargingRateUnit chargingRateUnit;
     std::vector<ChargingSchedulePeriod> chargingSchedulePeriod;
-    std::optional<int32_t> duration;
+    std::optional<std::int32_t> duration;
     std::optional<ocpp::DateTime> startSchedule;
     std::optional<float> minChargingRate;
 };
@@ -143,12 +143,12 @@ void from_json(const json& j, MeterValue& k);
 std::ostream& operator<<(std::ostream& os, const MeterValue& k);
 
 struct ChargingProfile {
-    int32_t chargingProfileId;
-    int32_t stackLevel;
+    std::int32_t chargingProfileId;
+    std::int32_t stackLevel;
     ChargingProfilePurposeType chargingProfilePurpose;
     ChargingProfileKindType chargingProfileKind;
     ChargingSchedule chargingSchedule;
-    std::optional<int32_t> transactionId;
+    std::optional<std::int32_t> transactionId;
     std::optional<RecurrencyKindType> recurrencyKind;
     std::optional<ocpp::DateTime> validFrom;
     std::optional<ocpp::DateTime> validTo;

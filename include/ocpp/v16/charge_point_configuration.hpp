@@ -78,7 +78,7 @@ public:
     std::optional<KeyValue> getMeterSerialNumberKeyValue();
     std::optional<CiString<25>> getMeterType();
     std::optional<KeyValue> getMeterTypeKeyValue();
-    int32_t getWebsocketReconnectInterval();
+    std::int32_t getWebsocketReconnectInterval();
     KeyValue getWebsocketReconnectIntervalKeyValue();
     bool getAuthorizeConnectorZeroOnConnectorOne();
     KeyValue getAuthorizeConnectorZeroOnConnectorOneKeyValue();
@@ -92,29 +92,29 @@ public:
     KeyValue getLogRotationKeyValue();
     bool getLogRotationDateSuffix();
     KeyValue getLogRotationDateSuffixKeyValue();
-    uint64_t getLogRotationMaximumFileSize();
+    std::uint64_t getLogRotationMaximumFileSize();
     KeyValue getLogRotationMaximumFileSizeKeyValue();
-    uint64_t getLogRotationMaximumFileCount();
+    std::uint64_t getLogRotationMaximumFileCount();
     KeyValue getLogRotationMaximumFileCountKeyValue();
     std::vector<ChargingProfilePurposeType> getSupportedChargingProfilePurposeTypes();
     KeyValue getSupportedChargingProfilePurposeTypesKeyValue();
     std::vector<ChargingProfilePurposeType> getIgnoredProfilePurposesOffline();
     std::optional<KeyValue> getIgnoredProfilePurposesOfflineKeyValue();
     bool setIgnoredProfilePurposesOffline(const std::string& ignored_profile_purposes_offline);
-    int32_t getMaxCompositeScheduleDuration();
+    std::int32_t getMaxCompositeScheduleDuration();
     KeyValue getMaxCompositeScheduleDurationKeyValue();
-    std::optional<int32_t> getCompositeScheduleDefaultLimitAmps();
+    std::optional<std::int32_t> getCompositeScheduleDefaultLimitAmps();
     std::optional<KeyValue> getCompositeScheduleDefaultLimitAmpsKeyValue();
-    void setCompositeScheduleDefaultLimitAmps(int32_t limit_amps);
-    std::optional<int32_t> getCompositeScheduleDefaultLimitWatts();
+    void setCompositeScheduleDefaultLimitAmps(std::int32_t limit_amps);
+    std::optional<std::int32_t> getCompositeScheduleDefaultLimitWatts();
     std::optional<KeyValue> getCompositeScheduleDefaultLimitWattsKeyValue();
-    void setCompositeScheduleDefaultLimitWatts(int32_t limit_watts);
-    std::optional<int32_t> getCompositeScheduleDefaultNumberPhases();
+    void setCompositeScheduleDefaultLimitWatts(std::int32_t limit_watts);
+    std::optional<std::int32_t> getCompositeScheduleDefaultNumberPhases();
     std::optional<KeyValue> getCompositeScheduleDefaultNumberPhasesKeyValue();
-    void setCompositeScheduleDefaultNumberPhases(int32_t number_phases);
-    std::optional<int32_t> getSupplyVoltage();
+    void setCompositeScheduleDefaultNumberPhases(std::int32_t number_phases);
+    std::optional<std::int32_t> getSupplyVoltage();
     std::optional<KeyValue> getSupplyVoltageKeyValue();
-    void setSupplyVoltage(int32_t supply_voltage);
+    void setSupplyVoltage(std::int32_t supply_voltage);
     std::string getSupportedCiphers12();
     KeyValue getSupportedCiphers12KeyValue();
     std::string getSupportedCiphers13();
@@ -140,16 +140,16 @@ public:
     void setStopTransactionIfUnlockNotSupported(bool stop_transaction_if_unlock_not_supported);
     KeyValue getStopTransactionIfUnlockNotSupportedKeyValue();
 
-    int32_t getRetryBackoffRandomRange();
-    void setRetryBackoffRandomRange(int32_t retry_backoff_random_range);
+    std::int32_t getRetryBackoffRandomRange();
+    void setRetryBackoffRandomRange(std::int32_t retry_backoff_random_range);
     KeyValue getRetryBackoffRandomRangeKeyValue();
 
-    int32_t getRetryBackoffRepeatTimes();
-    void setRetryBackoffRepeatTimes(int32_t retry_backoff_repeat_times);
+    std::int32_t getRetryBackoffRepeatTimes();
+    void setRetryBackoffRepeatTimes(std::int32_t retry_backoff_repeat_times);
     KeyValue getRetryBackoffRepeatTimesKeyValue();
 
-    int32_t getRetryBackoffWaitMinimum();
-    void setRetryBackoffWaitMinimum(int32_t retry_backoff_wait_minimum);
+    std::int32_t getRetryBackoffWaitMinimum();
+    void setRetryBackoffWaitMinimum(std::int32_t retry_backoff_wait_minimum);
     KeyValue getRetryBackoffWaitMinimumKeyValue();
 
     std::set<MessageType> getSupportedMessageTypesSending();
@@ -158,7 +158,7 @@ public:
     std::string getWebsocketPingPayload();
     KeyValue getWebsocketPingPayloadKeyValue();
 
-    int32_t getWebsocketPongTimeout();
+    std::int32_t getWebsocketPongTimeout();
     KeyValue getWebsocketPongTimeoutKeyValue();
 
     std::optional<std::string> getHostName();
@@ -192,18 +192,18 @@ public:
     KeyValue getAuthorizeRemoteTxRequestsKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getBlinkRepeat();
-    void setBlinkRepeat(int32_t blink_repeat);
+    std::optional<std::int32_t> getBlinkRepeat();
+    void setBlinkRepeat(std::int32_t blink_repeat);
     std::optional<KeyValue> getBlinkRepeatKeyValue();
 
     // Core Profile
-    int32_t getClockAlignedDataInterval();
-    void setClockAlignedDataInterval(int32_t interval);
+    std::int32_t getClockAlignedDataInterval();
+    void setClockAlignedDataInterval(std::int32_t interval);
     KeyValue getClockAlignedDataIntervalKeyValue();
 
     // Core Profile
-    int32_t getConnectionTimeOut();
-    void setConnectionTimeOut(int32_t timeout);
+    std::int32_t getConnectionTimeOut();
+    void setConnectionTimeOut(std::int32_t timeout);
     KeyValue getConnectionTimeOutKeyValue();
 
     // Core Profile
@@ -212,21 +212,21 @@ public:
     KeyValue getConnectorPhaseRotationKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getConnectorPhaseRotationMaxLength();
+    std::optional<std::int32_t> getConnectorPhaseRotationMaxLength();
     std::optional<KeyValue> getConnectorPhaseRotationMaxLengthKeyValue();
 
     // Core Profile
-    int32_t getGetConfigurationMaxKeys();
+    std::int32_t getGetConfigurationMaxKeys();
     KeyValue getGetConfigurationMaxKeysKeyValue();
 
     // Core Profile
-    int32_t getHeartbeatInterval();
-    void setHeartbeatInterval(int32_t interval);
+    std::int32_t getHeartbeatInterval();
+    void setHeartbeatInterval(std::int32_t interval);
     KeyValue getHeartbeatIntervalKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getLightIntensity();
-    void setLightIntensity(int32_t light_intensity);
+    std::optional<std::int32_t> getLightIntensity();
+    void setLightIntensity(std::int32_t light_intensity);
     std::optional<KeyValue> getLightIntensityKeyValue();
 
     // Core Profile
@@ -240,8 +240,8 @@ public:
     KeyValue getLocalPreAuthorizeKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getMaxEnergyOnInvalidId();
-    void setMaxEnergyOnInvalidId(int32_t max_energy);
+    std::optional<std::int32_t> getMaxEnergyOnInvalidId();
+    void setMaxEnergyOnInvalidId(std::int32_t max_energy);
     std::optional<KeyValue> getMaxEnergyOnInvalidIdKeyValue();
 
     // Core Profile
@@ -251,7 +251,7 @@ public:
     std::vector<MeasurandWithPhase> getMeterValuesAlignedDataVector();
 
     // Core Profile - optional
-    std::optional<int32_t> getMeterValuesAlignedDataMaxLength();
+    std::optional<std::int32_t> getMeterValuesAlignedDataMaxLength();
     std::optional<KeyValue> getMeterValuesAlignedDataMaxLengthKeyValue();
 
     // Core Profile
@@ -261,21 +261,21 @@ public:
     std::vector<MeasurandWithPhase> getMeterValuesSampledDataVector();
 
     // Core Profile - optional
-    std::optional<int32_t> getMeterValuesSampledDataMaxLength();
+    std::optional<std::int32_t> getMeterValuesSampledDataMaxLength();
     std::optional<KeyValue> getMeterValuesSampledDataMaxLengthKeyValue();
 
     // Core Profile
-    int32_t getMeterValueSampleInterval();
-    void setMeterValueSampleInterval(int32_t interval);
+    std::int32_t getMeterValueSampleInterval();
+    void setMeterValueSampleInterval(std::int32_t interval);
     KeyValue getMeterValueSampleIntervalKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getMinimumStatusDuration();
-    void setMinimumStatusDuration(int32_t minimum_status_duration);
+    std::optional<std::int32_t> getMinimumStatusDuration();
+    void setMinimumStatusDuration(std::int32_t minimum_status_duration);
     std::optional<KeyValue> getMinimumStatusDurationKeyValue();
 
     // Core Profile
-    int32_t getNumberOfConnectors();
+    std::int32_t getNumberOfConnectors();
     KeyValue getNumberOfConnectorsKeyValue();
 
     // Reservation Profile
@@ -283,8 +283,8 @@ public:
     std::optional<KeyValue> getReserveConnectorZeroSupportedKeyValue();
 
     // Core Profile
-    int32_t getResetRetries();
-    void setResetRetries(int32_t retries);
+    std::int32_t getResetRetries();
+    void setResetRetries(std::int32_t retries);
     KeyValue getResetRetriesKeyValue();
 
     // Core Profile - optional
@@ -302,7 +302,7 @@ public:
     KeyValue getStopTxnAlignedDataKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getStopTxnAlignedDataMaxLength();
+    std::optional<std::int32_t> getStopTxnAlignedDataMaxLength();
     std::optional<KeyValue> getStopTxnAlignedDataMaxLengthKeyValue();
 
     // Core Profile
@@ -311,7 +311,7 @@ public:
     KeyValue getStopTxnSampledDataKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getStopTxnSampledDataMaxLength();
+    std::optional<std::int32_t> getStopTxnSampledDataMaxLength();
     std::optional<KeyValue> getStopTxnSampledDataMaxLengthKeyValue();
 
     // Core Profile
@@ -320,17 +320,17 @@ public:
     std::set<SupportedFeatureProfiles> getSupportedFeatureProfilesSet();
 
     // Core Profile - optional
-    std::optional<int32_t> getSupportedFeatureProfilesMaxLength();
+    std::optional<std::int32_t> getSupportedFeatureProfilesMaxLength();
     std::optional<KeyValue> getSupportedFeatureProfilesMaxLengthKeyValue();
 
     // Core Profile
-    int32_t getTransactionMessageAttempts();
-    void setTransactionMessageAttempts(int32_t attempts);
+    std::int32_t getTransactionMessageAttempts();
+    void setTransactionMessageAttempts(std::int32_t attempts);
     KeyValue getTransactionMessageAttemptsKeyValue();
 
     // Core Profile
-    int32_t getTransactionMessageRetryInterval();
-    void setTransactionMessageRetryInterval(int32_t retry_interval);
+    std::int32_t getTransactionMessageRetryInterval();
+    void setTransactionMessageRetryInterval(std::int32_t retry_interval);
     KeyValue getTransactionMessageRetryIntervalKeyValue();
 
     // Core Profile
@@ -339,8 +339,8 @@ public:
     KeyValue getUnlockConnectorOnEVSideDisconnectKeyValue();
 
     // Core Profile - optional
-    std::optional<int32_t> getWebsocketPingInterval();
-    void setWebsocketPingInterval(int32_t websocket_ping_interval);
+    std::optional<std::int32_t> getWebsocketPingInterval();
+    void setWebsocketPingInterval(std::int32_t websocket_ping_interval);
     std::optional<KeyValue> getWebsocketPingIntervalKeyValue();
 
     // Core Profile end
@@ -351,7 +351,7 @@ public:
     std::optional<KeyValue> getSupportedFileTransferProtocolsKeyValue();
 
     // SmartCharging Profile
-    int32_t getChargeProfileMaxStackLevel();
+    std::int32_t getChargeProfileMaxStackLevel();
     KeyValue getChargeProfileMaxStackLevelKeyValue();
 
     // SmartCharging Profile
@@ -360,7 +360,7 @@ public:
     std::vector<ChargingRateUnit> getChargingScheduleAllowedChargingRateUnitVector();
 
     // SmartCharging Profile
-    int32_t getChargingScheduleMaxPeriods();
+    std::int32_t getChargingScheduleMaxPeriods();
     KeyValue getChargingScheduleMaxPeriodsKeyValue();
 
     // SmartCharging Profile - optional
@@ -368,7 +368,7 @@ public:
     std::optional<KeyValue> getConnectorSwitch3to1PhaseSupportedKeyValue();
 
     // SmartCharging Profile
-    int32_t getMaxChargingProfilesInstalled();
+    std::int32_t getMaxChargingProfilesInstalled();
     KeyValue getMaxChargingProfilesInstalledKeyValue();
 
     // SmartCharging Profile end
@@ -383,11 +383,11 @@ public:
     std::optional<KeyValue> getAuthorizationKeyKeyValue();
 
     // Security profile - optional
-    std::optional<int32_t> getCertificateSignedMaxChainSize();
+    std::optional<std::int32_t> getCertificateSignedMaxChainSize();
     std::optional<KeyValue> getCertificateSignedMaxChainSizeKeyValue();
 
     // Security profile - optional
-    std::optional<int32_t> getCertificateStoreMaxLength();
+    std::optional<std::int32_t> getCertificateStoreMaxLength();
     std::optional<KeyValue> getCertificateStoreMaxLengthKeyValue();
 
     // Security profile - optional
@@ -396,8 +396,8 @@ public:
     std::optional<KeyValue> getCpoNameKeyValue();
 
     // // Security profile - optional in ocpp but mandatory websocket connection
-    int32_t getSecurityProfile();
-    void setSecurityProfile(int32_t security_profile);
+    std::int32_t getSecurityProfile();
+    void setSecurityProfile(std::int32_t security_profile);
     KeyValue getSecurityProfileKeyValue();
 
     // // Security profile - optional with default
@@ -411,11 +411,11 @@ public:
     KeyValue getLocalAuthListEnabledKeyValue();
 
     // Local Auth List Management Profile
-    int32_t getLocalAuthListMaxLength();
+    std::int32_t getLocalAuthListMaxLength();
     KeyValue getLocalAuthListMaxLengthKeyValue();
 
     // Local Auth List Management Profile
-    int32_t getSendLocalListMaxLength();
+    std::int32_t getSendLocalListMaxLength();
     KeyValue getSendLocalListMaxLengthKeyValue();
 
     // PnC
@@ -431,20 +431,20 @@ public:
     void setCentralContractValidationAllowed(const bool central_contract_validation_allowed);
     std::optional<KeyValue> getCentralContractValidationAllowedKeyValue();
 
-    std::optional<int32_t> getCertSigningWaitMinimum();
-    void setCertSigningWaitMinimum(const int32_t cert_signing_wait_minimum);
+    std::optional<std::int32_t> getCertSigningWaitMinimum();
+    void setCertSigningWaitMinimum(const std::int32_t cert_signing_wait_minimum);
     std::optional<KeyValue> getCertSigningWaitMinimumKeyValue();
 
-    std::optional<int32_t> getCertSigningRepeatTimes();
-    void setCertSigningRepeatTimes(const int32_t cert_signing_repeat_times);
+    std::optional<std::int32_t> getCertSigningRepeatTimes();
+    void setCertSigningRepeatTimes(const std::int32_t cert_signing_repeat_times);
     std::optional<KeyValue> getCertSigningRepeatTimesKeyValue();
 
     bool getContractValidationOffline();
     void setContractValidationOffline(const bool contract_validation_offline);
     KeyValue getContractValidationOfflineKeyValue();
 
-    int32_t getOcspRequestInterval();
-    void setOcspRequestInterval(const int32_t ocsp_request_interval);
+    std::int32_t getOcspRequestInterval();
+    void setOcspRequestInterval(const std::int32_t ocsp_request_interval);
     KeyValue getOcspRequestIntervalKeyValue();
 
     std::optional<std::string> getSeccLeafSubjectCommonName();
@@ -467,15 +467,15 @@ public:
     void setAllowChargingProfileWithoutStartSchedule(const bool allow);
     std::optional<KeyValue> getAllowChargingProfileWithoutStartScheduleKeyValue();
 
-    int32_t getWaitForStopTransactionsOnResetTimeout();
-    void setWaitForStopTransactionsOnResetTimeout(const int32_t wait_for_stop_transactions_on_reset_timeout);
+    std::int32_t getWaitForStopTransactionsOnResetTimeout();
+    void setWaitForStopTransactionsOnResetTimeout(const std::int32_t wait_for_stop_transactions_on_reset_timeout);
     KeyValue getWaitForStopTransactionsOnResetTimeoutKeyValue();
 
     // California Pricing Requirements
     bool getCustomDisplayCostAndPriceEnabled();
     KeyValue getCustomDisplayCostAndPriceEnabledKeyValue();
 
-    std::optional<uint32_t> getPriceNumberOfDecimalsForCostValues();
+    std::optional<std::uint32_t> getPriceNumberOfDecimalsForCostValues();
     std::optional<KeyValue> getPriceNumberOfDecimalsForCostValuesKeyValue();
 
     std::optional<std::string> getDefaultPriceText(const std::string& language);
@@ -514,8 +514,8 @@ public:
     void setLanguage(const std::string& language);
     std::optional<KeyValue> getLanguageKeyValue();
 
-    std::optional<int32_t> getWaitForSetUserPriceTimeout();
-    void setWaitForSetUserPriceTimeout(const int32_t wait_for_set_user_price_timeout);
+    std::optional<std::int32_t> getWaitForSetUserPriceTimeout();
+    void setWaitForSetUserPriceTimeout(const std::int32_t wait_for_set_user_price_timeout);
     std::optional<KeyValue> getWaitForSetUserPriceTimeoutKeyValue();
 
     // custom

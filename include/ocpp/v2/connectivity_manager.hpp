@@ -26,7 +26,7 @@ using WebsocketConnectionCallback =
                        const OcppProtocolVersion version)>;
 using WebsocketConnectionFailedCallback = std::function<void(ConnectionFailedReason reason)>;
 using ConfigureNetworkConnectionProfileCallback = std::function<std::future<ConfigNetworkResult>(
-    const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>;
+    const std::int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>;
 
 class ConnectivityManagerInterface {
 public:
@@ -64,13 +64,13 @@ public:
     /// This returns the value from the cached network connection profiles.
     /// \return Returns a profile if the slot is found
     virtual std::optional<NetworkConnectionProfile>
-    get_network_connection_profile(const int32_t configuration_slot) const = 0;
+    get_network_connection_profile(const std::int32_t configuration_slot) const = 0;
 
     /// \brief Get the priority of the given configuration slot.
     /// \param configuration_slot   The configuration slot to get the priority from.
     /// \return The priority if the configuration slot exists.
     ///
-    virtual std::optional<int32_t> get_priority_from_configuration_slot(const int configuration_slot) const = 0;
+    virtual std::optional<std::int32_t> get_priority_from_configuration_slot(const int configuration_slot) const = 0;
 
     /// @brief Get the network connection slots sorted by priority.
     /// Each item in the vector contains the configured configuration slots, where the slot with index 0 has the highest
@@ -88,7 +88,7 @@ public:
     /// \param configuration_slot Optional the network_profile_slot to connect to. std::nullopt will select the slot
     /// internally.
     ///
-    virtual void connect(std::optional<int32_t> network_profile_slot = std::nullopt) = 0;
+    virtual void connect(std::optional<std::int32_t> network_profile_slot = std::nullopt) = 0;
 
     /// \brief Disconnect the websocket
     ///
@@ -139,14 +139,14 @@ private:
     std::optional<ConfigureNetworkConnectionProfileCallback> configure_network_connection_profile_callback;
 
     Everest::SteadyTimer websocket_timer;
-    std::optional<int32_t> pending_configuration_slot;
+    std::optional<std::int32_t> pending_configuration_slot;
     bool wants_to_be_connected;
-    int32_t active_network_configuration_priority;
+    std::int32_t active_network_configuration_priority;
     int last_known_security_level;
     /// @brief Local cached network connection profiles
     std::vector<SetNetworkProfileRequest> cached_network_connection_profiles;
     /// @brief local cached network connection priorities
-    std::vector<int32_t> network_connection_slots;
+    std::vector<std::int32_t> network_connection_slots;
     OcppProtocolVersion connected_ocpp_version;
 
 public:
@@ -162,11 +162,11 @@ public:
     void set_websocket_connection_failed_callback(WebsocketConnectionFailedCallback callback) override;
     void set_configure_network_connection_profile_callback(ConfigureNetworkConnectionProfileCallback callback) override;
     std::optional<NetworkConnectionProfile>
-    get_network_connection_profile(const int32_t configuration_slot) const override;
-    std::optional<int32_t> get_priority_from_configuration_slot(const int configuration_slot) const override;
+    get_network_connection_profile(const std::int32_t configuration_slot) const override;
+    std::optional<std::int32_t> get_priority_from_configuration_slot(const int configuration_slot) const override;
     const std::vector<int>& get_network_connection_slots() const override;
     bool is_websocket_connected() override;
-    void connect(std::optional<int32_t> network_profile_slot = std::nullopt) override;
+    void connect(std::optional<std::int32_t> network_profile_slot = std::nullopt) override;
     void disconnect() override;
     bool send_to_websocket(const std::string& message) override;
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
@@ -181,7 +181,7 @@ private:
     /// \brief Get the current websocket connection options
     /// \return the current websocket connection options
     ///
-    std::optional<WebsocketConnectionOptions> get_ws_connection_options(const int32_t configuration_slot);
+    std::optional<WebsocketConnectionOptions> get_ws_connection_options(const std::int32_t configuration_slot);
 
     /// \brief Calls the configuration callback to get the interface to use, if there is a callback
     /// \param slot The configuration slot to get the interface for
@@ -223,7 +223,7 @@ private:
     /// \param configuration_slot The current configuration slot.
     /// \return The next prioritized configuration slot.
     ///
-    int get_next_configuration_slot(int32_t configuration_slot);
+    int get_next_configuration_slot(std::int32_t configuration_slot);
 
     /// \brief Cache all the network connection profiles
     void cache_network_connection_profiles();

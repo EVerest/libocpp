@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP CustomerInformation message
 struct CustomerInformationRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     bool report;
     bool clear;
     std::optional<CertificateHashDataType> customerCertificate;

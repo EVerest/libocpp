@@ -20,14 +20,14 @@ struct TransactionEventRequest : public ocpp::Message {
     TransactionEventEnum eventType;
     ocpp::DateTime timestamp;
     TriggerReasonEnum triggerReason;
-    int32_t seqNo;
+    std::int32_t seqNo;
     Transaction transactionInfo;
     std::optional<CostDetails> costDetails;
     std::optional<std::vector<MeterValue>> meterValue;
     std::optional<bool> offline;
-    std::optional<int32_t> numberOfPhasesUsed;
-    std::optional<int32_t> cableMaxCurrent;
-    std::optional<int32_t> reservationId;
+    std::optional<std::int32_t> numberOfPhasesUsed;
+    std::optional<std::int32_t> cableMaxCurrent;
+    std::optional<std::int32_t> reservationId;
     std::optional<PreconditioningStatusEnum> preconditioningStatus;
     std::optional<bool> evseSleep;
     std::optional<EVSE> evse;
@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream& os, const TransactionEventRequest& k);
 /// \brief Contains a OCPP TransactionEventResponse message
 struct TransactionEventResponse : public ocpp::Message {
     std::optional<float> totalCost;
-    std::optional<int32_t> chargingPriority;
+    std::optional<std::int32_t> chargingPriority;
     std::optional<IdTokenInfo> idTokenInfo;
     std::optional<TransactionLimit> transactionLimit;
     std::optional<MessageContent> updatedPersonalMessage;

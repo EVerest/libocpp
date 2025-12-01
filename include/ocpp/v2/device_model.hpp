@@ -28,7 +28,7 @@ template <typename T> struct RequestDeviceModelResponse {
 template <typename T> T to_specific_type(const std::string& value) {
     static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, int> || std::is_same_v<T, double> ||
                       std::is_same_v<T, size_t> || std::is_same_v<T, DateTime> || std::is_same_v<T, bool> ||
-                      std::is_same_v<T, uint64_t>,
+                      std::is_same_v<T, std::uint64_t>,
                   "Requested unknown datatype");
 
     if constexpr (std::is_same_v<T, std::string>) {
@@ -44,7 +44,7 @@ template <typename T> T to_specific_type(const std::string& value) {
         return DateTime(value);
     } else if constexpr (std::is_same_v<T, bool>) {
         return ocpp::conversions::string_to_bool(value);
-    } else if constexpr (std::is_same_v<T, uint64_t>) {
+    } else if constexpr (std::is_same_v<T, std::uint64_t>) {
         return std::stoull(value);
     }
 }
@@ -84,7 +84,7 @@ void filter_criteria_monitors(const std::vector<MonitoringCriterionEnum>& criter
                               std::vector<VariableMonitoringMeta>& monitors);
 
 using on_variable_changed = std::function<void(
-    const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors, const Component& component,
+    const std::unordered_map<std::int64_t, VariableMonitoringMeta>& monitors, const Component& component,
     const Variable& variable, const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
     const std::string& value_previous, const std::string& value_current)>;
 
@@ -302,7 +302,7 @@ public:
     std::vector<SetMonitoringResult> set_monitors(const std::vector<SetMonitoringData>& requests,
                                                   const VariableMonitorType type = VariableMonitorType::CustomMonitor);
 
-    bool update_monitor_reference(int32_t monitor_id, const std::string& reference_value);
+    bool update_monitor_reference(std::int32_t monitor_id, const std::string& reference_value);
 
     std::vector<VariableMonitoringPeriodic> get_periodic_monitors();
 
@@ -323,11 +323,11 @@ public:
 
     /// \brief Clears all the custom monitors (set by the CSMS) present in the database
     /// \return count of monitors deleted, can be 0 if no custom monitors were present in the db
-    int32_t clear_custom_monitors();
+    std::int32_t clear_custom_monitors();
 
     /// \brief Check data integrity of the device model provided by the device model data storage:
     /// For "required" variables, assert values exist. Checks might be extended in the future.
-    void check_integrity(const std::map<int32_t, int32_t>& evse_connector_structure);
+    void check_integrity(const std::map<std::int32_t, std::int32_t>& evse_connector_structure);
 };
 
 } // namespace v2

@@ -13,7 +13,7 @@ using namespace std::chrono;
 
 using QueryExecutionException = everest::db::QueryExecutionException;
 
-const int32_t STATION_WIDE_ID = 0;
+const std::int32_t STATION_WIDE_ID = 0;
 
 namespace {
 /**
@@ -99,7 +99,7 @@ bool validate_schedule(const ChargingSchedule& schedule, const int charging_sche
     return true;
 }
 
-SmartChargingHandler::SmartChargingHandler(std::map<int32_t, std::shared_ptr<Connector>>& connectors,
+SmartChargingHandler::SmartChargingHandler(std::map<std::int32_t, std::shared_ptr<Connector>>& connectors,
                                            std::shared_ptr<DatabaseHandler> database_handler,
                                            ChargePointConfiguration& configuration) :
     connectors(connectors), database_handler(database_handler), configuration(configuration) {
@@ -145,7 +145,7 @@ struct CompositeScheduleConfig {
     std::set<ChargingProfilePurposeType> purposes_to_ignore;
     float current_limit{};
     float power_limit{};
-    int32_t default_number_phases{};
+    std::int32_t default_number_phases{};
     float supply_voltage{};
 
     CompositeScheduleConfig(ChargePointConfiguration& configuration, bool is_offline) {
@@ -205,7 +205,7 @@ std::vector<IntermediateProfile> generate_evse_intermediates(std::vector<Chargin
 
 ChargingSchedule SmartChargingHandler::calculate_composite_schedule(const ocpp::DateTime& start_time,
                                                                     const ocpp::DateTime& end_time,
-                                                                    const int32_t evse_id,
+                                                                    const std::int32_t evse_id,
                                                                     ChargingRateUnit charging_rate_unit,
                                                                     bool is_offline, bool simulate_transaction_active) {
     const auto enhanced_composite_schedule = this->calculate_enhanced_composite_schedule(
@@ -226,7 +226,7 @@ ChargingSchedule SmartChargingHandler::calculate_composite_schedule(const ocpp::
 }
 
 EnhancedChargingSchedule SmartChargingHandler::calculate_enhanced_composite_schedule(
-    const ocpp::DateTime& start_time, const ocpp::DateTime& end_time, const int32_t evse_id,
+    const ocpp::DateTime& start_time, const ocpp::DateTime& end_time, const std::int32_t evse_id,
     ChargingRateUnit charging_rate_unit, bool is_offline, bool simulate_transaction_active) {
 
     const CompositeScheduleConfig config{this->configuration, is_offline};
@@ -438,7 +438,7 @@ void SmartChargingHandler::add_tx_profile(const ChargingProfile& profile, const 
     }
 }
 
-bool SmartChargingHandler::clear_profiles(std::map<int32_t, ChargingProfile>& stack_level_profiles_map,
+bool SmartChargingHandler::clear_profiles(std::map<std::int32_t, ChargingProfile>& stack_level_profiles_map,
                                           std::optional<int> profile_id_opt, std::optional<int> connector_id_opt,
                                           const int connector_id, std::optional<int> stack_level_opt,
                                           std::optional<ChargingProfilePurposeType> charging_profile_purpose_opt,
@@ -541,7 +541,7 @@ SmartChargingHandler::get_valid_profiles(const ocpp::DateTime& /*start_time*/, c
     if (connector_id > 0) {
         // tx_default profiles added to connector 0 are copied to every connector
 
-        std::optional<int32_t> transactionId;
+        std::optional<std::int32_t> transactionId;
         const auto& itt = connectors.find(connector_id);
         if (itt != connectors.end()) {
             // connector exists!

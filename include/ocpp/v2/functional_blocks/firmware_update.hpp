@@ -22,7 +22,7 @@ class FirmwareUpdateInterface : public MessageHandlerInterface {
 public:
     ~FirmwareUpdateInterface() override = default;
 
-    virtual void on_firmware_update_status_notification(int32_t request_id,
+    virtual void on_firmware_update_status_notification(std::int32_t request_id,
                                                         const FirmwareStatusEnum& firmware_update_status) = 0;
     virtual void on_firmware_status_notification_request() = 0;
 };
@@ -38,7 +38,7 @@ private: // Members
 
     FirmwareStatusEnum firmware_status;
     // The request ID in the last firmware update status received
-    std::optional<int32_t> firmware_status_id;
+    std::optional<std::int32_t> firmware_status_id;
     // The last firmware status which will be posted before the firmware is installed.
     FirmwareStatusEnum firmware_status_before_installing = FirmwareStatusEnum::SignatureVerified;
 
@@ -47,7 +47,7 @@ public:
                    SecurityInterface& security, UpdateFirmwareRequestCallback update_firmware_request_callback,
                    std::optional<AllConnectorsUnavailableCallback> all_connectors_unavailable_callback);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
-    void on_firmware_update_status_notification(int32_t request_id,
+    void on_firmware_update_status_notification(std::int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
     void on_firmware_status_notification_request() override;
 

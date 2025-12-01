@@ -99,7 +99,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     this->boot_notification_timer =
         std::make_unique<Everest::SteadyTimer>(&this->io_context, [this]() { this->boot_notification(); });
 
-    for (int32_t connector = 0; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
+    for (std::int32_t connector = 0; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
         this->status_notification_timers.push_back(std::make_unique<Everest::SteadyTimer>(&this->io_context));
     }
 
@@ -135,7 +135,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
     });
 
     this->status = std::make_unique<ChargePointStates>(
-        [this](const int32_t connector, const ChargePointErrorCode errorCode, const ChargePointStatus status,
+        [this](const std::int32_t connector, const ChargePointErrorCode errorCode, const ChargePointStatus status,
                const ocpp::DateTime& timestamp, const std::optional<CiString<50>>& info,
                const std::optional<CiString<255>>& vendor_id, const std::optional<CiString<50>>& vendor_error_code) {
             if (connector >= this->status_notification_timers.size() or connector >= this->connectors.size()) {
@@ -465,7 +465,7 @@ void ChargePointImpl::boot_notification(bool initiated_by_trigger_message) {
 
 void ChargePointImpl::clock_aligned_meter_values_sample() {
     EVLOG_debug << "Sending clock aligned meter values";
-    for (int32_t connector = 1; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
+    for (std::int32_t connector = 1; connector < this->configuration->getNumberOfConnectors() + 1; connector++) {
         auto meter_value = this->get_latest_meter_value(
             connector, this->configuration->getMeterValuesAlignedDataVector(), ReadingContext::Sample_Clock);
         if (meter_value.has_value()) {
@@ -486,7 +486,7 @@ void ChargePointImpl::update_heartbeat_interval() {
 
 void ChargePointImpl::update_meter_values_sample_interval() {
     // TODO(kai): should we update the meter values for continuous monitoring here too?
-    const int32_t interval = this->configuration->getMeterValueSampleInterval();
+    const std::int32_t interval = this->configuration->getMeterValueSampleInterval();
     this->transaction_handler->change_meter_values_sample_intervals(interval);
 }
 
@@ -598,7 +598,7 @@ void ChargePointImpl::load_charging_profiles() {
     }
 }
 
-std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(int32_t connector,
+std::optional<MeterValue> ChargePointImpl::get_latest_meter_value(std::int32_t connector,
                                                                   std::vector<MeasurandWithPhase> values_of_interest,
                                                                   ReadingContext context) {
     const std::lock_guard<std::mutex> lock(measurement_mutex);
@@ -988,7 +988,8 @@ MeterValue get_signed_meter_value(const std::string& signed_value, const Reading
 }
 } // namespace
 
-void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value, bool initiated_by_trigger_message) {
+void ChargePointImpl::send_meter_value(std::int32_t connector, MeterValue meter_value,
+                                       bool initiated_by_trigger_message) {
 
     if (meter_value.sampledValue.empty()) {
         return;
@@ -1026,7 +1027,7 @@ void ChargePointImpl::send_meter_value(int32_t connector, MeterValue meter_value
     this->message_dispatcher->dispatch_call(call, initiated_by_trigger_message);
 }
 
-void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connector_number,
+void ChargePointImpl::send_meter_value_on_pricing_trigger(const std::int32_t connector_number,
                                                           std::shared_ptr<Connector> connector,
                                                           const Measurement& measurement) {
     if (connector->trigger_metervalue_on_energy_kwh.has_value()) {
@@ -1098,7 +1099,7 @@ void ChargePointImpl::send_meter_value_on_pricing_trigger(const int32_t connecto
     }
 }
 
-void ChargePointImpl::reset_pricing_triggers(const int32_t connector_number) {
+void ChargePointImpl::reset_pricing_triggers(const std::int32_t connector_number) {
     const std::shared_ptr<Connector> c = this->connectors.at(connector_number);
     c->last_triggered_metervalue_power_kw = std::nullopt;
     c->trigger_metervalue_on_power_kw = std::nullopt;
@@ -1205,12 +1206,12 @@ void ChargePointImpl::reset_state_machine(const std::map<int, ChargePointStatus>
 }
 
 void ChargePointImpl::change_all_connectors_to_unavailable_for_firmware_update() {
-    std::map<int32_t, AvailabilityStatus> connector_availability_status;
+    std::map<std::int32_t, AvailabilityStatus> connector_availability_status;
 
     bool transaction_running = false;
 
-    const int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
-    for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
+    const std::int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+    for (std::int32_t connector = 1; connector <= number_of_connectors; connector++) {
         if (this->transaction_handler->transaction_active(connector)) {
             EVLOG_debug << "change_all_connectors_to_unavailable_for_firmware_update: detected running Transaction on "
                            "connector "
@@ -1243,8 +1244,8 @@ void ChargePointImpl::stop_all_transactions() {
 }
 
 void ChargePointImpl::stop_all_transactions(Reason reason) {
-    const int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
-    for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
+    const std::int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+    for (std::int32_t connector = 1; connector <= number_of_connectors; connector++) {
         if (this->transaction_handler->transaction_active(connector)) {
             this->stop_transaction_callback(connector, reason);
         }
@@ -1728,12 +1729,12 @@ void ChargePointImpl::handleBootNotificationResponse(ocpp::CallResult<BootNotifi
 
 void ChargePointImpl::preprocess_change_availability_request(
     const ChangeAvailabilityRequest& request, ChangeAvailabilityResponse& response,
-    std::vector<int32_t>& accepted_connector_availability_changes) {
+    std::vector<std::int32_t>& accepted_connector_availability_changes) {
 
     // we can only change the connector availability if there is no active transaction on this
     // connector or the connector is not in Preparing state. If this is the case this change must be scheduled and we
     // should report an availability status of "Scheduled"
-    auto should_be_scheduled_func = [this](int32_t connector) {
+    auto should_be_scheduled_func = [this](std::int32_t connector) {
         return this->transaction_handler->transaction_active(connector) or
                this->status->get_state(connector) == ChargePointStatus::Preparing;
     };
@@ -1744,8 +1745,8 @@ void ChargePointImpl::preprocess_change_availability_request(
 
         if (request.connectorId == 0) {
             accepted_connector_availability_changes.push_back(0);
-            const int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
-            for (int32_t connector = 1; connector <= number_of_connectors; connector++) {
+            const std::int32_t number_of_connectors = this->configuration->getNumberOfConnectors();
+            for (std::int32_t connector = 1; connector <= number_of_connectors; connector++) {
                 if (should_be_scheduled_func(connector)) {
                     should_be_scheduled = true;
                     const std::lock_guard<std::mutex> change_availability_lock(change_availability_mutex);
@@ -1780,7 +1781,7 @@ void ChargePointImpl::preprocess_change_availability_request(
     }
 }
 
-void ChargePointImpl::execute_connectors_availability_change(const std::vector<int32_t>& changed_connectors,
+void ChargePointImpl::execute_connectors_availability_change(const std::vector<std::int32_t>& changed_connectors,
                                                              const ocpp::v16::AvailabilityType availability,
                                                              bool persist) {
     for (const auto& connector : changed_connectors) {
@@ -1811,7 +1812,7 @@ void ChargePointImpl::execute_connectors_availability_change(const std::vector<i
     }
 }
 
-void ChargePointImpl::execute_queued_availability_change(const int32_t connector) {
+void ChargePointImpl::execute_queued_availability_change(const std::int32_t connector) {
     bool change_queued = false;
     AvailabilityType connector_availability = AvailabilityType::Inoperative;
     bool persist = false;
@@ -1912,7 +1913,7 @@ ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> 
                                 message_dispatcher->dispatch_call_result(call_result);
                             }
                             response.reset(); // response has been sent
-                            int32_t security_profile = std::stoi(value);
+                            std::int32_t security_profile = std::stoi(value);
                             switch_security_profile_callback = [this, security_profile]() {
                                 switchSecurityProfile(security_profile, 1);
                             };
@@ -1985,7 +1986,7 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
     const auto& request = call.msg;
 
     ChangeAvailabilityResponse response{};
-    std::vector<int32_t> accepted_connector_availability_changes{};
+    std::vector<std::int32_t> accepted_connector_availability_changes{};
     preprocess_change_availability_request(request, response, accepted_connector_availability_changes);
 
     // respond first
@@ -2010,7 +2011,7 @@ void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigur
     }
 }
 
-void ChargePointImpl::switchSecurityProfile(int32_t new_security_profile, int32_t max_connection_attempts) {
+void ChargePointImpl::switchSecurityProfile(std::int32_t new_security_profile, std::int32_t max_connection_attempts) {
     EVLOG_info << "Switching security profile from " << this->configuration->getSecurityProfile() << " to "
                << new_security_profile;
     const auto old_security_profile = this->configuration->getSecurityProfile();
@@ -2119,7 +2120,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
     // a charge point may reject a remote start transaction request without a connectorId
     // TODO(kai): what is our policy here? reject for now
     RemoteStartTransactionResponse response;
-    std::vector<int32_t> referenced_connectors;
+    std::vector<std::int32_t> referenced_connectors;
 
     if (call.msg.connectorId) {
         if (call.msg.connectorId.value() <= 0 or
@@ -2202,7 +2203,7 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
     }
 
     {
-        std::vector<int32_t> referenced_connectors;
+        std::vector<std::int32_t> referenced_connectors;
 
         if (!call.msg.connectorId) {
             for (int connector = 1; connector <= this->configuration->getNumberOfConnectors(); connector++) {
@@ -2295,7 +2296,7 @@ void ChargePointImpl::handleResetRequest(ocpp::Call<ResetRequest> call) {
             std::unique_lock lk(this->stop_transaction_mutex);
             this->stop_transaction_cv.wait_for(
                 lk, std::chrono::seconds(this->configuration->getWaitForStopTransactionsOnResetTimeout()), [this] {
-                    for (int32_t connector = 1; connector <= this->configuration->getNumberOfConnectors();
+                    for (std::int32_t connector = 1; connector <= this->configuration->getNumberOfConnectors();
                          connector++) {
                         if (this->transaction_handler->transaction_active(connector) or
                             this->status->get_state(connector) == ChargePointStatus::Charging) {
@@ -2330,7 +2331,7 @@ void ChargePointImpl::handleStartTransactionResponse(ocpp::CallResult<StartTrans
         }
         this->message_queue->notify_start_transaction_handled(call_result.uniqueId.get(),
                                                               start_transaction_response.transactionId);
-        const int32_t connector = transaction->get_connector();
+        const std::int32_t connector = transaction->get_connector();
         transaction->set_transaction_id(start_transaction_response.transactionId);
         auto idTag = transaction->get_id_tag();
 
@@ -2376,7 +2377,7 @@ void ChargePointImpl::handleStopTransactionResponse(const EnhancedMessage<v16::M
     const auto transaction = this->transaction_handler->get_transaction(call_result.uniqueId);
 
     if (transaction != nullptr) {
-        const int32_t connector = transaction->get_connector();
+        const std::int32_t connector = transaction->get_connector();
 
         if (stop_transaction_response.idTagInfo) {
             auto id_tag = this->transaction_handler->get_authorized_id_tag(call_result.uniqueId.get());
@@ -2635,7 +2636,7 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
         this->heartbeat(true);
         break;
     case MessageTrigger::MeterValues: {
-        const auto send_meter_value_func = [this](const int32_t connector_id) {
+        const auto send_meter_value_func = [this](const std::int32_t connector_id) {
             auto meter_value = this->get_latest_meter_value(
                 connector_id, this->configuration->getMeterValuesSampledDataVector(), ReadingContext::Trigger);
             if (meter_value.has_value()) {
@@ -2648,7 +2649,7 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
 
         if (!call.msg.connectorId.has_value()) {
             // send a MeterValue.req for every connector
-            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+            for (std::int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
                 send_meter_value_func(c);
             }
         } else {
@@ -2659,7 +2660,7 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
     case MessageTrigger::StatusNotification:
         if (!call.msg.connectorId.has_value()) {
             // send a status notification for every connector
-            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+            for (std::int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
                 const ErrorInfo error_info =
                     this->status->get_latest_error(c).value_or(ErrorInfo("", ChargePointErrorCode::NoError, false));
                 this->status_notification(c, error_info.error_code, this->status->get_state(c), ocpp::DateTime(),
@@ -2779,7 +2780,7 @@ void ChargePointImpl::handleExtendedTriggerMessageRequest(ocpp::Call<ExtendedTri
     case MessageTriggerEnumType::StatusNotification:
         if (!call.msg.connectorId.has_value()) {
             // send a status notification for every connector
-            for (int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
+            for (std::int32_t c = 0; c <= this->configuration->getNumberOfConnectors(); c++) {
                 const ErrorInfo error_info =
                     this->status->get_latest_error(c).value_or(ErrorInfo("", ChargePointErrorCode::NoError, false));
                 this->status_notification(c, error_info.error_code, this->status->get_state(c), ocpp::DateTime(),
@@ -3265,7 +3266,7 @@ DataTransferResponse ChargePointImpl::handle_set_user_price(const std::optional<
     } else {
         identifier_id = t->get_session_id();
         identifier_type = IdentifierType::SessionId;
-        const std::optional<int32_t> transaction_id = t->get_transaction_id();
+        const std::optional<std::int32_t> transaction_id = t->get_transaction_id();
         if (transaction_id != std::nullopt) {
             tariff_message.ocpp_transaction_id = std::to_string(transaction_id.value());
         }
@@ -3340,7 +3341,7 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const RunningCostS
         return response;
     }
 
-    const int32_t connector_id =
+    const std::int32_t connector_id =
         this->transaction_handler->get_connector_from_transaction_id(std::stoi(cost.transaction_id));
     std::string session_id = cost.transaction_id;
     if (connector_id == -1) {
@@ -3361,7 +3362,7 @@ DataTransferResponse ChargePointImpl::handle_set_session_cost(const RunningCostS
 
     cost.transaction_id = session_id;
     cost.state = type;
-    static const uint32_t number_of_decimals =
+    static const std::uint32_t number_of_decimals =
         this->configuration->getPriceNumberOfDecimalsForCostValues().value_or(DEFAULT_PRICE_NUMBER_OF_DECIMALS);
 
     if (connector != nullptr) {
@@ -3413,7 +3414,7 @@ void ChargePointImpl::set_connector_trigger_metervalue_timer(const DateTime& dat
     }
 
     const DateTime d(now);
-    const int32_t connector_id = connector->id;
+    const std::int32_t connector_id = connector->id;
 
     connector->trigger_metervalue_at_time_timer =
         std::make_unique<Everest::SystemTimer>(&this->io_context, [this, connector_id]() {
@@ -3450,7 +3451,7 @@ void ChargePointImpl::set_time_offset_timer(const std::string& date_time) {
     this->change_time_offset_timer->at(d.to_time_point());
 }
 
-void ChargePointImpl::status_notification(const int32_t connector, const ChargePointErrorCode errorCode,
+void ChargePointImpl::status_notification(const std::int32_t connector, const ChargePointErrorCode errorCode,
                                           const ChargePointStatus status, const ocpp::DateTime& /*timestamp*/,
                                           const std::optional<CiString<50>>& info,
                                           const std::optional<CiString<255>>& vendor_id,
@@ -3593,10 +3594,10 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> id_token, con
     return enhanced_id_tag_info;
 }
 
-std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_schedules(const int32_t duration_s,
-                                                                                          const ChargingRateUnit unit) {
+std::map<std::int32_t, ChargingSchedule>
+ChargePointImpl::get_all_composite_charging_schedules(const std::int32_t duration_s, const ChargingRateUnit unit) {
 
-    std::map<int32_t, ChargingSchedule> charging_schedules;
+    std::map<std::int32_t, ChargingSchedule> charging_schedules;
     std::set<ChargingProfilePurposeType> purposes_to_ignore;
     const auto is_offline = this->websocket == nullptr or not this->websocket->is_connected();
 
@@ -3620,10 +3621,11 @@ std::map<int32_t, ChargingSchedule> ChargePointImpl::get_all_composite_charging_
     return charging_schedules;
 }
 
-std::map<int32_t, EnhancedChargingSchedule>
-ChargePointImpl::get_all_enhanced_composite_charging_schedules(const int32_t duration_s, const ChargingRateUnit unit) {
+std::map<std::int32_t, EnhancedChargingSchedule>
+ChargePointImpl::get_all_enhanced_composite_charging_schedules(const std::int32_t duration_s,
+                                                               const ChargingRateUnit unit) {
 
-    std::map<int32_t, EnhancedChargingSchedule> charging_schedules;
+    std::map<std::int32_t, EnhancedChargingSchedule> charging_schedules;
     std::set<ChargingProfilePurposeType> purposes_to_ignore;
 
     if (this->websocket == nullptr or not this->websocket->is_connected()) {
@@ -3867,7 +3869,7 @@ void ChargePointImpl::data_transfer_pnc_sign_certificate() {
 }
 
 void ChargePointImpl::data_transfer_pnc_get_15118_ev_certificate(
-    const int32_t connector_id, const std::string& exi_request, const std::string& iso15118_schema_version,
+    const std::int32_t connector_id, const std::string& exi_request, const std::string& iso15118_schema_version,
     const ocpp::v2::CertificateActionEnum& certificate_action) {
 
     if (!this->is_pnc_enabled()) {
@@ -4250,7 +4252,7 @@ void ChargePointImpl::register_data_transfer_callback(
     this->data_transfer_callback = callback;
 }
 
-void ChargePointImpl::on_meter_values(int32_t connector, const Measurement& measurement) {
+void ChargePointImpl::on_meter_values(std::int32_t connector, const Measurement& measurement) {
     // FIXME: fix measurement to also work with dc
     std::shared_ptr<Connector> c;
     {
@@ -4263,14 +4265,14 @@ void ChargePointImpl::on_meter_values(int32_t connector, const Measurement& meas
     send_meter_value_on_pricing_trigger(connector, c, measurement);
 }
 
-void ChargePointImpl::on_max_current_offered(int32_t connector, int32_t max_current) {
+void ChargePointImpl::on_max_current_offered(std::int32_t connector, std::int32_t max_current) {
     const std::lock_guard<std::mutex> lock(measurement_mutex);
     // TODO(kai): uses power meter mutex because the reading context is similar, think about storing
     // this information in a unified struct
     this->connectors.at(connector)->max_current_offered = max_current;
 }
 
-void ChargePointImpl::on_max_power_offered(int32_t connector, int32_t max_power) {
+void ChargePointImpl::on_max_power_offered(std::int32_t connector, std::int32_t max_power) {
     const std::lock_guard<std::mutex> lock(measurement_mutex);
     // TODO(kai): uses power meter mutex because the reading context is similar, think about storing
     // this information in a unified struct
@@ -4282,7 +4284,7 @@ void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction
     StartTransactionRequest req;
     req.connectorId = transaction->get_connector();
     req.idTag = transaction->get_id_tag();
-    req.meterStart = clamp_to<int32_t>(std::lround(transaction->get_start_energy_wh()->energy_Wh));
+    req.meterStart = clamp_to<std::int32_t>(std::lround(transaction->get_start_energy_wh()->energy_Wh));
     req.timestamp = transaction->get_start_energy_wh()->timestamp;
     const auto message_id = ocpp::create_message_id();
 
@@ -4313,7 +4315,7 @@ void ChargePointImpl::start_transaction(std::shared_ptr<Transaction> transaction
     }
 }
 
-void ChargePointImpl::on_session_started(int32_t connector, const std::string& session_id,
+void ChargePointImpl::on_session_started(std::int32_t connector, const std::string& session_id,
                                          const ocpp::SessionStartedReason reason,
                                          const std::optional<std::string>& session_logging_path) {
 
@@ -4332,7 +4334,7 @@ void ChargePointImpl::on_session_started(int32_t connector, const std::string& s
     }
 }
 
-void ChargePointImpl::on_session_stopped(const int32_t connector, const std::string& session_id) {
+void ChargePointImpl::on_session_stopped(const std::int32_t connector, const std::string& session_id) {
     this->execute_queued_availability_change(connector);
 
     if (this->status->get_state(connector) != ChargePointStatus::Reserved &&
@@ -4345,9 +4347,10 @@ void ChargePointImpl::on_session_stopped(const int32_t connector, const std::str
     }
 }
 
-void ChargePointImpl::on_transaction_started(const int32_t& connector, const std::string& session_id,
+void ChargePointImpl::on_transaction_started(const std::int32_t& connector, const std::string& session_id,
                                              const std::string& id_token, const double meter_start,
-                                             std::optional<int32_t> reservation_id, const ocpp::DateTime& timestamp,
+                                             std::optional<std::int32_t> reservation_id,
+                                             const ocpp::DateTime& timestamp,
                                              std::optional<std::string> signed_meter_value) {
     if (this->status->get_state(connector) == ChargePointStatus::Reserved) {
         this->status->submit_event(connector, FSMEvent::UsageInitiated, ocpp::DateTime());
@@ -4399,7 +4402,7 @@ void ChargePointImpl::on_transaction_started(const int32_t& connector, const std
     this->start_transaction(transaction);
 }
 
-void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std::string& session_id,
+void ChargePointImpl::on_transaction_stopped(const std::int32_t connector, const std::string& session_id,
                                              const Reason& reason, ocpp::DateTime timestamp, float energy_wh_import,
                                              std::optional<CiString<20>> id_tag_end,
                                              std::optional<std::string> signed_meter_value) {
@@ -4438,7 +4441,7 @@ void ChargePointImpl::on_transaction_stopped(const int32_t connector, const std:
     reset_pricing_triggers(connector);
 }
 
-void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::optional<CiString<20>> id_tag_end) {
+void ChargePointImpl::stop_transaction(std::int32_t connector, Reason reason, std::optional<CiString<20>> id_tag_end) {
     EVLOG_debug << "Called stop transaction with reason: " << conversions::reason_to_string(reason);
     StopTransactionRequest req;
 
@@ -4452,7 +4455,7 @@ void ChargePointImpl::stop_transaction(int32_t connector, Reason reason, std::op
         }
     }
 
-    req.meterStop = clamp_to<int32_t>(std::lround(energyWhStamped->energy_Wh));
+    req.meterStop = clamp_to<std::int32_t>(std::lround(energyWhStamped->energy_Wh));
     req.timestamp = energyWhStamped->timestamp;
     req.reason.emplace(reason);
     req.transactionId = transaction->get_transaction_id().value_or(transaction->get_internal_transaction_id());
@@ -4563,31 +4566,31 @@ ChargePointImpl::get_filtered_transaction_data(const std::shared_ptr<Transaction
     return filtered_transaction_data_vec;
 }
 
-void ChargePointImpl::on_suspend_charging_ev(int32_t connector, const std::optional<CiString<50>> info) {
+void ChargePointImpl::on_suspend_charging_ev(std::int32_t connector, const std::optional<CiString<50>> info) {
     this->status->submit_event(connector, FSMEvent::PauseChargingEV, ocpp::DateTime(), info);
 }
 
-void ChargePointImpl::on_suspend_charging_evse(int32_t connector, const std::optional<CiString<50>> info) {
+void ChargePointImpl::on_suspend_charging_evse(std::int32_t connector, const std::optional<CiString<50>> info) {
     this->status->submit_event(connector, FSMEvent::PauseChargingEVSE, ocpp::DateTime(), info);
 }
 
-void ChargePointImpl::on_resume_charging(int32_t connector) {
+void ChargePointImpl::on_resume_charging(std::int32_t connector) {
     this->status->submit_event(connector, FSMEvent::StartCharging, ocpp::DateTime());
 }
 
-void ChargePointImpl::on_error(int32_t connector, const ErrorInfo& error_info) {
+void ChargePointImpl::on_error(std::int32_t connector, const ErrorInfo& error_info) {
     this->status->submit_error(connector, error_info);
 }
 
-void ChargePointImpl::on_error_cleared(int32_t connector, const std::string uuid) {
+void ChargePointImpl::on_error_cleared(std::int32_t connector, const std::string uuid) {
     this->status->submit_error_cleared(connector, uuid);
 }
 
-void ChargePointImpl::on_all_errors_cleared(int32_t connector) {
+void ChargePointImpl::on_all_errors_cleared(std::int32_t connector) {
     this->status->submit_all_errors_cleared(connector);
 }
 
-void ChargePointImpl::on_log_status_notification(int32_t request_id, std::string log_status) {
+void ChargePointImpl::on_log_status_notification(std::int32_t request_id, std::string log_status) {
     // request id of -1 indicates a diagnostics status notification, else log status notification
     if (request_id != -1) {
         this->log_status_notification(conversions::string_to_upload_log_status_enum_type(log_status), request_id);
@@ -4601,7 +4604,7 @@ void ChargePointImpl::on_log_status_notification(int32_t request_id, std::string
     }
 }
 
-void ChargePointImpl::on_firmware_update_status_notification(int32_t request_id,
+void ChargePointImpl::on_firmware_update_status_notification(std::int32_t request_id,
                                                              const FirmwareStatusNotification firmware_update_status) {
     try {
         if (request_id != -1) {
@@ -4690,45 +4693,47 @@ void ChargePointImpl::firmware_status_notification(FirmwareStatus status, bool i
     }
 }
 
-void ChargePointImpl::register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePointImpl::register_enable_evse_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->enable_evse_callback = callback;
 }
 
-void ChargePointImpl::register_disable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePointImpl::register_disable_evse_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->disable_evse_callback = callback;
 }
 
-void ChargePointImpl::register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePointImpl::register_pause_charging_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->pause_charging_callback = callback;
 }
 
-void ChargePointImpl::register_resume_charging_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePointImpl::register_resume_charging_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->resume_charging_callback = callback;
 }
 
 void ChargePointImpl::register_provide_token_callback(
-    const std::function<void(const std::string& id_token, std::vector<int32_t> referenced_connectors,
+    const std::function<void(const std::string& id_token, std::vector<std::int32_t> referenced_connectors,
                              bool prevalidated)>& callback) {
     this->provide_token_callback = callback;
 }
 
 void ChargePointImpl::register_stop_transaction_callback(
-    const std::function<bool(int32_t connector, Reason reason)>& callback) {
+    const std::function<bool(std::int32_t connector, Reason reason)>& callback) {
     this->stop_transaction_callback = callback;
 }
 
 void ChargePointImpl::register_reserve_now_callback(
-    const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
-                                          CiString<20> idTag, std::optional<CiString<20>> parent_id)>& callback) {
+    const std::function<ReservationStatus(std::int32_t reservation_id, std::int32_t connector,
+                                          ocpp::DateTime expiryDate, CiString<20> idTag,
+                                          std::optional<CiString<20>> parent_id)>& callback) {
     this->reserve_now_callback = callback;
 }
 
-void ChargePointImpl::register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePointImpl::register_cancel_reservation_callback(
+    const std::function<bool(std::int32_t connector)>& callback) {
     this->cancel_reservation_callback = callback;
 }
 
 void ChargePointImpl::register_unlock_connector_callback(
-    const std::function<UnlockStatus(int32_t connector)>& callback) {
+    const std::function<UnlockStatus(std::int32_t connector)>& callback) {
     this->unlock_connector_callback = callback;
 }
 
@@ -4779,7 +4784,7 @@ void ChargePointImpl::register_upload_logs_callback(const std::function<GetLogRe
 }
 
 void ChargePointImpl::register_set_connection_timeout_callback(
-    const std::function<void(int32_t connection_timeout)>& callback) {
+    const std::function<void(std::int32_t connection_timeout)>& callback) {
     this->set_connection_timeout_callback = callback;
 }
 
@@ -4789,26 +4794,26 @@ void ChargePointImpl::register_connection_state_changed_callback(
 }
 
 void ChargePointImpl::register_get_15118_ev_certificate_response_callback(
-    const std::function<void(const int32_t connector,
+    const std::function<void(const std::int32_t connector,
                              const ocpp::v2::Get15118EVCertificateResponse& certificate_response,
                              const ocpp::v2::CertificateActionEnum& certificate_action)>& callback) {
     this->get_15118_ev_certificate_response_callback = callback;
 }
 
 void ChargePointImpl::register_transaction_started_callback(
-    const std::function<void(const int32_t connector, const std::string& session_id)>& callback) {
+    const std::function<void(const std::int32_t connector, const std::string& session_id)>& callback) {
     this->transaction_started_callback = callback;
 }
 
 void ChargePointImpl::register_transaction_stopped_callback(
-    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id)>&
-        callback) {
+    const std::function<void(const std::int32_t connector, const std::string& session_id,
+                             const std::int32_t transaction_id)>& callback) {
     this->transaction_stopped_callback = callback;
 }
 
 void ChargePointImpl::register_transaction_updated_callback(
-    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id,
-                             const IdTagInfo& id_tag_info)>
+    const std::function<void(const std::int32_t connector, const std::string& session_id,
+                             const std::int32_t transaction_id, const IdTagInfo& id_tag_info)>
         callback) {
     this->transaction_updated_callback = callback;
 }
@@ -4829,12 +4834,13 @@ void ChargePointImpl::register_security_event_callback(
 }
 
 void ChargePointImpl::register_is_token_reserved_for_connector_callback(
-    const std::function<ocpp::ReservationCheckStatus(const int32_t connector, const std::string& id_token)>& callback) {
+    const std::function<ocpp::ReservationCheckStatus(const std::int32_t connector, const std::string& id_token)>&
+        callback) {
     this->is_token_reserved_for_connector_callback = callback;
 }
 
 void ChargePointImpl::register_session_cost_callback(
-    const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
+    const std::function<DataTransferResponse(const RunningCost& running_cost, const std::uint32_t number_of_decimals)>&
         session_cost_callback) {
     this->session_cost_callback = session_cost_callback;
 }
@@ -4850,23 +4856,23 @@ void ChargePointImpl::register_set_display_message_callback(
     this->set_display_message_callback = set_display_message_callback;
 }
 
-void ChargePointImpl::on_reservation_start(int32_t connector) {
+void ChargePointImpl::on_reservation_start(std::int32_t connector) {
     this->status->submit_event(connector, FSMEvent::ReserveConnector, ocpp::DateTime());
 }
 
-void ChargePointImpl::on_reservation_end(int32_t connector) {
+void ChargePointImpl::on_reservation_end(std::int32_t connector) {
     this->status->submit_event(connector, FSMEvent::ReservationEnd, ocpp::DateTime());
 }
 
-void ChargePointImpl::on_enabled(int32_t connector) {
+void ChargePointImpl::on_enabled(std::int32_t connector) {
     this->status->submit_event(connector, FSMEvent::BecomeAvailable, ocpp::DateTime());
 }
 
-void ChargePointImpl::on_disabled(int32_t connector) {
+void ChargePointImpl::on_disabled(std::int32_t connector) {
     this->status->submit_event(connector, FSMEvent::ChangeAvailabilityToUnavailable, ocpp::DateTime());
 }
 
-void ChargePointImpl::on_plugin_timeout(int32_t connector) {
+void ChargePointImpl::on_plugin_timeout(std::int32_t connector) {
     this->status->submit_event(connector, FSMEvent::TransactionStoppedAndUserActionRequired, ocpp::DateTime(),
                                "ConnectionTimeout");
 }
@@ -4881,7 +4887,7 @@ ChangeAvailabilityResponse ChargePointImpl::on_change_availability(const ChangeA
                 << conversions::availability_type_to_string(request.type);
 
     ChangeAvailabilityResponse response{};
-    std::vector<int32_t> accepted_connector_availability_changes{};
+    std::vector<std::int32_t> accepted_connector_availability_changes{};
 
     preprocess_change_availability_request(request, response, accepted_connector_availability_changes);
 

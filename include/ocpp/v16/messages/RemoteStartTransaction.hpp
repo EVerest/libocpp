@@ -18,7 +18,7 @@ namespace v16 {
 /// \brief Contains a OCPP RemoteStartTransaction message
 struct RemoteStartTransactionRequest : public ocpp::Message {
     CiString<20> idTag;
-    std::optional<int32_t> connectorId;
+    std::optional<std::int32_t> connectorId;
     std::optional<ChargingProfile> chargingProfile;
 
     /// \brief Provides the type of this RemoteStartTransaction message as a human readable string

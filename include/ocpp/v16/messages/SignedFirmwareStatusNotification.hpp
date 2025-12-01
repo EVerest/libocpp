@@ -17,7 +17,7 @@ namespace v16 {
 /// \brief Contains a OCPP SignedFirmwareStatusNotification message
 struct SignedFirmwareStatusNotificationRequest : public ocpp::Message {
     FirmwareStatusEnumType status;
-    std::optional<int32_t> requestId;
+    std::optional<std::int32_t> requestId;
 
     /// \brief Provides the type of this SignedFirmwareStatusNotification message as a human readable string
     /// \returns the message type as a human readable string

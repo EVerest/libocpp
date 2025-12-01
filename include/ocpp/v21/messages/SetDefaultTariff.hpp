@@ -18,7 +18,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP SetDefaultTariff message
 struct SetDefaultTariffRequest : public ocpp::Message {
-    int32_t evseId;
+    std::int32_t evseId;
     Tariff tariff;
     std::optional<CustomData> customData;
 

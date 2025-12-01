@@ -48,10 +48,10 @@ struct SQLiteStatementTest : public StatementInterface {
     virtual int bind_int(const std::string& param, const int val) {
         return 0;
     }
-    virtual int bind_int64(const int idx, const int64_t val) {
+    virtual int bind_int64(const int idx, const std::int64_t val) {
         return 0;
     }
-    virtual int bind_int64(const std::string& param, const int64_t val) {
+    virtual int bind_int64(const std::string& param, const std::int64_t val) {
         return 0;
     }
     virtual int bind_double(const int idx, const double val) {
@@ -81,7 +81,7 @@ struct SQLiteStatementTest : public StatementInterface {
     virtual int column_int(const int idx) {
         return 0;
     }
-    virtual int64_t column_int64(const int idx) {
+    virtual std::int64_t column_int64(const int idx) {
         return 0;
     }
     virtual double column_double(const int idx) {
@@ -120,12 +120,12 @@ struct DatabaseConnectionTest : public ConnectionInterface {
     virtual bool clear_table(const std::string& table) {
         return true;
     }
-    virtual int64_t get_last_inserted_rowid() {
+    virtual std::int64_t get_last_inserted_rowid() {
         return 1;
     }
-    virtual void set_user_version(uint32_t version) override {
+    virtual void set_user_version(std::uint32_t version) override {
     }
-    virtual uint32_t get_user_version() override {
+    virtual std::uint32_t get_user_version() override {
         return 0;
     }
 };
@@ -137,7 +137,7 @@ protected:
     const fs::path init_script_path = "./core_migrations";
     const fs::path db_filename = database_path / (chargepoint_id + ".db");
 
-    std::map<int32_t, std::shared_ptr<Connector>> connectors;
+    std::map<std::int32_t, std::shared_ptr<Connector>> connectors;
     std::shared_ptr<stubs::DatabaseHandlerTest> database_handler;
     std::unique_ptr<ConnectionInterface> database_interface;
     std::unique_ptr<ChargePointConfiguration> configuration;

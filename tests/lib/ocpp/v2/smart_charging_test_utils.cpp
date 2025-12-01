@@ -184,7 +184,8 @@ ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit)
 
 ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
                                         const std::vector<ChargingSchedulePeriod>& charging_schedule_period,
-                                        std::optional<ocpp::DateTime> start_schedule, std::optional<int32_t> duration) {
+                                        std::optional<ocpp::DateTime> start_schedule,
+                                        std::optional<std::int32_t> duration) {
     ChargingSchedule charging_schedule;
     charging_schedule.chargingRateUnit = charging_rate_unit;
     charging_schedule.chargingSchedulePeriod = charging_schedule_period;
@@ -193,9 +194,9 @@ ChargingSchedule create_charge_schedule(ChargingRateUnitEnum charging_rate_unit,
     return charging_schedule;
 }
 
-std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(int32_t start_period,
-                                                                     std::optional<int32_t> number_phases,
-                                                                     std::optional<int32_t> phase_to_use,
+std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(std::int32_t start_period,
+                                                                     std::optional<std::int32_t> number_phases,
+                                                                     std::optional<std::int32_t> phase_to_use,
                                                                      std::optional<float> limit) {
     ChargingSchedulePeriod charging_schedule_period;
     charging_schedule_period.startPeriod = start_period;
@@ -206,7 +207,7 @@ std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(int32_t sta
     return {charging_schedule_period};
 }
 
-std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(const std::vector<int32_t>& start_periods) {
+std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(const std::vector<std::int32_t>& start_periods) {
     auto charging_schedule_periods = std::vector<ChargingSchedulePeriod>();
     for (auto start_period : start_periods) {
         ChargingSchedulePeriod charging_schedule_period;
@@ -218,8 +219,9 @@ std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(const std::
     return charging_schedule_periods;
 }
 
-std::vector<ChargingSchedulePeriod>
-create_charging_schedule_periods_with_phases(int32_t start_period, int32_t numberPhases, int32_t phaseToUse) {
+std::vector<ChargingSchedulePeriod> create_charging_schedule_periods_with_phases(std::int32_t start_period,
+                                                                                 std::int32_t numberPhases,
+                                                                                 std::int32_t phaseToUse) {
     ChargingSchedulePeriod charging_schedule_period;
     charging_schedule_period.startPeriod = start_period;
     charging_schedule_period.numberPhases = numberPhases;
@@ -228,7 +230,7 @@ create_charging_schedule_periods_with_phases(int32_t start_period, int32_t numbe
     return {charging_schedule_period};
 }
 
-ChargingProfile create_charging_profile(int32_t charging_profile_id,
+ChargingProfile create_charging_profile(std::int32_t charging_profile_id,
                                         ChargingProfilePurposeEnum charging_profile_purpose,
                                         const std::vector<ChargingSchedule>& charging_schedules,
                                         std::optional<std::string> transaction_id,
@@ -250,7 +252,7 @@ ChargingProfile create_charging_profile(int32_t charging_profile_id,
     return charging_profile;
 }
 
-ChargingProfile create_charging_profile(int32_t charging_profile_id,
+ChargingProfile create_charging_profile(std::int32_t charging_profile_id,
                                         ChargingProfilePurposeEnum charging_profile_purpose,
                                         ChargingSchedule charging_schedule, std::optional<std::string> transaction_id,
                                         ChargingProfileKindEnum charging_profile_kind, int stack_level,
@@ -262,9 +264,9 @@ ChargingProfile create_charging_profile(int32_t charging_profile_id,
 }
 
 ChargingProfileCriterion create_charging_profile_criteria(std::optional<std::vector<ocpp::CiString<20>>> sources,
-                                                          std::optional<std::vector<int32_t>> ids,
+                                                          std::optional<std::vector<std::int32_t>> ids,
                                                           std::optional<ChargingProfilePurposeEnum> purpose,
-                                                          std::optional<int32_t> stack_level) {
+                                                          std::optional<std::int32_t> stack_level) {
     ChargingProfileCriterion criteria;
     criteria.chargingLimitSource = sources;
     criteria.chargingProfileId = ids;
@@ -273,8 +275,9 @@ ChargingProfileCriterion create_charging_profile_criteria(std::optional<std::vec
     return criteria;
 }
 
-GetChargingProfilesRequest create_get_charging_profile_request(int32_t request_id, ChargingProfileCriterion criteria,
-                                                               std::optional<int32_t> evse_id) {
+GetChargingProfilesRequest create_get_charging_profile_request(std::int32_t request_id,
+                                                               ChargingProfileCriterion criteria,
+                                                               std::optional<std::int32_t> evse_id) {
     GetChargingProfilesRequest req;
     req.requestId = request_id;
     req.chargingProfile = criteria;
@@ -282,7 +285,7 @@ GetChargingProfilesRequest create_get_charging_profile_request(int32_t request_i
     return req;
 }
 
-ClearChargingProfileRequest create_clear_charging_profile_request(std::optional<int32_t> id,
+ClearChargingProfileRequest create_clear_charging_profile_request(std::optional<std::int32_t> id,
                                                                   std::optional<ClearChargingProfile> criteria) {
     ClearChargingProfileRequest req;
     req.chargingProfileId = id;
@@ -290,9 +293,9 @@ ClearChargingProfileRequest create_clear_charging_profile_request(std::optional<
     return req;
 }
 
-ClearChargingProfile create_clear_charging_profile(std::optional<int32_t> evse_id,
+ClearChargingProfile create_clear_charging_profile(std::optional<std::int32_t> evse_id,
                                                    std::optional<ChargingProfilePurposeEnum> purpose,
-                                                   std::optional<int32_t> stack_level) {
+                                                   std::optional<std::int32_t> stack_level) {
     ClearChargingProfile clear_charging_profile;
     clear_charging_profile.customData = {};
     clear_charging_profile.evseId = evse_id;
@@ -391,7 +394,7 @@ void CompositeScheduleTestFixtureV2::TearDown() {
 }
 
 void CompositeScheduleTestFixtureV2::load_charging_profiles_for_evse(const std::filesystem::path& path,
-                                                                     int32_t evse_id) {
+                                                                     std::int32_t evse_id) {
     std::vector<ChargingProfile> profiles = std::filesystem::is_directory(path)
                                                 ? SmartChargingTestUtils::get_charging_profiles_from_directory(path)
                                                 : SmartChargingTestUtils::get_charging_profiles_from_file(path);
@@ -450,7 +453,7 @@ CompositeScheduleTestFixtureV2::create_smart_charging_handler(const OcppProtocol
                                                stop_transaction_callback_mock.AsStdFunction());
 }
 
-void CompositeScheduleTestFixtureV2::reconfigure_for_nr_of_evses(int32_t nr_of_evses) {
+void CompositeScheduleTestFixtureV2::reconfigure_for_nr_of_evses(std::int32_t nr_of_evses) {
     this->evse_manager = std::make_unique<EvseManagerFake>(nr_of_evses);
     this->functional_block_context = std::make_unique<FunctionalBlockContext>(
         this->mock_dispatcher, *this->device_model, this->connectivity_manager, *this->evse_manager,

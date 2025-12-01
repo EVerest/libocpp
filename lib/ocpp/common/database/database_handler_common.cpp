@@ -13,7 +13,7 @@ namespace ocpp::common {
 
 DatabaseHandlerCommon::DatabaseHandlerCommon(std::unique_ptr<ConnectionInterface> database,
                                              const fs::path& sql_migration_files_path,
-                                             uint32_t target_schema_version) noexcept :
+                                             std::uint32_t target_schema_version) noexcept :
     database(std::move(database)),
     sql_migration_files_path(sql_migration_files_path),
     target_schema_version(target_schema_version) {

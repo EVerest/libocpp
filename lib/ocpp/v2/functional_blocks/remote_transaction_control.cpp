@@ -43,7 +43,7 @@ RemoteTransactionControl::RemoteTransactionControl(
     ProvisioningInterface& provisioning, UnlockConnectorCallback unlock_connector_callback,
     RemoteStartTransactionCallback remote_start_transaction_callback, StopTransactionCallback stop_transaction_callback,
     std::atomic<RegistrationStatusEnum>& registration_status, std::atomic<UploadLogStatusEnum>& upload_log_status,
-    std::atomic<int32_t>& upload_log_status_id) :
+    std::atomic<std::int32_t>& upload_log_status_id) :
     context(functional_block_context),
     transaction(transaction),
     smart_charging(smart_charging),
@@ -107,7 +107,7 @@ void RemoteTransactionControl::handle_remote_start_transaction_request(Call<Requ
 
     // Check if evse id is given.
     if (msg.evseId.has_value()) {
-        const int32_t evse_id = msg.evseId.value();
+        const std::int32_t evse_id = msg.evseId.value();
         auto& evse = this->context.evse_manager.get_evse(evse_id);
 
         // F01.FR.23: Faulted or unavailable. F01.FR.24 / F02.FR.25: Occupied. Send rejected.
@@ -193,7 +193,7 @@ void RemoteTransactionControl::handle_remote_stop_transaction_request(Call<Reque
     const auto msg = call.msg;
 
     RequestStopTransactionResponse response;
-    std::optional<int32_t> evseid = this->context.evse_manager.get_transaction_evseid(msg.transactionId);
+    std::optional<std::int32_t> evseid = this->context.evse_manager.get_transaction_evseid(msg.transactionId);
 
     if (evseid.has_value()) {
         // F03.FR.07: send 'accepted' if there was an ongoing transaction with the given transaction id
@@ -215,7 +215,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
     response.status = TriggerMessageStatusEnum::Rejected;
 
     if (msg.evse.has_value()) {
-        const int32_t evse_id = msg.evse.value().id;
+        const std::int32_t evse_id = msg.evse.value().id;
         evse_ptr = &this->context.evse_manager.get_evse(evse_id);
     }
 
@@ -272,7 +272,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
 
     case MessageTriggerEnum::StatusNotification:
         if (msg.evse.has_value() and msg.evse.value().connectorId.has_value()) {
-            const int32_t connector_id = msg.evse.value().connectorId.value();
+            const std::int32_t connector_id = msg.evse.value().connectorId.value();
             if (evse_ptr != nullptr and connector_id > 0 and connector_id <= evse_ptr->get_number_of_connectors()) {
                 response.status = TriggerMessageStatusEnum::Accepted;
             }
@@ -315,7 +315,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
         return;
     }
 
-    auto send_evse_message = [&](std::function<void(int32_t evse_id, EvseInterface & evse)> send) {
+    auto send_evse_message = [&](std::function<void(std::int32_t evse_id, EvseInterface& evse)> send) {
         if (evse_ptr != nullptr) {
             send(msg.evse.value().id, *evse_ptr);
         } else {
@@ -331,7 +331,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
         break;
 
     case MessageTriggerEnum::MeterValues: {
-        auto send_meter_value = [&](int32_t evse_id, EvseInterface& evse) {
+        auto send_meter_value = [&](std::int32_t evse_id, EvseInterface& evse) {
             const auto meter_value =
                 this->meter_values.get_latest_meter_value_filtered(evse.get_meter_value(), ReadingContextEnum::Trigger,
                                                                    ControllerComponentVariables::AlignedDataMeasurands);
@@ -344,7 +344,7 @@ void RemoteTransactionControl::handle_trigger_message(Call<TriggerMessageRequest
     } break;
 
     case MessageTriggerEnum::TransactionEvent: {
-        auto send_transaction = [&](int32_t /*evse_id*/, EvseInterface& evse) {
+        auto send_transaction = [&](std::int32_t /*evse_id*/, EvseInterface& evse) {
             if (!evse.has_active_transaction()) {
                 return;
             }
@@ -420,10 +420,10 @@ bool is_evse_connector_available(EvseInterface& evse) {
         return false;
     }
 
-    const uint32_t connectors = evse.get_number_of_connectors();
-    for (uint32_t i = 1; i <= connectors; ++i) {
+    const std::uint32_t connectors = evse.get_number_of_connectors();
+    for (std::uint32_t i = 1; i <= connectors; ++i) {
         const ConnectorStatusEnum status =
-            evse.get_connector(static_cast<int32_t>(i))->get_effective_connector_status();
+            evse.get_connector(static_cast<std::int32_t>(i))->get_effective_connector_status();
 
         // At least one of the connectors is available / not faulted.
         if (status != ConnectorStatusEnum::Faulted and status != ConnectorStatusEnum::Unavailable) {

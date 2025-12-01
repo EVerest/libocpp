@@ -17,7 +17,7 @@ namespace v16 {
 
 /// \brief Contains a OCPP StatusNotification message
 struct StatusNotificationRequest : public ocpp::Message {
-    int32_t connectorId;
+    std::int32_t connectorId;
     ChargePointErrorCode errorCode;
     ChargePointStatus status;
     std::optional<CiString<50>> info;

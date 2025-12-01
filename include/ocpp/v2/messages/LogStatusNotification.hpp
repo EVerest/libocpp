@@ -18,7 +18,7 @@ namespace v2 {
 /// \brief Contains a OCPP LogStatusNotification message
 struct LogStatusNotificationRequest : public ocpp::Message {
     UploadLogStatusEnum status;
-    std::optional<int32_t> requestId;
+    std::optional<std::int32_t> requestId;
     std::optional<StatusInfo> statusInfo;
     std::optional<CustomData> customData;
 

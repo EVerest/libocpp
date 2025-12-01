@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP ClearDisplayMessage message
 struct ClearDisplayMessageRequest : public ocpp::Message {
-    int32_t id;
+    std::int32_t id;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClearDisplayMessage message as a human readable string

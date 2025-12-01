@@ -76,10 +76,10 @@ TEST_F(DatabaseTest, test_init_connector_table) {
 
 TEST_F(DatabaseTest, test_list_version) {
 
-    int32_t list_version = this->db_handler->get_local_list_version();
+    std::int32_t list_version = this->db_handler->get_local_list_version();
     ASSERT_EQ(0, list_version);
 
-    int32_t exp_list_version = 42;
+    std::int32_t exp_list_version = 42;
     this->db_handler->insert_or_update_local_list_version(exp_list_version);
     list_version = this->db_handler->get_local_list_version();
     ASSERT_EQ(exp_list_version, list_version);
@@ -241,7 +241,7 @@ TEST_F(DatabaseTest, test_clear_authorization_cache) {
 
 TEST_F(DatabaseTest, test_connector_availability) {
 
-    std::vector<int32_t> connectors;
+    std::vector<std::int32_t> connectors;
     connectors.push_back(1);
     connectors.push_back(2);
 

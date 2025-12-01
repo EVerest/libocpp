@@ -25,13 +25,13 @@ struct StampedEnergyWh {
 /// \brief Contains all transaction related data, such as the ID and power meter values
 class Transaction {
 private:
-    std::optional<int32_t> transaction_id;
-    int32_t internal_transaction_id;
-    int32_t connector;
+    std::optional<std::int32_t> transaction_id;
+    std::int32_t internal_transaction_id;
+    std::int32_t connector;
     std::string session_id;
     CiString<20> id_token;
     std::shared_ptr<StampedEnergyWh> start_energy_wh;
-    std::optional<int32_t> reservation_id;
+    std::optional<std::int32_t> reservation_id;
     bool active;
     bool finished;
     bool has_signed_meter_values;
@@ -45,8 +45,8 @@ private:
 public:
     /// \brief Creates a new Transaction object, taking ownership of the provided \p meter_values_sample_timer
     /// on the provided \p connector
-    Transaction(const int32_t transaction_id, const int32_t& connector, const std::string& session_id,
-                const CiString<20>& id_token, const double meter_start, std::optional<int32_t> reservation_id,
+    Transaction(const std::int32_t transaction_id, const std::int32_t& connector, const std::string& session_id,
+                const CiString<20>& id_token, const double meter_start, std::optional<std::int32_t> reservation_id,
                 const ocpp::DateTime& timestamp, std::unique_ptr<Everest::SteadyTimer> meter_values_sample_timer);
 
     /// \brief Provides the energy in Wh at the start of the transaction
@@ -63,11 +63,11 @@ public:
 
     /// \brief Provides the reservation id of the transaction if present
     /// \returns the reservation id
-    std::optional<int32_t> get_reservation_id();
+    std::optional<std::int32_t> get_reservation_id();
 
     /// \brief Provides the connector of this transaction
     /// \returns the connector
-    int32_t get_connector() const;
+    std::int32_t get_connector() const;
 
     /// \brief Provides the authorized id tag of this Transaction
     /// \returns the authorized id tag
@@ -82,17 +82,17 @@ public:
 
     /// \brief Changes the sample \p interval of the powermeter values sampling timer
     /// \returns true if successful
-    bool change_meter_values_sample_interval(int32_t interval);
+    bool change_meter_values_sample_interval(std::int32_t interval);
 
     /// \brief Adds the provided \p meter_value to a chronological list of clock aligned powermeter values
     void add_clock_aligned_meter_value(MeterValue meter_value);
 
     /// \brief Provides the id of this transaction
     /// \returns the transaction id
-    std::optional<int32_t> get_transaction_id();
+    std::optional<std::int32_t> get_transaction_id();
 
     /// \brief Returns the internal transaction id
-    int32_t get_internal_transaction_id() const;
+    std::int32_t get_internal_transaction_id() const;
 
     /// \brief Provides the id of this session
     /// \returns the session_id
@@ -111,7 +111,7 @@ public:
     std::string get_stop_transaction_message_id();
 
     /// \brief Sets the transaction id
-    void set_transaction_id(int32_t transaction_id);
+    void set_transaction_id(std::int32_t transaction_id);
 
     /// \brief Provides all recorded sampled and clock aligned powermeter values
     /// \returns a vector of sampled and clock aligned powermeter values packaged into a TransactionData object
@@ -146,38 +146,38 @@ class TransactionHandler {
 private:
     std::mutex active_transactions_mutex;
     // size is equal to the number of connectors
-    int32_t number_of_connectors;
+    std::int32_t number_of_connectors;
 
     std::vector<std::shared_ptr<Transaction>> active_transactions;
     // size does not depend on the number of connectors
     std::vector<std::shared_ptr<Transaction>> stopped_transactions;
 
     std::mt19937 gen;
-    std::uniform_int_distribution<int32_t> distr;
+    std::uniform_int_distribution<std::int32_t> distr;
 
 public:
     /// \brief Creates and manages transactions for the provided \p number_of_connectors
-    explicit TransactionHandler(int32_t number_of_connectors);
+    explicit TransactionHandler(std::int32_t number_of_connectors);
 
     /// \brief Returns a negative random transaction_id
-    int32_t get_negative_random_transaction_id();
+    std::int32_t get_negative_random_transaction_id();
 
     /// \brief Adds the given \p transaction the vector of transactions
     void add_transaction(std::shared_ptr<Transaction> transaction);
 
     /// \brief Adds the transaction at the \p connector to the vector of stopped transactions
-    void add_stopped_transaction(int32_t connector);
+    void add_stopped_transaction(std::int32_t connector);
 
     /// \brief Removes a transaction from the provided \p connector
     /// \returns true if successful
-    bool remove_active_transaction(int32_t connector);
+    bool remove_active_transaction(std::int32_t connector);
 
     /// \brief Erases a transaction with the provided \p stop_transaction_message_id
     void erase_stopped_transaction(std::string stop_transaction_message_id);
 
     /// \brief Returns the transaction associated with the transaction at the provided \p connector
     /// \returns The associated transaction if available or nullptr if not
-    std::shared_ptr<Transaction> get_transaction(int32_t connector);
+    std::shared_ptr<Transaction> get_transaction(std::int32_t connector);
 
     /// \brief Returns the transaction associated with the transaction with the provided
     /// \p start_transaction_message_id
@@ -193,14 +193,14 @@ public:
 
     /// \brief Provides the connector on which a transaction with the given \p transaction_id is running
     /// \returns The connector or -1 if the transaction_id is unknown
-    int32_t get_connector_from_transaction_id(int32_t transaction_id);
+    std::int32_t get_connector_from_transaction_id(std::int32_t transaction_id);
 
     /// \brief Adds a clock aligned \p meter_value to the transaction on the provided \p connector
-    void add_meter_value(int32_t connector, const MeterValue& meter_value);
+    void add_meter_value(std::int32_t connector, const MeterValue& meter_value);
 
     /// \brief Modifies the sample interval of the meter values sample timer on all connectors. The
     /// provided \p interval is expected to be given in seconds.
-    void change_meter_values_sample_intervals(int32_t interval);
+    void change_meter_values_sample_intervals(std::int32_t interval);
 
     // \brief Provides the IdTag that was associated with the transaction with the provided
     /// \p stop_transaction_message_id
@@ -209,7 +209,7 @@ public:
 
     /// \brief Indicates if there is an active transaction at the proveded \p connector
     /// \returns true if a transaction exists
-    bool transaction_active(int32_t connector);
+    bool transaction_active(std::int32_t connector);
 };
 
 } // namespace v16

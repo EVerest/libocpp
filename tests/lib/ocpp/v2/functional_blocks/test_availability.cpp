@@ -72,8 +72,8 @@ protected: // Functions
 
     ocpp::EnhancedMessage<MessageType>
     create_example_change_availability_request(const OperationalStatusEnum operational_status,
-                                               const std::optional<int32_t> evse_id,
-                                               const std::optional<int32_t> connector_id) {
+                                               const std::optional<std::int32_t> evse_id,
+                                               const std::optional<std::int32_t> connector_id) {
         ChangeAvailabilityRequest request;
         request.operationalStatus = operational_status;
         if (evse_id.has_value()) {

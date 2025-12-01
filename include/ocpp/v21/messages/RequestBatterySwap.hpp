@@ -19,7 +19,7 @@ namespace v21 {
 /// \brief Contains a OCPP BatterySwap message
 struct RequestBatterySwapRequest : public ocpp::Message {
     IdToken idToken;
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this BatterySwap message as a human readable string

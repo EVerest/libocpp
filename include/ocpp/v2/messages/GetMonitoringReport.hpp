@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP GetMonitoringReport message
 struct GetMonitoringReportRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<std::vector<ComponentVariable>> componentVariable;
     std::optional<std::vector<MonitoringCriterionEnum>> monitoringCriteria;
     std::optional<CustomData> customData;

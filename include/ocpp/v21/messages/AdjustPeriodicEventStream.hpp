@@ -18,7 +18,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP AdjustPeriodicEventStream message
 struct AdjustPeriodicEventStreamRequest : public ocpp::Message {
-    int32_t id;
+    std::int32_t id;
     PeriodicEventStreamParams params;
     std::optional<CustomData> customData;
 

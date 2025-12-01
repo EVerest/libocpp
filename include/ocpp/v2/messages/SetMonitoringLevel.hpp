@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP SetMonitoringLevel message
 struct SetMonitoringLevelRequest : public ocpp::Message {
-    int32_t severity;
+    std::int32_t severity;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this SetMonitoringLevel message as a human readable string

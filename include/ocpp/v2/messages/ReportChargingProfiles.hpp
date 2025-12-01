@@ -17,10 +17,10 @@ namespace v2 {
 
 /// \brief Contains a OCPP ReportChargingProfiles message
 struct ReportChargingProfilesRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     CiString<20> chargingLimitSource;
     std::vector<ChargingProfile> chargingProfile;
-    int32_t evseId;
+    std::int32_t evseId;
     std::optional<bool> tbc;
     std::optional<CustomData> customData;
 

@@ -35,7 +35,7 @@ void Reservation::handle_message(const ocpp::EnhancedMessage<MessageType>& messa
     }
 }
 
-void Reservation::on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) {
+void Reservation::on_reservation_status(const std::int32_t reservation_id, const ReservationUpdateStatusEnum status) {
     ReservationStatusUpdateRequest req;
     req.reservationId = reservation_id;
     req.reservationUpdateStatus = status;
@@ -53,11 +53,11 @@ Reservation::is_evse_reserved_for_other(const EvseInterface& evse, const IdToken
     return this->is_reservation_for_token_callback(evse.get_id(), id_token.idToken, groupIdToken);
 }
 
-void Reservation::on_reserved(const int32_t evse_id, const int32_t connector_id) {
+void Reservation::on_reserved(const std::int32_t evse_id, const std::int32_t connector_id) {
     this->context.evse_manager.get_evse(evse_id).submit_event(connector_id, ConnectorEvent::Reserve);
 }
 
-void Reservation::on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) {
+void Reservation::on_reservation_cleared(const std::int32_t evse_id, const std::int32_t connector_id) {
     this->context.evse_manager.get_evse(evse_id).submit_event(connector_id, ConnectorEvent::ReservationCleared);
 }
 
@@ -106,7 +106,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         return;
     }
 
-    const std::optional<int32_t> evse_id = request.evseId;
+    const std::optional<std::int32_t> evse_id = request.evseId;
 
     if (evse_id.has_value()) {
         if (evse_id <= 0 || !this->context.evse_manager.does_evse_exist(evse_id.value())) {
@@ -126,7 +126,7 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         }
     } else {
         // No evse id. Just search for all evse's if there is something available for reservation
-        const uint64_t number_of_evses = this->context.evse_manager.get_number_of_evses();
+        const std::uint64_t number_of_evses = this->context.evse_manager.get_number_of_evses();
         if (number_of_evses == 0) {
             send_reserve_now_rejected_response(call.uniqueId, "No evse's found in charging station");
             EVLOG_error << "Trying to make a reservation, but number of evse's is 0";
@@ -134,12 +134,12 @@ void Reservation::handle_reserve_now_request(Call<ReserveNowRequest> call) {
         }
 
         bool connector_exists = false;
-        for (uint64_t i = 1; i <= number_of_evses; i++) {
-            if (i > std::numeric_limits<int32_t>::max()) {
+        for (std::uint64_t i = 1; i <= number_of_evses; i++) {
+            if (i > std::numeric_limits<std::int32_t>::max()) {
                 break;
             }
             if (this->context.evse_manager.does_connector_exist(
-                    clamp_to<int32_t>(i), request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
+                    clamp_to<std::int32_t>(i), request.connectorType.value_or(ConnectorEnumStringType::Unknown))) {
                 connector_exists = true;
                 break;
             }

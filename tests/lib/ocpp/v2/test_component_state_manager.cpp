@@ -13,15 +13,15 @@ namespace {
 
 class DatabaseHandlerMock : public DatabaseHandler {
 private:
-    std::map<std::pair<int32_t, int32_t>, OperationalStatusEnum> data;
+    std::map<std::pair<std::int32_t, std::int32_t>, OperationalStatusEnum> data;
 
-    void insert(int32_t evse_id, int32_t connector_id, OperationalStatusEnum status, bool replace) {
+    void insert(std::int32_t evse_id, std::int32_t connector_id, OperationalStatusEnum status, bool replace) {
         if (replace || this->data.count(std::make_pair(evse_id, connector_id)) == 0) {
             this->data.insert_or_assign(std::make_pair(evse_id, connector_id), status);
         }
     }
 
-    OperationalStatusEnum get(int32_t evse_id, int32_t connector_id) {
+    OperationalStatusEnum get(std::int32_t evse_id, std::int32_t connector_id) {
         if (this->data.count(std::make_pair(evse_id, connector_id)) == 0) {
             throw std::logic_error("Get: no data available");
         } else {
@@ -40,20 +40,20 @@ public:
         return this->get(0, 0);
     }
 
-    virtual void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status,
+    virtual void insert_evse_availability(std::int32_t evse_id, OperationalStatusEnum operational_status,
                                           bool replace) override {
 
         this->insert(evse_id, 0, operational_status, replace);
     }
-    virtual OperationalStatusEnum get_evse_availability(int32_t evse_id) override {
+    virtual OperationalStatusEnum get_evse_availability(std::int32_t evse_id) override {
         return this->get(evse_id, 0);
     }
 
-    virtual void insert_connector_availability(int32_t evse_id, int32_t connector_id,
+    virtual void insert_connector_availability(std::int32_t evse_id, std::int32_t connector_id,
                                                OperationalStatusEnum operational_status, bool replace) override {
         this->insert(evse_id, connector_id, operational_status, replace);
     }
-    virtual OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id) override {
+    virtual OperationalStatusEnum get_connector_availability(std::int32_t evse_id, std::int32_t connector_id) override {
         return this->get(evse_id, connector_id);
     }
 };
@@ -62,10 +62,10 @@ public:
 
 class MockCallbacks {
 public:
-    MOCK_METHOD(bool, connector_status_update, (int32_t, int32_t, std::string), ());
+    MOCK_METHOD(bool, connector_status_update, (std::int32_t, std::int32_t, std::string), ());
     MOCK_METHOD(void, cs_op_state_update, (std::string), ());
-    MOCK_METHOD(void, evse_op_state_update, (int32_t, std::string), ());
-    MOCK_METHOD(void, connector_op_state_update, (int32_t, int32_t, std::string), ());
+    MOCK_METHOD(void, evse_op_state_update, (std::int32_t, std::string), ());
+    MOCK_METHOD(void, connector_op_state_update, (std::int32_t, std::int32_t, std::string), ());
 };
 
 class ComponentStateManagerTest : public ::testing::Test {
@@ -75,14 +75,14 @@ protected:
     }
 
     ComponentStateManager component_state_manager(std::shared_ptr<DatabaseHandler> database,
-                                                  std::vector<uint32_t> connector_structure) {
-        std::map<int32_t, int32_t> evse_connector_structure;
+                                                  std::vector<std::uint32_t> connector_structure) {
+        std::map<std::int32_t, std::int32_t> evse_connector_structure;
         for (int i = 0; i < connector_structure.size(); i++) {
             evse_connector_structure.insert_or_assign(i + 1, connector_structure[i]);
         }
 
         ComponentStateManager mgr(evse_connector_structure, database,
-                                  [this](int32_t evse_id, int32_t connector_id, ConnectorStatusEnum status,
+                                  [this](std::int32_t evse_id, std::int32_t connector_id, ConnectorStatusEnum status,
                                          bool initiated_by_trigger_message) {
                                       return this->callbacks.connector_status_update(
                                           evse_id, connector_id, conversions::connector_status_enum_to_string(status));
@@ -91,11 +91,12 @@ protected:
         mgr.set_cs_effective_availability_changed_callback([this](OperationalStatusEnum status) {
             this->callbacks.cs_op_state_update(conversions::operational_status_enum_to_string(status));
         });
-        mgr.set_evse_effective_availability_changed_callback([this](int32_t evse_id, OperationalStatusEnum status) {
-            this->callbacks.evse_op_state_update(evse_id, conversions::operational_status_enum_to_string(status));
-        });
+        mgr.set_evse_effective_availability_changed_callback(
+            [this](std::int32_t evse_id, OperationalStatusEnum status) {
+                this->callbacks.evse_op_state_update(evse_id, conversions::operational_status_enum_to_string(status));
+            });
         mgr.set_connector_effective_availability_changed_callback(
-            [this](int32_t evse_id, int32_t connector_id, OperationalStatusEnum status) {
+            [this](std::int32_t evse_id, std::int32_t connector_id, OperationalStatusEnum status) {
                 this->callbacks.connector_op_state_update(evse_id, connector_id,
                                                           conversions::operational_status_enum_to_string(status));
             });

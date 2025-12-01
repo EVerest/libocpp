@@ -24,11 +24,11 @@ struct FormattedMessageWithType {
 struct LogRotationConfig {
     bool date_suffix; ///< If set to true the log rotation files use a date after the ".", if not use the traditional
                       ///< .0, .1 ... style
-    uint64_t
+    std::uint64_t
         maximum_file_size_bytes; ///< The maximum size of the log file in bytes after which the file will be rotated
-    uint64_t maximum_file_count; ///< The maximum number of log files to keep in rotation
+    std::uint64_t maximum_file_count; ///< The maximum number of log files to keep in rotation
 
-    LogRotationConfig(bool date_suffix, uint64_t maximum_file_size_bytes, uint64_t maximum_file_count) :
+    LogRotationConfig(bool date_suffix, std::uint64_t maximum_file_size_bytes, std::uint64_t maximum_file_count) :
         date_suffix(date_suffix),
         maximum_file_size_bytes(maximum_file_size_bytes),
         maximum_file_count(maximum_file_count) {
@@ -79,8 +79,8 @@ private:
     bool rotate_logs;
     bool date_suffix;
     std::string logfile_basename;
-    uint64_t maximum_file_size_bytes;
-    uint64_t maximum_file_count;
+    std::uint64_t maximum_file_size_bytes;
+    std::uint64_t maximum_file_count;
 
     /// \brief Initialize the OCPP message logging
     void initialize();

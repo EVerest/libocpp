@@ -15,7 +15,7 @@ namespace v2 {
 namespace {
 // Forward declarations of helper functions
 void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit,
-                                     const float& no_limit_specified, const std::optional<int32_t> number_phases,
+                                     const float& no_limit_specified, const std::optional<std::int32_t> number_phases,
                                      const OcppProtocolVersion ocpp_version);
 float get_max_limit(const float limit1, const float limit2, const std::optional<float> cap_max = std::nullopt);
 PeriodLimit get_max_limit(const PeriodLimit& limit1, const PeriodLimit& limit2,
@@ -32,14 +32,14 @@ void store_limit_to_phase_limits(const PeriodLimit& input_limit, const float& no
 void convert_and_transform_limit_value(const float& input, const float& not_specified, const float& transform_value,
                                        std::optional<float>& value, const bool use_min, const bool use_divide);
 void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_limit, const float& not_specified,
-                                                    const float& transform_value, const int32_t number_phases,
+                                                    const float& transform_value, const std::int32_t number_phases,
                                                     std::optional<float>& value, std::optional<float>& value_L2,
                                                     std::optional<float>& value_L3, const bool use_min,
                                                     const bool use_divide);
 } // namespace
 
-int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
-    return clamp_to<int32_t>(duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count());
+std::int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from) {
+    return clamp_to<std::int32_t>(duration_cast<seconds>(to.to_time_point() - from.to_time_point()).count());
 }
 
 ocpp::DateTime floor_seconds(const ocpp::DateTime& dt) {
@@ -63,7 +63,7 @@ IntermediatePeriod default_intermediate_period() {
     return empty;
 }
 
-IntermediatePeriod default_intermediate_period(const int32_t start_period) {
+IntermediatePeriod default_intermediate_period(const std::int32_t start_period) {
     IntermediatePeriod empty = default_intermediate_period();
     empty.startPeriod = start_period;
     return empty;
@@ -515,7 +515,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
         }
     }
 
-    int32_t current_period = 0;
+    std::int32_t current_period = 0;
     while (std::any_of(profile_iterators.begin(), profile_iterators.end(),
                        [](const std::pair<period_iterator, period_iterator>& it) { return it.first != it.second; })) {
 
@@ -533,7 +533,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
         }
 
         // Determine the next earliest period
-        int32_t next_lowest_period = std::numeric_limits<int32_t>::max();
+        std::int32_t next_lowest_period = std::numeric_limits<std::int32_t>::max();
 
         for (const auto& [it, end] : profile_iterators) {
             auto next = it + 1;
@@ -543,7 +543,7 @@ IntermediateProfile combine_list_of_profiles(const std::vector<IntermediateProfi
         }
 
         // If there is none, we are done
-        if (next_lowest_period == std::numeric_limits<int32_t>::max()) {
+        if (next_lowest_period == std::numeric_limits<std::int32_t>::max()) {
             break;
         }
 
@@ -755,7 +755,7 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
 
 std::vector<ChargingSchedulePeriod>
 convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingRateUnitEnum charging_rate_unit,
-                                   float default_limit, int32_t default_number_phases, float supply_voltage) {
+                                   float default_limit, std::int32_t default_number_phases, float supply_voltage) {
 
     std::vector<ChargingSchedulePeriod> output{};
 
@@ -771,7 +771,7 @@ convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingR
             period_out.limit = std::numeric_limits<float>::max();
         }
 
-        const int32_t number_phases = period_out.numberPhases.value_or(default_number_phases);
+        const std::int32_t number_phases = period_out.numberPhases.value_or(default_number_phases);
         const float transform_value = supply_voltage;
         if (charging_rate_unit == ChargingRateUnitEnum::A) {
             store_limit_to_phase_limits(period.current_limit, NO_LIMIT_SPECIFIED, period_out.limit, period_out.limit_L2,
@@ -853,7 +853,7 @@ namespace {
 /// \param ocpp_version         The ocpp version.
 ///
 void set_setpoint_limit_phase_values(PeriodLimit& current_limit, PeriodLimit& power_limit,
-                                     const float& no_limit_specified, const std::optional<int32_t> number_phases,
+                                     const float& no_limit_specified, const std::optional<std::int32_t> number_phases,
                                      const OcppProtocolVersion ocpp_version) {
     // This can't be done for all limits and setpoints, because OCPP 2.0.1 does not support setpoints for L2 and L3.
     if (ocpp_version != OcppProtocolVersion::v21) {
@@ -1134,7 +1134,7 @@ void convert_and_transform_limit_value(const float& input, const float& not_spec
 /// \param[in] use_divide           Whether to divide with transform_value (true) or multiply (false).
 ///
 void convert_and_transform_limit_to_period_schedule(const PeriodLimit& input_limit, const float& not_specified,
-                                                    const float& transform_value, const int32_t number_phases,
+                                                    const float& transform_value, const std::int32_t number_phases,
                                                     std::optional<float>& value, std::optional<float>& value_L2,
                                                     std::optional<float>& value_L3, const bool use_min,
                                                     const bool use_divide) {

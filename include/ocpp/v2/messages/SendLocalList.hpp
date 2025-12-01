@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP SendLocalList message
 struct SendLocalListRequest : public ocpp::Message {
-    int32_t versionNumber;
+    std::int32_t versionNumber;
     UpdateEnum updateType;
     std::optional<std::vector<AuthorizationData>> localAuthorizationList;
     std::optional<CustomData> customData;

@@ -19,9 +19,9 @@ namespace v2 {
 struct GetLogRequest : public ocpp::Message {
     LogParameters log;
     LogEnum logType;
-    int32_t requestId;
-    std::optional<int32_t> retries;
-    std::optional<int32_t> retryInterval;
+    std::int32_t requestId;
+    std::optional<std::int32_t> retries;
+    std::optional<std::int32_t> retryInterval;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetLog message as a human readable string

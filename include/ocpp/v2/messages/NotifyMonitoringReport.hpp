@@ -17,8 +17,8 @@ namespace v2 {
 
 /// \brief Contains a OCPP NotifyMonitoringReport message
 struct NotifyMonitoringReportRequest : public ocpp::Message {
-    int32_t requestId;
-    int32_t seqNo;
+    std::int32_t requestId;
+    std::int32_t seqNo;
     ocpp::DateTime generatedAt;
     std::optional<std::vector<MonitoringData>> monitor;
     std::optional<bool> tbc;

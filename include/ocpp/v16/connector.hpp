@@ -12,7 +12,7 @@ namespace ocpp {
 namespace v16 {
 
 struct Connector {
-    int32_t id;
+    std::int32_t id;
     std::optional<Measurement> measurement;
     double max_current_offered = 0;
     double max_power_offered = 0;

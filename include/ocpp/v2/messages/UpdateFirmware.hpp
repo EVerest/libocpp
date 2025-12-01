@@ -17,10 +17,10 @@ namespace v2 {
 
 /// \brief Contains a OCPP UpdateFirmware message
 struct UpdateFirmwareRequest : public ocpp::Message {
-    int32_t requestId;
+    std::int32_t requestId;
     Firmware firmware;
-    std::optional<int32_t> retries;
-    std::optional<int32_t> retryInterval;
+    std::optional<std::int32_t> retries;
+    std::optional<std::int32_t> retryInterval;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this UpdateFirmware message as a human readable string

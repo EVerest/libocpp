@@ -17,11 +17,11 @@ namespace v2 {
 
 /// \brief Contains a OCPP ReserveNow message
 struct ReserveNowRequest : public ocpp::Message {
-    int32_t id;
+    std::int32_t id;
     ocpp::DateTime expiryDateTime;
     IdToken idToken;
     std::optional<CiString<20>> connectorType;
-    std::optional<int32_t> evseId;
+    std::optional<std::int32_t> evseId;
     std::optional<IdToken> groupIdToken;
     std::optional<CustomData> customData;
 

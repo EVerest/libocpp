@@ -19,7 +19,7 @@ namespace v2 {
 struct NotifyChargingLimitRequest : public ocpp::Message {
     ChargingLimit chargingLimit;
     std::optional<std::vector<ChargingSchedule>> chargingSchedule;
-    std::optional<int32_t> evseId;
+    std::optional<std::int32_t> evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyChargingLimit message as a human readable string

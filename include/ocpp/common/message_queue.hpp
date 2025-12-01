@@ -61,9 +61,9 @@ template <typename M> struct EnhancedMessage {
 
 /// \brief This contains an internal control message
 template <typename M> struct ControlMessage {
-    json::array_t message;    ///< The OCPP message as a json array
-    M messageType;            ///< The OCPP message type
-    int32_t message_attempts; ///< The number of times this message has been rejected by the central system
+    json::array_t message;         ///< The OCPP message as a json array
+    M messageType;                 ///< The OCPP message type
+    std::int32_t message_attempts; ///< The number of times this message has been rejected by the central system
     std::promise<EnhancedMessage<M>> promise; ///< A promise used by the async send interface
     DateTime timestamp;                       ///< A timestamp that shows when this message can be sent
     MessageId initial_unique_id;
@@ -200,7 +200,7 @@ private:
     // this map is used for StopTransaction.req that have been put on the message queue without having received a
     // transactionId from the backend (e.g. when offline) it is used to replace the transactionId in the
     // StopTransaction.req
-    std::map<std::string, int32_t> message_id_transaction_id_map;
+    std::map<std::string, std::int32_t> message_id_transaction_id_map;
 
     // key is the message id of a StartTransaction.req and value is a list of MeterValue.req message ids. It is used to
     // replace the transactionId within the MeterValue.req in case the transactionId was unknown at the time the message
@@ -978,7 +978,7 @@ public:
         return false;
     }
 
-    bool contains_stop_transaction_message(const int32_t transaction_id) {
+    bool contains_stop_transaction_message(const std::int32_t transaction_id) {
         const std::lock_guard<std::recursive_mutex> lk(this->message_mutex);
         for (const auto& control_message : this->transaction_message_queue) {
             if (control_message->messageType == v16::MessageType::StopTransaction) {
@@ -1008,7 +1008,7 @@ public:
 
     /// \brief Adds the given \p transaction_id to the message_id_transaction_id_map using the key \p
     /// stop_transaction_message_id
-    void add_stopped_transaction_id(std::string stop_transaction_message_id, int32_t transaction_id) {
+    void add_stopped_transaction_id(std::string stop_transaction_message_id, std::int32_t transaction_id) {
         EVLOG_debug << "adding " << stop_transaction_message_id << " for transaction " << transaction_id;
         this->message_id_transaction_id_map[stop_transaction_message_id] = transaction_id;
     }
@@ -1026,7 +1026,7 @@ public:
     }
 
     void notify_start_transaction_handled(const std::string& start_transaction_message_id,
-                                          const int32_t transaction_id) {
+                                          const std::int32_t transaction_id) {
         this->cv.notify_one();
 
         // replace transaction id in meter values if start_transaction_message_id is present in map

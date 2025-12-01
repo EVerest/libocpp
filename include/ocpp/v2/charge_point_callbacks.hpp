@@ -37,18 +37,18 @@ struct Callbacks {
     /// \retval false if any of the normal callbacks are nullptr or any of the optional ones are filled with a nullptr
     ///        true otherwise
     bool all_callbacks_valid(std::shared_ptr<DeviceModel> device_model,
-                             const std::map<int32_t, int32_t>& evse_connector_structure) const;
+                             const std::map<std::int32_t, std::int32_t>& evse_connector_structure) const;
 
     ///
     /// \brief Callback if reset is allowed. If evse_id has a value, reset only applies to the given evse id. If it has
     ///        no value, applies to complete charging station.
     ///
-    std::function<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
+    std::function<bool(const std::optional<const std::int32_t> evse_id, const ResetEnum& reset_type)>
         is_reset_allowed_callback;
-    std::function<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
-    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+    std::function<void(const std::optional<const std::int32_t> evse_id, const ResetEnum& reset_type)> reset_callback;
+    std::function<RequestStartStopStatusEnum(const std::int32_t evse_id, const ReasonEnum& stop_reason)>
         stop_transaction_callback;
-    std::function<void(const int32_t evse_id)> pause_charging_callback;
+    std::function<void(const std::int32_t evse_id)> pause_charging_callback;
 
     /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of the charging station changed
     /// If as a result the state of EVSEs or connectors changed as well, libocpp will additionally call the
@@ -65,18 +65,20 @@ struct Callbacks {
     /// If left empty, the callback is ignored.
     /// \param evse_id The id of the EVSE
     /// \param new_status The operational status the EVSE switched to
-    std::optional<std::function<void(const int32_t evse_id, const OperationalStatusEnum new_status)>>
+    std::optional<std::function<void(const std::int32_t evse_id, const OperationalStatusEnum new_status)>>
         evse_effective_operative_status_changed_callback;
 
     /// \brief Used to notify the user of libocpp that the Operative/Inoperative state of a connector changed.
     /// \param evse_id The id of the EVSE
     /// \param connector_id The ID of the connector within the EVSE
     /// \param new_status The operational status the connector switched to
-    std::function<void(const int32_t evse_id, const int32_t connector_id, const OperationalStatusEnum new_status)>
+    std::function<void(const std::int32_t evse_id, const std::int32_t connector_id,
+                       const OperationalStatusEnum new_status)>
         connector_effective_operative_status_changed_callback;
 
     std::function<GetLogResponse(const GetLogRequest& request)> get_log_request_callback;
-    std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)> unlock_connector_callback;
+    std::function<UnlockConnectorResponse(const std::int32_t evse_id, const std::int32_t connecor_id)>
+        unlock_connector_callback;
     // callback to be called when the request can be accepted. authorize_remote_start indicates if Authorize.req needs
     // to follow or not
     std::function<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
@@ -87,7 +89,7 @@ struct Callbacks {
     /// \brief Check if the current reservation for the given evse id is made for the id token / group id token.
     /// \return The reservation check status of this evse / id token.
     ///
-    std::function<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<255> idToken,
+    std::function<ocpp::ReservationCheckStatus(const std::int32_t evse_id, const CiString<255> idToken,
                                                const std::optional<CiString<255>> groupIdToken)>
         is_reservation_for_token_callback;
     std::function<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)> update_firmware_request_callback;
@@ -95,7 +97,7 @@ struct Callbacks {
     std::optional<std::function<void(const SetVariableData& set_variable_data)>> variable_changed_callback;
     // callback is called when receiving a SetNetworkProfile.req from the CSMS
     std::optional<std::function<SetNetworkProfileStatusEnum(
-        const int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
+        const std::int32_t configuration_slot, const NetworkConnectionProfile& network_connection_profile)>>
         validate_network_profile_callback;
     std::optional<ConfigureNetworkConnectionProfileCallback> configure_network_connection_profile_callback;
     std::optional<std::function<void(const ocpp::DateTime& currentTime)>> time_sync_callback;
@@ -161,7 +163,7 @@ struct Callbacks {
         clear_display_message_callback;
 
     /// \brief Callback function is called when running cost is set.
-    std::optional<std::function<void(const RunningCost& running_cost, const uint32_t number_of_decimals,
+    std::optional<std::function<void(const RunningCost& running_cost, const std::uint32_t number_of_decimals,
                                      std::optional<std::string> currency_code)>>
         set_running_cost_callback;
 
@@ -172,7 +174,7 @@ struct Callbacks {
     /// \brief Callback function is called when a reservation request is received from the CSMS
     std::optional<std::function<ReserveNowStatusEnum(const ReserveNowRequest& request)>> reserve_now_callback;
     /// \brief Callback function is called when a cancel reservation request is received from the CSMS
-    std::optional<std::function<bool(const int32_t reservationId)>> cancel_reservation_callback;
+    std::optional<std::function<bool(const std::int32_t reservationId)>> cancel_reservation_callback;
 
     /// @} // End ocpp 201 callbacks group / topic
 

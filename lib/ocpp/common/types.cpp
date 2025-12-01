@@ -652,7 +652,7 @@ std::string running_cost_state_to_string(const RunningCostState& state) {
 void from_json(const json& j, RunningCost& c) {
     if (j.contains("transactionId")) {
         if (j.at("transactionId").is_number()) {
-            const uint32_t transaction_id = j.at("transactionId");
+            const std::uint32_t transaction_id = j.at("transactionId");
             c.transaction_id = std::to_string(transaction_id);
         } else if (j.at("transactionId").is_string()) {
             c.transaction_id = j.at("transactionId");

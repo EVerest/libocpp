@@ -19,8 +19,8 @@ struct EnhancedTransaction : public Transaction {
     }
 
     bool id_token_sent = false;
-    int32_t connector_id = 0;
-    int32_t seq_no = 0;
+    std::int32_t connector_id = 0;
+    std::int32_t seq_no = 0;
     std::optional<float> active_energy_import_start_value;
     DateTime start_time;
     bool check_max_active_import_energy = false;
@@ -32,8 +32,8 @@ struct EnhancedTransaction : public Transaction {
 
     /// @brief Get the current sequence number of the transaction message.
     /// @details This method also increments the sequence number.
-    /// @return int32_t seq number
-    int32_t get_seq_no();
+    /// @return std::int32_t seq number
+    std::int32_t get_seq_no();
     Transaction get_transaction();
 
     /// @brief Update the charging state of the transaction.

@@ -15,7 +15,7 @@ using namespace common;
 namespace v16 {
 
 DatabaseHandler::DatabaseHandler(std::unique_ptr<ConnectionInterface> database,
-                                 const fs::path& sql_migration_files_path, int32_t number_of_connectors) :
+                                 const fs::path& sql_migration_files_path, std::int32_t number_of_connectors) :
     DatabaseHandlerCommon(std::move(database), sql_migration_files_path, MIGRATION_FILE_VERSION_V16),
     number_of_connectors(number_of_connectors) {
 }
@@ -30,7 +30,7 @@ void DatabaseHandler::init_sql() {
 }
 
 void DatabaseHandler::init_connector_table() {
-    for (int32_t connector = 0; connector <= this->number_of_connectors; connector++) {
+    for (std::int32_t connector = 0; connector <= this->number_of_connectors; connector++) {
         const std::string sql =
             "INSERT OR IGNORE INTO CONNECTORS (ID, AVAILABILITY) VALUES (@connector, @availability_type)";
         auto stmt = this->database->new_statement(sql);
@@ -46,10 +46,10 @@ void DatabaseHandler::init_connector_table() {
 }
 
 // transactions
-void DatabaseHandler::insert_transaction(const std::string& session_id, const int32_t transaction_id,
-                                         const int32_t connector, const std::string& id_tag_start,
-                                         const std::string& time_start, const int32_t meter_start, const bool csms_ack,
-                                         const std::optional<int32_t> reservation_id,
+void DatabaseHandler::insert_transaction(const std::string& session_id, const std::int32_t transaction_id,
+                                         const std::int32_t connector, const std::string& id_tag_start,
+                                         const std::string& time_start, const std::int32_t meter_start,
+                                         const bool csms_ack, const std::optional<std::int32_t> reservation_id,
                                          const std::string& start_transaction_message_id) {
     const std::string sql =
         "INSERT INTO TRANSACTIONS (ID, TRANSACTION_ID, CONNECTOR, ID_TAG_START, TIME_START, METER_START, "
@@ -81,7 +81,7 @@ void DatabaseHandler::insert_transaction(const std::string& session_id, const in
     }
 }
 
-void DatabaseHandler::update_transaction(const std::string& session_id, int32_t transaction_id,
+void DatabaseHandler::update_transaction(const std::string& session_id, std::int32_t transaction_id,
                                          std::optional<CiString<20>> parent_id_tag) {
 
     const std::string sql = "UPDATE TRANSACTIONS SET TRANSACTION_ID=@transaction_id, PARENT_ID_TAG=@parent_id_tag, "
@@ -101,8 +101,9 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
     }
 }
 
-void DatabaseHandler::update_transaction(const std::string& session_id, int32_t meter_stop, const std::string& time_end,
-                                         std::optional<CiString<20>> id_tag_end, std::optional<v16::Reason> stop_reason,
+void DatabaseHandler::update_transaction(const std::string& session_id, std::int32_t meter_stop,
+                                         const std::string& time_end, std::optional<CiString<20>> id_tag_end,
+                                         std::optional<v16::Reason> stop_reason,
                                          const std::string& stop_transaction_message_id) {
     const std::string sql = "UPDATE TRANSACTIONS SET METER_STOP=@meter_stop, TIME_END=@time_end, "
                             "ID_TAG_END=@id_tag_end, STOP_REASON=@stop_reason, LAST_UPDATE=@last_update, "
@@ -127,7 +128,7 @@ void DatabaseHandler::update_transaction(const std::string& session_id, int32_t 
     }
 }
 
-void DatabaseHandler::update_transaction_csms_ack(const int32_t transaction_id) {
+void DatabaseHandler::update_transaction_csms_ack(const std::int32_t transaction_id) {
     const std::string sql =
         "UPDATE TRANSACTIONS SET CSMS_ACK=1, LAST_UPDATE=@last_update WHERE TRANSACTION_ID==@transaction_id";
     auto stmt = this->database->new_statement(sql);
@@ -154,7 +155,7 @@ void DatabaseHandler::update_start_transaction_message_id(const std::string& /*s
     }
 }
 
-void DatabaseHandler::update_transaction_meter_value(const std::string& session_id, const int32_t value,
+void DatabaseHandler::update_transaction_meter_value(const std::string& session_id, const std::int32_t value,
                                                      const std::string& last_meter_time) {
     const std::string sql = "UPDATE TRANSACTIONS SET METER_LAST=@meter_last, METER_LAST_TIME=@meter_last_time, "
                             "LAST_UPDATE=@last_update WHERE ID==@session_id";
@@ -305,7 +306,7 @@ void DatabaseHandler::clear_authorization_cache() {
     }
 }
 
-void DatabaseHandler::insert_or_update_connector_availability(int32_t connector,
+void DatabaseHandler::insert_or_update_connector_availability(std::int32_t connector,
                                                               const v16::AvailabilityType& availability_type) {
     const std::string sql = "INSERT OR REPLACE INTO CONNECTORS (ID, AVAILABILITY) VALUES (@id, @availability)";
     auto stmt = this->database->new_statement(sql);
@@ -321,14 +322,14 @@ void DatabaseHandler::insert_or_update_connector_availability(int32_t connector,
 }
 
 // connector availability
-void DatabaseHandler::insert_or_update_connector_availability(const std::vector<int32_t>& connectors,
+void DatabaseHandler::insert_or_update_connector_availability(const std::vector<std::int32_t>& connectors,
                                                               const v16::AvailabilityType& availability_type) {
     for (const auto connector : connectors) {
         this->insert_or_update_connector_availability(connector, availability_type);
     }
 }
 
-v16::AvailabilityType DatabaseHandler::get_connector_availability(int32_t connector) {
+v16::AvailabilityType DatabaseHandler::get_connector_availability(std::int32_t connector) {
     const std::string sql = "SELECT AVAILABILITY FROM CONNECTORS WHERE ID = @connector";
     auto stmt = this->database->new_statement(sql);
 
@@ -348,8 +349,8 @@ v16::AvailabilityType DatabaseHandler::get_connector_availability(int32_t connec
     return v16::conversions::string_to_availability_type(stmt->column_text(0));
 }
 
-std::map<int32_t, v16::AvailabilityType> DatabaseHandler::get_connector_availability() {
-    std::map<int32_t, v16::AvailabilityType> availability_map;
+std::map<std::int32_t, v16::AvailabilityType> DatabaseHandler::get_connector_availability() {
+    std::map<std::int32_t, v16::AvailabilityType> availability_map;
     const std::string sql = "SELECT ID, AVAILABILITY FROM CONNECTORS";
     auto stmt = this->database->new_statement(sql);
 
@@ -366,7 +367,7 @@ std::map<int32_t, v16::AvailabilityType> DatabaseHandler::get_connector_availabi
     return availability_map;
 }
 
-void DatabaseHandler::insert_or_ignore_local_list_version(int32_t version) {
+void DatabaseHandler::insert_or_ignore_local_list_version(std::int32_t version) {
     const std::string sql = "INSERT OR IGNORE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
     auto stmt = this->database->new_statement(sql);
 
@@ -377,7 +378,7 @@ void DatabaseHandler::insert_or_ignore_local_list_version(int32_t version) {
 }
 
 // local auth list management
-void DatabaseHandler::insert_or_update_local_list_version(int32_t version) {
+void DatabaseHandler::insert_or_update_local_list_version(std::int32_t version) {
     const std::string sql = "INSERT OR REPLACE INTO AUTH_LIST_VERSION (ID, VERSION) VALUES (0, @version)";
     auto stmt = this->database->new_statement(sql);
 
@@ -387,7 +388,7 @@ void DatabaseHandler::insert_or_update_local_list_version(int32_t version) {
     }
 }
 
-int32_t DatabaseHandler::get_local_list_version() {
+std::int32_t DatabaseHandler::get_local_list_version() {
     const std::string sql = "SELECT VERSION FROM AUTH_LIST_VERSION WHERE ID = 0";
     auto stmt = this->database->new_statement(sql);
 
@@ -510,7 +511,7 @@ void DatabaseHandler::clear_local_authorization_list() {
     }
 }
 
-int32_t DatabaseHandler::get_local_authorization_list_number_of_entries() {
+std::int32_t DatabaseHandler::get_local_authorization_list_number_of_entries() {
     const std::string sql = "SELECT COUNT(*) FROM AUTH_LIST;";
     auto stmt = this->database->new_statement(sql);
 

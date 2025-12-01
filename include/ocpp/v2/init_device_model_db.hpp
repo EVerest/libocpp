@@ -45,11 +45,11 @@ namespace ocpp::v2 {
 /// When the component is read from the database, the component id will be set.
 ///
 struct ComponentKey {
-    std::optional<uint64_t> db_id;       ///< \brief Component id in the database.
-    std::string name;                    ///< \brief Component name.
-    std::optional<std::string> instance; ///< \brief Component instance.
-    std::optional<int32_t> evse_id;      ///< \brief Component evse id.
-    std::optional<int32_t> connector_id; ///< \brief Component connector id.
+    std::optional<std::uint64_t> db_id;       ///< \brief Component id in the database.
+    std::string name;                         ///< \brief Component name.
+    std::optional<std::string> instance;      ///< \brief Component instance.
+    std::optional<std::int32_t> evse_id;      ///< \brief Component evse id.
+    std::optional<std::int32_t> connector_id; ///< \brief Component connector id.
 
     ///
     /// \brief operator <, needed to add this class as key in a map.
@@ -64,7 +64,7 @@ struct ComponentKey {
 /// \brief Struct that holds a VariableAttribute struct and an database id.
 ///
 struct DbVariableAttribute {
-    std::optional<uint64_t> db_id;           ///< \brief The id in the database, if the record is read from the db.
+    std::optional<std::uint64_t> db_id;      ///< \brief The id in the database, if the record is read from the db.
     std::optional<std::string> value_source; ///< \brief Source of the attribute value (who set the value).
     VariableAttribute variable_attribute;    ///< \brief The variable attribute
 };
@@ -74,9 +74,9 @@ struct DbVariableAttribute {
 ///
 struct DeviceModelVariable {
     /// \brief The id in the database, if the record is read from the db.
-    std::optional<uint64_t> db_id;
+    std::optional<std::uint64_t> db_id;
     /// \brief Id from the characteristics in the database, if the records is read from db.
-    std::optional<uint64_t> variable_characteristics_db_id;
+    std::optional<std::uint64_t> variable_characteristics_db_id;
     /// \brief Variable name
     std::string name;
     /// \brief Variable characteristics
@@ -212,7 +212,8 @@ private: // Functions
     ///
     /// \throws InitDeviceModelDbError if row could not be added to db.
     ///
-    void insert_variable_characteristics(const VariableCharacteristics& characteristics, const int64_t& variable_id);
+    void insert_variable_characteristics(const VariableCharacteristics& characteristics,
+                                         const std::int64_t& variable_id);
 
     ///
     /// \brief Update characteristics of a variable.
@@ -223,7 +224,7 @@ private: // Functions
     /// \throw InitDeviceModelDbError if variable characteristics could not be updated.
     ///
     void update_variable_characteristics(const VariableCharacteristics& characteristics,
-                                         const int64_t& characteristics_id, const int64_t& variable_id);
+                                         const std::int64_t& characteristics_id, const std::int64_t& variable_id);
 
     ///
     /// \brief Insert a variable in the database.
@@ -232,7 +233,7 @@ private: // Functions
     ///
     /// \throws InitDeviceModelDbError if variable could not be inserted
     ///
-    void insert_variable(const DeviceModelVariable& variable, const uint64_t& component_id);
+    void insert_variable(const DeviceModelVariable& variable, const std::uint64_t& component_id);
 
     ///
     /// \brief Update a variable in the database.
@@ -243,7 +244,7 @@ private: // Functions
     /// \throws InitDeviceModelDbError If variable could not be updated
     ///
     void update_variable(const DeviceModelVariable& variable, const DeviceModelVariable& db_variable,
-                         const uint64_t component_id);
+                         const std::uint64_t component_id);
 
     ///
     /// \brief Delete a variable from the database.
@@ -261,7 +262,7 @@ private: // Functions
     ///
     /// \throws InitDeviceModelDbError If attribute could not be inserted
     ///
-    void insert_attribute(const VariableAttribute& attribute, const uint64_t& variable_id,
+    void insert_attribute(const VariableAttribute& attribute, const std::uint64_t& variable_id,
                           const std::optional<std::string>& default_actual_value);
 
     ///
@@ -272,7 +273,7 @@ private: // Functions
     ///
     /// \throws InitDeviceModelDbError If one of the attributes could not be inserted or updated
     ///
-    void insert_attributes(const std::vector<DbVariableAttribute>& attributes, const uint64_t& variable_id,
+    void insert_attributes(const std::vector<DbVariableAttribute>& attributes, const std::uint64_t& variable_id,
                            const std::optional<std::string>& default_actual_value);
 
     ///
@@ -289,7 +290,7 @@ private: // Functions
     /// \throws InitDeviceModelDbError If one of the attributes could not be updated
     ///
     void update_attributes(const std::vector<DbVariableAttribute>& new_attributes,
-                           const std::vector<DbVariableAttribute>& db_attributes, const uint64_t& variable_id,
+                           const std::vector<DbVariableAttribute>& db_attributes, const std::uint64_t& variable_id,
                            const std::optional<std::string>& default_actual_value);
 
     ///
@@ -322,7 +323,7 @@ private: // Functions
     ///
     /// \throws InitDeviceModelDbError  When inserting failed
     ///
-    bool insert_variable_attribute_value(const int64_t& variable_attribute_id,
+    bool insert_variable_attribute_value(const std::int64_t& variable_attribute_id,
                                          const std::string& variable_attribute_value,
                                          const bool warn_source_not_default);
 
@@ -330,26 +331,27 @@ private: // Functions
     /// \brief  Inserts a single monitor in the database
     /// \param monitor Monitor data
     /// \param variable_id  Variable ID for which we insert this monitor
-    void insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id);
+    void insert_variable_monitor(const VariableMonitoringMeta& monitor, const std::int64_t& variable_id);
 
     ///
     /// \brief same as \ref insert_variable_monitor but will simply iterate the monitors and call the function
-    void insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors, const int64_t& variable_id);
+    void insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors, const std::int64_t& variable_id);
 
     ///
     /// \brief Updates the monitor in the database, using the information from the new monitor
     void update_variable_monitor(const VariableMonitoringMeta& new_monitor, const VariableMonitoringMeta& db_monitor,
-                                 const int64_t& variable_id);
+                                 const std::int64_t& variable_id);
 
     ///
     /// \brief Updates the monitors in the database, removing the monitors that do not exist
     /// in the configuration file, and inserting the new ones that were newly added
     void update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
-                                  const std::vector<VariableMonitoringMeta>& db_monitors, const int64_t& variable_id);
+                                  const std::vector<VariableMonitoringMeta>& db_monitors,
+                                  const std::int64_t& variable_id);
 
     ///
     /// \brief Deletes a single monitor related to the provided variable_id from the database
-    void delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id);
+    void delete_variable_monitor(const VariableMonitoringMeta& monitor, const std::int64_t& variable_id);
 
     ///
     /// \brief Get all components with its variables (and characteristics / attributes) from the database.
@@ -394,13 +396,13 @@ private: // Functions
     ///
     /// \throw InitDeviceModelDbError   When variable attributes could not be retrieved from the database.
     ///
-    std::vector<DbVariableAttribute> get_variable_attributes_from_db(const uint64_t& variable_id);
+    std::vector<DbVariableAttribute> get_variable_attributes_from_db(const std::uint64_t& variable_id);
 
     ///
     /// \brief Get monitors related to a variable from the DB
     /// \param variable_id  The id of the variable to get the attributes from.
     /// \return The monitors belonging to the given variables or an empty list
-    std::vector<VariableMonitoringMeta> get_variable_monitors_from_db(const uint64_t& variable_id);
+    std::vector<VariableMonitoringMeta> get_variable_monitors_from_db(const std::uint64_t& variable_id);
 
 protected: // Functions
     // DatabaseHandlerCommon interface

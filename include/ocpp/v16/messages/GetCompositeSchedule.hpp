@@ -16,8 +16,8 @@ namespace v16 {
 
 /// \brief Contains a OCPP GetCompositeSchedule message
 struct GetCompositeScheduleRequest : public ocpp::Message {
-    int32_t connectorId;
-    int32_t duration;
+    std::int32_t connectorId;
+    std::int32_t duration;
     std::optional<ChargingRateUnit> chargingRateUnit;
 
     /// \brief Provides the type of this GetCompositeSchedule message as a human readable string
@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, const GetCompositeScheduleRequest& k)
 /// \brief Contains a OCPP GetCompositeScheduleResponse message
 struct GetCompositeScheduleResponse : public ocpp::Message {
     GetCompositeScheduleStatus status;
-    std::optional<int32_t> connectorId;
+    std::optional<std::int32_t> connectorId;
     std::optional<ocpp::DateTime> scheduleStart;
     std::optional<ChargingSchedule> chargingSchedule;
 

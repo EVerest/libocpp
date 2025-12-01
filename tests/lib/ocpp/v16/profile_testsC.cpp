@@ -82,16 +82,16 @@ const ChargingProfile profileRecurring{
                 // EnhancedChargingSchedulePeriod
                 0,            // startPeriod
                 32.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 36000,        // startPeriod
                 7.0,          // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,                   // optional - int32_t duration
+        std::nullopt,                   // optional - std::int32_t duration
         profileRecurring_startSchedule, // optional - ocpp::DateTime - startSchedule
         std::nullopt,                   // optional - float - minChargingRate
     },                                  // chargingSchedule
@@ -114,10 +114,10 @@ const ChargingProfile profileRecurringAlt{
                 // EnhancedChargingSchedulePeriod
                 0,            // startPeriod
                 32.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        36000,                          // optional - int32_t duration
+        36000,                          // optional - std::int32_t duration
         profileRecurring_startSchedule, // optional - ocpp::DateTime - startSchedule
         std::nullopt,                   // optional - float - minChargingRate
     },                                  // chargingSchedule
@@ -140,10 +140,10 @@ const ChargingProfile profileMinimum{
                 // EnhancedChargingSchedulePeriod
                 0,            // startPeriod
                 6.0,          // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt, // optional - int32_t duration
+        std::nullopt, // optional - std::int32_t duration
         std::nullopt, // optional - ocpp::DateTime - startSchedule
         std::nullopt, // optional - float - minChargingRate
     },                // chargingSchedule
@@ -170,16 +170,16 @@ const ChargingProfile profileRelative{
                 // EnhancedChargingSchedulePeriod
                 0,            // startPeriod
                 32.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 36000,        // startPeriod
                 7.0,          // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,           // optional - int32_t duration
+        std::nullopt,           // optional - std::int32_t duration
         std::nullopt,           // optional - ocpp::DateTime - startSchedule
         std::nullopt,           // optional - float - minChargingRate
     },                          // chargingSchedule
@@ -814,10 +814,10 @@ const ChargingProfile profile609A{
                 // EnhancedChargingSchedulePeriod
                 0,      // startPeriod
                 2000.0, // limit
-                1,      // optional - int32_t - numberPhases
+                1,      // optional - std::int32_t - numberPhases
             },
         },
-        1080,                      // optional - int32_t duration
+        1080,                      // optional - std::int32_t duration
         profile609A_startSchedule, // optional - ocpp::DateTime - startSchedule
         0.0,                       // optional - float - minChargingRate
     },                             // chargingSchedule
@@ -841,22 +841,22 @@ const ChargingProfile profile609B{
                 // EnhancedChargingSchedulePeriod
                 0,       // startPeriod
                 11000.0, // limit
-                3,       // optional - int32_t - numberPhases
+                3,       // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 28800,  // startPeriod
                 6000.0, // limit
-                3,      // optional - int32_t - numberPhases
+                3,      // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 72000,   // startPeriod
                 12000.0, // limit
-                3,       // optional - int32_t - numberPhases
+                3,       // optional - std::int32_t - numberPhases
             },
         },
-        86400,                     // optional - int32_t duration
+        86400,                     // optional - std::int32_t duration
         profile609B_startSchedule, // optional - ocpp::DateTime - startSchedule
         0.0,                       // optional - float - minChargingRate
     },                             // chargingSchedule
@@ -945,28 +945,28 @@ const ChargingProfile profileWatts{
                 // EnhancedChargingSchedulePeriod
                 0,      // startPeriod
                 2000.0, // limit
-                1,      // optional - int32_t - numberPhases
+                1,      // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 300,    // startPeriod
                 1800.0, // limit
-                2,      // optional - int32_t - numberPhases
+                2,      // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 600,    // startPeriod
                 1600.0, // limit
-                3,      // optional - int32_t - numberPhases
+                3,      // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 900,          // startPeriod
                 1200.0,       // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        3500,                       // optional - int32_t duration
+        3500,                       // optional - std::int32_t duration
         profileWatts_startSchedule, // optional - ocpp::DateTime - startSchedule
         0.0,                        // optional - float - minChargingRate
     },                              // chargingSchedule
@@ -990,28 +990,28 @@ const ChargingProfile profileAmps{
                 // EnhancedChargingSchedulePeriod
                 0,    // startPeriod
                 32.0, // limit
-                3,    // optional - int32_t - numberPhases
+                3,    // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 300,  // startPeriod
                 24.0, // limit
-                2,    // optional - int32_t - numberPhases
+                2,    // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 600,  // startPeriod
                 12.0, // limit
-                1,    // optional - int32_t - numberPhases
+                1,    // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 900,          // startPeriod
                 10.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        3600,                      // optional - int32_t duration
+        3600,                      // optional - std::int32_t duration
         profileAmps_startSchedule, // optional - ocpp::DateTime - startSchedule
         0.0,                       // optional - float - minChargingRate
     },                             // chargingSchedule
@@ -1158,22 +1158,22 @@ const ChargingProfile profileCombinedCPM{
                 // EnhancedChargingSchedulePeriod
                 0,            // startPeriod
                 10.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 80,   // startPeriod
                 20.0, // limit
-                1,    // optional - int32_t - numberPhases
+                1,    // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 100,  // startPeriod
                 20.0, // limit
-                3,    // optional - int32_t - numberPhases
+                3,    // optional - std::int32_t - numberPhases
             },
         },
-        200,                           // optional - int32_t duration
+        200,                           // optional - std::int32_t duration
         profileCombined_startSchedule, // optional - ocpp::DateTime - startSchedule
         std::nullopt,                  // optional - float - minChargingRate
     },                                 // chargingSchedule
@@ -1196,34 +1196,34 @@ const ChargingProfile profileCombinedTXD{
                 // EnhancedChargingSchedulePeriod
                 0,       // startPeriod
                 11000.0, // limit
-                3,       // optional - int32_t - numberPhases
+                3,       // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 60,     // startPeriod
                 6900.0, // limit
-                1,      // optional - int32_t - numberPhases
+                1,      // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 120,          // startPeriod
                 5520.0,       // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 180,          // startPeriod
                 17250.0,      // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 260,          // startPeriod
                 5520.0,       // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        300,                           // optional - int32_t duration
+        300,                           // optional - std::int32_t duration
         profileCombined_startSchedule, // optional - ocpp::DateTime - startSchedule
         std::nullopt,                  // optional - float - minChargingRate
     },                                 // chargingSchedule
@@ -1348,22 +1348,22 @@ const ChargingProfile profileRecurringA{
                 // EnhancedChargingSchedulePeriod
                 0,            // startPeriod
                 14.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 5000,         // startPeriod
                 16.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 15000,        // startPeriod
                 20.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        std::nullopt,                    // optional - int32_t duration
+        std::nullopt,                    // optional - std::int32_t duration
         profileRecurringA_startSchedule, // optional - ocpp::DateTime - startSchedule
         std::nullopt,                    // optional - float - minChargingRate
     },                                   // chargingSchedule
@@ -1387,22 +1387,22 @@ const ChargingProfile profileRecurringB{
                 // EnhancedChargingSchedulePeriod
                 0,            // startPeriod
                 10.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 10000,        // startPeriod
                 22.0,         // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
             {
                 // EnhancedChargingSchedulePeriod
                 20000,        // startPeriod
                 6.0,          // limit
-                std::nullopt, // optional - int32_t - numberPhases
+                std::nullopt, // optional - std::int32_t - numberPhases
             },
         },
-        86400,                           // optional - int32_t duration
+        86400,                           // optional - std::int32_t duration
         profileRecurringB_startSchedule, // optional - ocpp::DateTime - startSchedule
         std::nullopt,                    // optional - float - minChargingRate
     },                                   // chargingSchedule

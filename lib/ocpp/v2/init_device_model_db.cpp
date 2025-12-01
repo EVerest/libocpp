@@ -272,19 +272,19 @@ void InitDeviceModelDb::insert_component(const ComponentKey& component_key,
                                      std::string(this->database->get_error_message()));
     }
 
-    const int64_t component_id = this->database->get_last_inserted_rowid();
+    const std::int64_t component_id = this->database->get_last_inserted_rowid();
 
     // Loop over the properties of this component.
     for (const auto& variable : component_variables) {
         EVLOG_debug << "-- Inserting variable " << variable.name;
 
         // Add variable
-        insert_variable(variable, static_cast<uint64_t>(component_id));
+        insert_variable(variable, static_cast<std::uint64_t>(component_id));
     }
 }
 
 void InitDeviceModelDb::insert_variable_characteristics(const VariableCharacteristics& characteristics,
-                                                        const int64_t& variable_id) {
+                                                        const std::int64_t& variable_id) {
     static const std::string statement = "INSERT OR REPLACE INTO VARIABLE_CHARACTERISTICS (DATATYPE_ID, VARIABLE_ID, "
                                          "MAX_LIMIT, MIN_LIMIT, SUPPORTS_MONITORING, "
                                          "UNIT, VALUES_LIST) VALUES (@datatype_id, @variable_id, @max_limit, "
@@ -337,7 +337,8 @@ void InitDeviceModelDb::insert_variable_characteristics(const VariableCharacteri
 }
 
 void InitDeviceModelDb::update_variable_characteristics(const VariableCharacteristics& characteristics,
-                                                        const int64_t& characteristics_id, const int64_t& variable_id) {
+                                                        const std::int64_t& characteristics_id,
+                                                        const std::int64_t& variable_id) {
     static const std::string update_characteristics_statement =
         "UPDATE VARIABLE_CHARACTERISTICS SET DATATYPE_ID=@datatype_id, VARIABLE_ID=@variable_id, MAX_LIMIT=@max_limit, "
         "MIN_LIMIT=@min_limit, SUPPORTS_MONITORING=@supports_monitoring, UNIT=@unit, VALUES_LIST=@values_list WHERE "
@@ -388,7 +389,7 @@ void InitDeviceModelDb::update_variable_characteristics(const VariableCharacteri
     }
 }
 
-void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, const uint64_t& component_id) {
+void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, const std::uint64_t& component_id) {
     static const std::string statement =
         "INSERT OR REPLACE INTO VARIABLE (NAME, INSTANCE, COMPONENT_ID, SOURCE) VALUES "
         "(@name, @instance, @component_id, @source)";
@@ -420,15 +421,15 @@ void InitDeviceModelDb::insert_variable(const DeviceModelVariable& variable, con
                                      " could not be inserted: " + std::string(this->database->get_error_message()));
     }
 
-    const int64_t variable_id = this->database->get_last_inserted_rowid();
+    const std::int64_t variable_id = this->database->get_last_inserted_rowid();
 
     insert_variable_characteristics(variable.characteristics, variable_id);
-    insert_attributes(variable.attributes, static_cast<uint64_t>(variable_id), variable.default_actual_value);
+    insert_attributes(variable.attributes, static_cast<std::uint64_t>(variable_id), variable.default_actual_value);
     insert_variable_monitors(variable.monitors, variable_id);
 }
 
 void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, const DeviceModelVariable& db_variable,
-                                        const uint64_t component_id) {
+                                        const std::uint64_t component_id) {
     if (!db_variable.db_id.has_value()) {
         EVLOG_error << "Can not update variable " << variable.name << ": database id unknown";
         return;
@@ -469,8 +470,8 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     if (db_variable.variable_characteristics_db_id.has_value() &&
         is_characteristics_different(variable.characteristics, db_variable.characteristics)) {
         update_variable_characteristics(variable.characteristics,
-                                        clamp_to<int64_t>(db_variable.variable_characteristics_db_id.value()),
-                                        clamp_to<int64_t>(db_variable.db_id.value()));
+                                        clamp_to<std::int64_t>(db_variable.variable_characteristics_db_id.value()),
+                                        clamp_to<std::int64_t>(db_variable.db_id.value()));
     }
 
     if (!variable_has_same_attributes(variable.attributes, db_variable.attributes)) {
@@ -479,7 +480,8 @@ void InitDeviceModelDb::update_variable(const DeviceModelVariable& variable, con
     }
 
     if (!variable_has_same_monitors(variable.monitors, db_variable.monitors)) {
-        update_variable_monitors(variable.monitors, db_variable.monitors, clamp_to<int64_t>(db_variable.db_id.value()));
+        update_variable_monitors(variable.monitors, db_variable.monitors,
+                                 clamp_to<std::int64_t>(db_variable.db_id.value()));
     }
 }
 
@@ -508,7 +510,7 @@ void InitDeviceModelDb::delete_variable(const DeviceModelVariable& variable) {
     }
 }
 
-void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, const uint64_t& variable_id,
+void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, const std::uint64_t& variable_id,
                                          const std::optional<std::string>& default_actual_value) {
     static const std::string statement =
         "INSERT OR REPLACE INTO VARIABLE_ATTRIBUTE (VARIABLE_ID, MUTABILITY_ID, PERSISTENT, CONSTANT, TYPE_ID) "
@@ -539,7 +541,7 @@ void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, con
         throw InitDeviceModelDbError("Could not insert attribute: " + std::string(this->database->get_error_message()));
     }
 
-    const int64_t attribute_id = this->database->get_last_inserted_rowid();
+    const std::int64_t attribute_id = this->database->get_last_inserted_rowid();
 
     if (has_attribute_actual_value(attribute, default_actual_value)) {
         insert_variable_attribute_value(
@@ -550,7 +552,7 @@ void InitDeviceModelDb::insert_attribute(const VariableAttribute& attribute, con
 }
 
 void InitDeviceModelDb::insert_attributes(const std::vector<DbVariableAttribute>& attributes,
-                                          const uint64_t& variable_id,
+                                          const std::uint64_t& variable_id,
                                           const std::optional<std::string>& default_actual_value) {
     for (const auto& attribute : attributes) {
         insert_attribute(attribute.variable_attribute, variable_id, default_actual_value);
@@ -559,7 +561,7 @@ void InitDeviceModelDb::insert_attributes(const std::vector<DbVariableAttribute>
 
 void InitDeviceModelDb::update_attributes(const std::vector<DbVariableAttribute>& new_attributes,
                                           const std::vector<DbVariableAttribute>& db_attributes,
-                                          const uint64_t& variable_id,
+                                          const std::uint64_t& variable_id,
                                           const std::optional<std::string>& default_actual_value) {
     // First check if there are attributes in the database that are not in the config. They should be removed.
     for (const auto& db_attribute : db_attributes) {
@@ -648,7 +650,7 @@ void InitDeviceModelDb::update_attribute(const VariableAttribute& attribute, con
 
     if (has_attribute_actual_value(attribute, default_actual_value)) {
         if (!insert_variable_attribute_value(
-                static_cast<int64_t>(db_attribute.db_id.value()),
+                static_cast<std::int64_t>(db_attribute.db_id.value()),
                 // NOLINTNEXTLINE(bugprone-unchecked-optional-access): has_attribute_actual_value ensures this
                 (attribute.value.has_value() ? attribute.value.value().get() : default_actual_value.value()), false)) {
             EVLOG_error << "Can not update variable attribute (" << db_attribute.db_id.value()
@@ -679,7 +681,7 @@ void InitDeviceModelDb::delete_attribute(const DbVariableAttribute& attribute) {
     }
 }
 
-bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_attribute_id,
+bool InitDeviceModelDb::insert_variable_attribute_value(const std::int64_t& variable_attribute_id,
                                                         const std::string& variable_attribute_value,
                                                         const bool warn_source_not_default) {
     // Insert variable statement.
@@ -699,7 +701,7 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_
     }
 
     insert_variable_attribute_statement->bind_int("@variable_attribute_id",
-                                                  static_cast<int32_t>(variable_attribute_id));
+                                                  static_cast<std::int32_t>(variable_attribute_id));
     insert_variable_attribute_statement->bind_text("@value", variable_attribute_value, SQLiteString::Transient);
 
     if (insert_variable_attribute_statement->step() != SQLITE_DONE) {
@@ -715,7 +717,8 @@ bool InitDeviceModelDb::insert_variable_attribute_value(const int64_t& variable_
     return true;
 }
 
-void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& variable_id) {
+void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& monitor,
+                                                const std::int64_t& variable_id) {
     const std::string insert_statement =
         "INSERT OR REPLACE INTO VARIABLE_MONITORING (VARIABLE_ID, SEVERITY, 'TRANSACTION', TYPE_ID, "
         "CONFIG_TYPE_ID, VALUE, REFERENCE_VALUE) "
@@ -746,14 +749,15 @@ void InitDeviceModelDb::insert_variable_monitor(const VariableMonitoringMeta& mo
 }
 
 void InitDeviceModelDb::insert_variable_monitors(const std::vector<VariableMonitoringMeta>& monitors,
-                                                 const int64_t& variable_id) {
+                                                 const std::int64_t& variable_id) {
     for (const VariableMonitoringMeta& monitor : monitors) {
         insert_variable_monitor(monitor, variable_id);
     }
 }
 
 void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& new_monitor,
-                                                const VariableMonitoringMeta& db_monitor, const int64_t& variable_id) {
+                                                const VariableMonitoringMeta& db_monitor,
+                                                const std::int64_t& variable_id) {
     /* clang-format off */
     static const std::string update_monitor = "UPDATE VARIABLE_MONITORING "
                                               "SET SEVERITY=?, 'TRANSACTION'=?, TYPE_ID=?, CONFIG_TYPE_ID=?, VALUE=?, REFERENCE_VALUE=? "
@@ -784,7 +788,7 @@ void InitDeviceModelDb::update_variable_monitor(const VariableMonitoringMeta& ne
 
 void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonitoringMeta>& new_monitors,
                                                  const std::vector<VariableMonitoringMeta>& db_monitors,
-                                                 const int64_t& variable_id) {
+                                                 const std::int64_t& variable_id) {
     // Remove monitors that are present in the database but not in the config
     for (const VariableMonitoringMeta& db_monitor : db_monitors) {
         const auto& it = std::find_if(std::begin(new_monitors), std::end(new_monitors),
@@ -819,7 +823,8 @@ void InitDeviceModelDb::update_variable_monitors(const std::vector<VariableMonit
     }
 }
 
-void InitDeviceModelDb::delete_variable_monitor(const VariableMonitoringMeta& monitor, const int64_t& /*variable_id*/) {
+void InitDeviceModelDb::delete_variable_monitor(const VariableMonitoringMeta& monitor,
+                                                const std::int64_t& /*variable_id*/) {
     try {
         const std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE ID = ?";
         auto delete_stmt = this->database->new_statement(delete_query);
@@ -1070,7 +1075,7 @@ void InitDeviceModelDb::update_component_variables(
     }
 }
 
-std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from_db(const uint64_t& variable_id) {
+std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from_db(const std::uint64_t& variable_id) {
     std::vector<DbVariableAttribute> attributes;
 
     static const std::string get_attributes_statement = "SELECT ID, MUTABILITY_ID, PERSISTENT, CONSTANT, TYPE_ID FROM "
@@ -1116,7 +1121,7 @@ std::vector<DbVariableAttribute> InitDeviceModelDb::get_variable_attributes_from
     return attributes;
 }
 
-std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_from_db(const uint64_t& variable_id) {
+std::vector<VariableMonitoringMeta> InitDeviceModelDb::get_variable_monitors_from_db(const std::uint64_t& variable_id) {
     std::vector<VariableMonitoringMeta> monitors{};
 
     const std::string select_query =

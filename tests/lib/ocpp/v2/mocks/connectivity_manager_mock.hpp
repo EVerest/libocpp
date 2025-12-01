@@ -19,11 +19,12 @@ public:
     MOCK_METHOD(void, set_configure_network_connection_profile_callback,
                 (ConfigureNetworkConnectionProfileCallback callback));
     MOCK_METHOD(std::optional<NetworkConnectionProfile>, get_network_connection_profile,
-                (const int32_t configuration_slot), (const));
-    MOCK_METHOD(std::optional<int32_t>, get_priority_from_configuration_slot, (const int configuration_slot), (const));
+                (const std::int32_t configuration_slot), (const));
+    MOCK_METHOD(std::optional<std::int32_t>, get_priority_from_configuration_slot, (const int configuration_slot),
+                (const));
     MOCK_METHOD(const std::vector<int>&, get_network_connection_slots, (), (const));
     MOCK_METHOD(bool, is_websocket_connected, ());
-    MOCK_METHOD(void, connect, (std::optional<int32_t> network_profile_slot));
+    MOCK_METHOD(void, connect, (std::optional<std::int32_t> network_profile_slot));
     MOCK_METHOD(void, disconnect, ());
     MOCK_METHOD(bool, send_to_websocket, (const std::string& message));
     MOCK_METHOD(void, on_network_disconnected, (OCPPInterfaceEnum ocpp_interface));

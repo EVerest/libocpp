@@ -20,7 +20,7 @@ Transaction EnhancedTransaction::get_transaction() {
     return transaction;
 }
 
-int32_t EnhancedTransaction::get_seq_no() {
+std::int32_t EnhancedTransaction::get_seq_no() {
     this->seq_no += 1;
     if (this->database_enabled) {
         try {

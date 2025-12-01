@@ -18,7 +18,7 @@ namespace v2 {
 /// \brief Contains a OCPP FirmwareStatusNotification message
 struct FirmwareStatusNotificationRequest : public ocpp::Message {
     FirmwareStatusEnum status;
-    std::optional<int32_t> requestId;
+    std::optional<std::int32_t> requestId;
     std::optional<StatusInfo> statusInfo;
     std::optional<CustomData> customData;
 

@@ -83,7 +83,7 @@ protected:
     ocpp::EvseSecurityMock evse_security;
     ComponentStateManagerMock component_state_manager;
     MockFunction<void()> set_charging_profiles_callback_mock;
-    MockFunction<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+    MockFunction<RequestStartStopStatusEnum(const std::int32_t evse_id, const ReasonEnum& stop_reason)>
         stop_transaction_callback_mock;
     std::unique_ptr<FunctionalBlockContext> functional_block_context;
     TestSmartCharging smart_charging = create_smart_charging();

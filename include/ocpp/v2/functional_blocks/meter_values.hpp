@@ -19,11 +19,11 @@ public:
     /// \brief Event handler that should be called when a new meter value is present
     /// \param evse_id
     /// \param meter_value
-    virtual void on_meter_value(const int32_t evse_id, const MeterValue& meter_value) = 0;
+    virtual void on_meter_value(const std::int32_t evse_id, const MeterValue& meter_value) = 0;
     virtual MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                        const RequiredComponentVariable& component_variable) = 0;
     // Functional Block J: MeterValues
-    virtual void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
+    virtual void meter_values_req(const std::int32_t evse_id, const std::vector<MeterValue>& meter_values,
                                   const bool initiated_by_trigger_message = false) = 0;
 };
 
@@ -33,11 +33,11 @@ public:
     explicit MeterValues(const FunctionalBlockContext& functional_block_context);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
     void update_aligned_data_interval() override;
-    void on_meter_value(const int32_t evse_id, const MeterValue& meter_value) override;
+    void on_meter_value(const std::int32_t evse_id, const MeterValue& meter_value) override;
     MeterValue get_latest_meter_value_filtered(const MeterValue& meter_value, ReadingContextEnum context,
                                                const RequiredComponentVariable& component_variable) override;
 
-    void meter_values_req(const int32_t evse_id, const std::vector<MeterValue>& meter_values,
+    void meter_values_req(const std::int32_t evse_id, const std::vector<MeterValue>& meter_values,
                           const bool initiated_by_trigger_message = false) override;
 
 private: // Members

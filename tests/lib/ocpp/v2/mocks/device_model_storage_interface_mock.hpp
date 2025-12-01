@@ -22,9 +22,9 @@ public:
     MOCK_METHOD(std::vector<VariableMonitoringMeta>, get_monitoring_data,
                 (const std::vector<MonitoringCriterionEnum>&, const Component&, const Variable&));
     MOCK_METHOD(ClearMonitoringStatusEnum, clear_variable_monitor, (int, bool));
-    MOCK_METHOD(int32_t, clear_custom_variable_monitors, ());
+    MOCK_METHOD(std::int32_t, clear_custom_variable_monitors, ());
     MOCK_METHOD(void, check_integrity, ());
-    MOCK_METHOD(bool, update_monitoring_reference, (int32_t monitor_id, const std::string& reference_value),
+    MOCK_METHOD(bool, update_monitoring_reference, (std::int32_t monitor_id, const std::string& reference_value),
                 (override));
 };
 } // namespace ocpp::v2

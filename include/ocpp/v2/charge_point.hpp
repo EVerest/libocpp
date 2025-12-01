@@ -76,7 +76,7 @@ public:
     ///
     /// \param network_profile_slot Optional slot to use when connecting. std::nullopt means the slot will be determined
     /// automatically.
-    virtual void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) = 0;
+    virtual void connect_websocket(std::optional<std::int32_t> network_profile_slot = std::nullopt) = 0;
 
     /// \brief Disconnects the the websocket connection to the CSMS if it is connected
     virtual void disconnect_websocket() = 0;
@@ -103,13 +103,13 @@ public:
     ///        called during a Firmware Update to indicate the current firmware_update_status.
     /// \param request_id   The request_id. When it is -1, it will not be included in the request.
     /// \param firmware_update_status The firmware_update_status
-    virtual void on_firmware_update_status_notification(int32_t request_id,
+    virtual void on_firmware_update_status_notification(std::int32_t request_id,
                                                         const FirmwareStatusEnum& firmware_update_status) = 0;
 
     /// \brief Event handler that should be called when a session has started
     /// \param evse_id
     /// \param connector_id
-    virtual void on_session_started(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_session_started(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the EV sends a certificate request (for update or installation)
     /// \param request
@@ -128,12 +128,14 @@ public:
     /// \param reservation_id
     /// \param remote_start_id
     /// \param charging_state   The new charging state
-    virtual void
-    on_transaction_started(const int32_t evse_id, const int32_t connector_id, const std::string& session_id,
-                           const DateTime& timestamp, const TriggerReasonEnum trigger_reason,
-                           const MeterValue& meter_start, const std::optional<IdToken>& id_token,
-                           const std::optional<IdToken>& group_id_token, const std::optional<int32_t>& reservation_id,
-                           const std::optional<int32_t>& remote_start_id, const ChargingStateEnum charging_state) = 0;
+    virtual void on_transaction_started(const std::int32_t evse_id, const std::int32_t connector_id,
+                                        const std::string& session_id, const DateTime& timestamp,
+                                        const TriggerReasonEnum trigger_reason, const MeterValue& meter_start,
+                                        const std::optional<IdToken>& id_token,
+                                        const std::optional<IdToken>& group_id_token,
+                                        const std::optional<std::int32_t>& reservation_id,
+                                        const std::optional<std::int32_t>& remote_start_id,
+                                        const ChargingStateEnum charging_state) = 0;
 
     /// \brief Event handler that should be called when a transaction has finished
     /// \param evse_id
@@ -143,52 +145,53 @@ public:
     /// \param id_token
     /// \param signed_meter_value
     /// \param charging_state
-    virtual void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
-                                         const ReasonEnum reason, const TriggerReasonEnum trigger_reason,
-                                         const std::optional<IdToken>& id_token,
+    virtual void on_transaction_finished(const std::int32_t evse_id, const DateTime& timestamp,
+                                         const MeterValue& meter_stop, const ReasonEnum reason,
+                                         const TriggerReasonEnum trigger_reason, const std::optional<IdToken>& id_token,
                                          const std::optional<std::string>& signed_meter_value,
                                          const ChargingStateEnum charging_state) = 0;
 
     /// \brief Event handler that should be called when a session has finished
     /// \param evse_id
     /// \param connector_id
-    virtual void on_session_finished(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_session_finished(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the given \p id_token is authorized
-    virtual void on_authorized(const int32_t evse_id, const int32_t connector_id, const IdToken& id_token) = 0;
+    virtual void on_authorized(const std::int32_t evse_id, const std::int32_t connector_id,
+                               const IdToken& id_token) = 0;
 
     /// \brief Event handler that should be called when a new meter value is present
     /// \param evse_id
     /// \param meter_value
-    virtual void on_meter_value(const int32_t evse_id, const MeterValue& meter_value) = 0;
+    virtual void on_meter_value(const std::int32_t evse_id, const MeterValue& meter_value) = 0;
 
     /// \brief Event handler that should be called when the connector on the given \p evse_id and \p connector_id
     /// becomes unavailable
-    virtual void on_unavailable(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_unavailable(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the connector returns from unavailable on the given \p evse_id
     /// and \p connector_id .
-    virtual void on_enabled(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_enabled(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is faulted.
     /// \param evse_id          Faulted EVSE id
     /// \param connector_id     Faulted connector id
-    virtual void on_faulted(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_faulted(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the fault on the connector on the given evse_id is cleared.
     /// \param evse_id          EVSE id where fault was cleared
     /// \param connector_id     Connector id where fault was cleared
-    virtual void on_fault_cleared(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_fault_cleared(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the connector on the given evse_id and connector_id is reserved.
     /// \param evse_id          Reserved EVSE id
     /// \param connector_id     Reserved connector id
-    virtual void on_reserved(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_reserved(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that should be called when the reservation of the connector is cleared.
     /// \param evse_id          Cleared EVSE id
     /// \param connector_id     Cleared connector id.
-    virtual void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) = 0;
+    virtual void on_reservation_cleared(const std::int32_t evse_id, const std::int32_t connector_id) = 0;
 
     /// \brief Event handler that will update the charging state internally when it has been changed.
     /// \param evse_id          The evse id of which the charging state has changed.
@@ -196,13 +199,13 @@ public:
     /// \param trigger_reason   The trigger reason of the event. Defaults to ChargingStateChanged
     /// \return True on success. False if evse id does not exist.
     virtual bool
-    on_charging_state_changed(const uint32_t evse_id, const ChargingStateEnum charging_state,
+    on_charging_state_changed(const std::uint32_t evse_id, const ChargingStateEnum charging_state,
                               const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) = 0;
 
     /// \brief Gets the transaction id for a certain \p evse_id if there is an active transaction
     /// \param evse_id The evse to get the transaction for
     /// \return The transaction id if a transaction is active, otherwise nullopt
-    virtual std::optional<std::string> get_evse_transaction_id(int32_t evse_id) = 0;
+    virtual std::optional<std::string> get_evse_transaction_id(std::int32_t evse_id) = 0;
 
     /// \brief Event handler that can be called to trigger a NotifyEvent.req with the given \p events
     /// \param events
@@ -216,7 +219,7 @@ public:
     /// \param status       Log status.
     /// \param requestId    Request id that was provided in GetLogRequest.
     ///
-    virtual void on_log_status_notification(UploadLogStatusEnum status, int32_t requestId) = 0;
+    virtual void on_log_status_notification(UploadLogStatusEnum status, std::int32_t requestId) = 0;
 
     // \brief Notifies chargepoint that a SecurityEvent has occured. This will send a SecurityEventNotification.req to
     // the
@@ -239,7 +242,7 @@ public:
     /// \brief Event handler that will send a ReservationStatusUpdate request.
     /// \param reservation_id   The reservation id.
     /// \param status           The status.
-    virtual void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
+    virtual void on_reservation_status(const std::int32_t reservation_id, const ReservationUpdateStatusEnum status) = 0;
 
     /// \brief Event handler that should be called when the charging station receives a ChargeParameterDiscoveryReq from
     /// the CSMS \param request specifies the parameters sent from the EV to the charging station
@@ -303,7 +306,7 @@ public:
     /// \param duration How long the schedule should be
     /// \param unit ChargingRateUnit to thet the schedule for
     /// \return the composite schedule if the operation was successful, otherwise nullopt
-    virtual std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+    virtual std::optional<CompositeSchedule> get_composite_schedule(std::int32_t evse_id, std::chrono::seconds duration,
                                                                     ChargingRateUnitEnum unit) = 0;
 
     /// \brief Gets composite schedules for all evse_ids (including 0) for the given \p duration and \p unit . If no
@@ -312,7 +315,7 @@ public:
     /// \param duration of the request from. Composite schedules will be retrieved from now to (now + duration)
     /// \param unit of the period entries of the composite schedules
     /// \return vector of composite schedules, one for each evse_id including 0.
-    virtual std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
+    virtual std::vector<CompositeSchedule> get_all_composite_schedules(const std::int32_t duration,
                                                                        const ChargingRateUnitEnum& unit) = 0;
 
     /// \brief Gets the configured NetworkConnectionProfile based on the given \p configuration_slot . The
@@ -320,7 +323,7 @@ public:
     /// present. This returns the value from the cached network connection profiles. \param
     /// network_configuration_priority \return
     virtual std::optional<NetworkConnectionProfile>
-    get_network_connection_profile(const int32_t configuration_slot) const = 0;
+    get_network_connection_profile(const std::int32_t configuration_slot) const = 0;
 
     /// \brief Get the priority of the given configuration slot.
     /// \param configuration_slot   The configuration slot to get the priority from.
@@ -373,7 +376,7 @@ private:
     std::atomic<OcppProtocolVersion> ocpp_version =
         OcppProtocolVersion::Unknown; // version that is currently in use, selected by CSMS in websocket handshake
     std::atomic<UploadLogStatusEnum> upload_log_status;
-    std::atomic<int32_t> upload_log_status_id;
+    std::atomic<std::int32_t> upload_log_status_id;
     BootReasonEnum bootreason;
     bool skip_invalid_csms_certificate_notifications;
 
@@ -382,8 +385,8 @@ private:
 
     // store the connector status
     struct EvseConnectorPair {
-        int32_t evse_id;
-        int32_t connector_id;
+        std::int32_t evse_id;
+        std::int32_t connector_id;
 
         // Define a comparison operator for the struct
         bool operator<(const EvseConnectorPair& other) const {
@@ -407,14 +410,15 @@ private:
     std::chrono::seconds message_queue_resume_delay = std::chrono::seconds(0);
 
     // internal helper functions
-    void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
+    void initialize(const std::map<std::int32_t, std::int32_t>& evse_connector_structure,
+                    const std::string& message_log_path);
     void websocket_connected_callback(const int configuration_slot,
                                       const NetworkConnectionProfile& network_connection_profile,
                                       const OcppProtocolVersion ocpp_version);
     void websocket_disconnected_callback(const int configuration_slot,
                                          const NetworkConnectionProfile& network_connection_profile);
     void websocket_connection_failed(ConnectionFailedReason reason);
-    void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
+    void update_dm_availability_state(const std::int32_t evse_id, const std::int32_t connector_id,
                                       const ConnectorStatusEnum status);
 
     void message_callback(const std::string& message);
@@ -469,8 +473,8 @@ public:
     /// \param message_log_path Path to where logfiles are written to
     /// \param evse_security Pointer to evse_security that manages security related operations
     /// \param callbacks Callbacks that will be registered for ChargePoint
-    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DeviceModel> device_model,
-                std::shared_ptr<DatabaseHandler> database_handler,
+    ChargePoint(const std::map<std::int32_t, std::int32_t>& evse_connector_structure,
+                std::shared_ptr<DeviceModel> device_model, std::shared_ptr<DatabaseHandler> database_handler,
                 std::shared_ptr<MessageQueue<v2::MessageType>> message_queue, const std::string& message_log_path,
                 const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks);
 
@@ -484,7 +488,7 @@ public:
     /// \param message_log_path Path to where logfiles are written to
     /// \param evse_security Pointer to evse_security that manages security related operations
     /// \param callbacks Callbacks that will be registered for ChargePoint
-    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+    ChargePoint(const std::map<std::int32_t, std::int32_t>& evse_connector_structure,
                 std::unique_ptr<DeviceModelStorageInterface> device_model_storage_interface,
                 const std::string& ocpp_main_path, const std::string& core_database_path,
                 const std::string& sql_init_path, const std::string& message_log_path,
@@ -503,7 +507,7 @@ public:
     /// \param evse_security Pointer to evse_security that manages security related operations; if nullptr
     /// security_configuration must be set
     /// \param callbacks Callbacks that will be registered for ChargePoint
-    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+    ChargePoint(const std::map<std::int32_t, std::int32_t>& evse_connector_structure,
                 const std::string& device_model_storage_address, const std::string& device_model_migration_path,
                 const std::string& device_model_config_path, const std::string& ocpp_main_path,
                 const std::string& core_database_path, const std::string& sql_init_path,
@@ -520,63 +524,63 @@ public:
 
     void stop() override;
 
-    void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) override;
+    void connect_websocket(std::optional<std::int32_t> network_profile_slot = std::nullopt) override;
     void disconnect_websocket() override;
 
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
 
-    void on_firmware_update_status_notification(int32_t request_id,
+    void on_firmware_update_status_notification(std::int32_t request_id,
                                                 const FirmwareStatusEnum& firmware_update_status) override;
 
-    void on_session_started(const int32_t evse_id, const int32_t connector_id) override;
+    void on_session_started(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
     Get15118EVCertificateResponse
     on_get_15118_ev_certificate_request(const Get15118EVCertificateRequest& request) override;
 
-    void on_transaction_started(const int32_t evse_id, const int32_t connector_id, const std::string& session_id,
-                                const DateTime& timestamp, const TriggerReasonEnum trigger_reason,
-                                const MeterValue& meter_start, const std::optional<IdToken>& id_token,
-                                const std::optional<IdToken>& group_id_token,
-                                const std::optional<int32_t>& reservation_id,
-                                const std::optional<int32_t>& remote_start_id,
+    void on_transaction_started(const std::int32_t evse_id, const std::int32_t connector_id,
+                                const std::string& session_id, const DateTime& timestamp,
+                                const TriggerReasonEnum trigger_reason, const MeterValue& meter_start,
+                                const std::optional<IdToken>& id_token, const std::optional<IdToken>& group_id_token,
+                                const std::optional<std::int32_t>& reservation_id,
+                                const std::optional<std::int32_t>& remote_start_id,
                                 const ChargingStateEnum charging_state) override;
 
-    void on_transaction_finished(const int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
+    void on_transaction_finished(const std::int32_t evse_id, const DateTime& timestamp, const MeterValue& meter_stop,
                                  const ReasonEnum reason, const TriggerReasonEnum trigger_reason,
                                  const std::optional<IdToken>& id_token,
                                  const std::optional<std::string>& signed_meter_value,
                                  const ChargingStateEnum charging_state) override;
 
-    void on_session_finished(const int32_t evse_id, const int32_t connector_id) override;
+    void on_session_finished(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
-    void on_authorized(const int32_t evse_id, const int32_t connector_id, const IdToken& id_token) override;
+    void on_authorized(const std::int32_t evse_id, const std::int32_t connector_id, const IdToken& id_token) override;
 
-    void on_meter_value(const int32_t evse_id, const MeterValue& meter_value) override;
+    void on_meter_value(const std::int32_t evse_id, const MeterValue& meter_value) override;
 
-    void on_unavailable(const int32_t evse_id, const int32_t connector_id) override;
+    void on_unavailable(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
-    void on_enabled(const int32_t evse_id, const int32_t connector_id) override;
+    void on_enabled(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
-    void on_faulted(const int32_t evse_id, const int32_t connector_id) override;
+    void on_faulted(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
-    void on_fault_cleared(const int32_t evse_id, const int32_t connector_id) override;
+    void on_fault_cleared(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
-    void on_reserved(const int32_t evse_id, const int32_t connector_id) override;
+    void on_reserved(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
-    void on_reservation_cleared(const int32_t evse_id, const int32_t connector_id) override;
+    void on_reservation_cleared(const std::int32_t evse_id, const std::int32_t connector_id) override;
 
     bool on_charging_state_changed(
-        const uint32_t evse_id, const ChargingStateEnum charging_state,
+        const std::uint32_t evse_id, const ChargingStateEnum charging_state,
         const TriggerReasonEnum trigger_reason = TriggerReasonEnum::ChargingStateChanged) override;
 
-    std::optional<std::string> get_evse_transaction_id(int32_t evse_id) override;
+    std::optional<std::string> get_evse_transaction_id(std::int32_t evse_id) override;
 
     AuthorizeResponse validate_token(const IdToken id_token, const std::optional<CiString<10000>>& certificate,
                                      const std::optional<std::vector<OCSPRequestData>>& ocsp_request_data) override;
 
     void on_event(const std::vector<EventData>& events) override;
 
-    void on_log_status_notification(UploadLogStatusEnum status, int32_t requestId) override;
+    void on_log_status_notification(UploadLogStatusEnum status, std::int32_t requestId) override;
 
     void on_security_event(const CiString<50>& event_type, const std::optional<CiString<255>>& tech_info,
                            const std::optional<bool>& critical = std::nullopt,
@@ -584,7 +588,7 @@ public:
 
     void on_variable_changed(const SetVariableData& set_variable_data) override;
 
-    void on_reservation_status(const int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
+    void on_reservation_status(const std::int32_t reservation_id, const ReservationUpdateStatusEnum status) override;
 
     void on_ev_charging_needs(const NotifyEVChargingNeedsRequest& request) override;
 
@@ -603,13 +607,13 @@ public:
     std::map<SetVariableData, SetVariableResult>
     set_variables(const std::vector<SetVariableData>& set_variable_data_vector, const std::string& source) override;
     GetCompositeScheduleResponse get_composite_schedule(const GetCompositeScheduleRequest& request) override;
-    std::optional<CompositeSchedule> get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
+    std::optional<CompositeSchedule> get_composite_schedule(std::int32_t evse_id, std::chrono::seconds duration,
                                                             ChargingRateUnitEnum unit) override;
-    std::vector<CompositeSchedule> get_all_composite_schedules(const int32_t duration,
+    std::vector<CompositeSchedule> get_all_composite_schedules(const std::int32_t duration,
                                                                const ChargingRateUnitEnum& unit) override;
 
     std::optional<NetworkConnectionProfile>
-    get_network_connection_profile(const int32_t configuration_slot) const override;
+    get_network_connection_profile(const std::int32_t configuration_slot) const override;
 
     std::optional<int> get_priority_from_configuration_slot(const int configuration_slot) const override;
 

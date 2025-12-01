@@ -23,7 +23,7 @@
 #include <ocpp/v2/messages/ReservationStatusUpdate.hpp>
 #include <ocpp/v2/messages/ReserveNow.hpp>
 #include <ocpp/v2/messages/Reset.hpp>
-const static uint32_t NR_OF_EVSES = 2;
+const static std::uint32_t NR_OF_EVSES = 2;
 
 using namespace ocpp::v2;
 using ::testing::_;
@@ -137,7 +137,7 @@ protected: // Functions
     /// \return The request message.
     ///
     ocpp::EnhancedMessage<MessageType>
-    create_example_reserve_now_request(const std::optional<int32_t> evse_id = std::nullopt,
+    create_example_reserve_now_request(const std::optional<std::int32_t> evse_id = std::nullopt,
                                        const std::optional<ocpp::CiString<20>> connector_type = std::nullopt) {
         ReserveNowRequest request;
         request.connectorType = connector_type;
@@ -156,7 +156,7 @@ protected: // Functions
     /// \param reservation_id   The reservation id.
     /// \return The request message.
     ///
-    ocpp::EnhancedMessage<MessageType> create_example_cancel_reservation_request(const int32_t reservation_id) {
+    ocpp::EnhancedMessage<MessageType> create_example_cancel_reservation_request(const std::int32_t reservation_id) {
         CancelReservationRequest request;
         request.reservationId = reservation_id;
         ocpp::Call<CancelReservationRequest> call(request);
@@ -182,8 +182,8 @@ protected: // Members
     // handle stays open until the whole test is destructed.
     std::unique_ptr<DeviceModel> device_model;
     MockFunction<ReserveNowStatusEnum(const ReserveNowRequest& request)> reserve_now_callback_mock;
-    MockFunction<bool(const int32_t reservationId)> cancel_reservation_callback_mock;
-    MockFunction<ocpp::ReservationCheckStatus(const int32_t evse_id, const ocpp::CiString<255> idToken,
+    MockFunction<bool(const std::int32_t reservationId)> cancel_reservation_callback_mock;
+    MockFunction<ocpp::ReservationCheckStatus(const std::int32_t evse_id, const ocpp::CiString<255> idToken,
                                               const std::optional<ocpp::CiString<255>> groupIdToken)>
         is_reservation_for_token_callback_mock;
     std::atomic<ocpp::OcppProtocolVersion> ocpp_version;

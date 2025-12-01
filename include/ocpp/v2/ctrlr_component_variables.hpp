@@ -320,7 +320,7 @@ extern const Variable AllowReset;
 extern const Variable Power;
 extern const Variable DCInputPhaseControl;
 extern const Variable ISO15118EvseId;
-ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable);
+ComponentVariable get_component_variable(const std::int32_t evse_id, const Variable& variable);
 } // namespace EvseComponentVariables
 
 namespace ConnectorComponentVariables {
@@ -328,7 +328,8 @@ extern const Variable Available;
 extern const Variable AvailabilityState;
 extern const Variable Type;
 extern const Variable SupplyPhases;
-ComponentVariable get_component_variable(const int32_t evse_id, const int32_t connector_id, const Variable& variable);
+ComponentVariable get_component_variable(const std::int32_t evse_id, const std::int32_t connector_id,
+                                         const Variable& variable);
 } // namespace ConnectorComponentVariables
 
 namespace V2xComponentVariables {
@@ -346,7 +347,7 @@ Variable get_v2x_tx_ended_measurands(const OperationModeEnum& mode);
 Variable get_v2x_tx_ended_interval(const OperationModeEnum& mode);
 Variable get_v2x_tx_updated_measurands(const OperationModeEnum& mode);
 Variable get_v2x_tx_updated_interval(const OperationModeEnum& mode);
-ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable);
+ComponentVariable get_component_variable(const std::int32_t evse_id, const Variable& variable);
 } // namespace V2xComponentVariables
 
 namespace ISO15118ComponentVariables {
@@ -357,7 +358,7 @@ extern const Variable ProtocolSupported;
 extern const Variable SeccId;
 extern const Variable CountryName;
 extern const Variable OrganizationName;
-ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable);
+ComponentVariable get_component_variable(const std::int32_t evse_id, const Variable& variable);
 } // namespace ISO15118ComponentVariables
 
 namespace ConnectedEvComponentVariables {
@@ -368,8 +369,8 @@ extern const Variable VehicleCertificateLeaf;
 extern const Variable VehicleCertificateSubCa1;
 extern const Variable VehicleCertificateSubCa2;
 extern const Variable VehicleCertificateRoot;
-Variable get_protocol_supported_by_ev(const int32_t priority);
-ComponentVariable get_component_variable(const int32_t evse_id, const Variable& variable);
+Variable get_protocol_supported_by_ev(const std::int32_t priority);
+ComponentVariable get_component_variable(const std::int32_t evse_id, const Variable& variable);
 } // namespace ConnectedEvComponentVariables
 
 } // namespace v2

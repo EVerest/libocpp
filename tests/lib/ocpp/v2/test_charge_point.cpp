@@ -39,8 +39,8 @@ public:
     ~ChargePointCommonTestFixtureV2() {
     }
 
-    std::map<int32_t, int32_t> create_evse_connector_structure() {
-        std::map<int32_t, int32_t> evse_connector_structure;
+    std::map<std::int32_t, std::int32_t> create_evse_connector_structure() {
+        std::map<std::int32_t, std::int32_t> evse_connector_structure;
         evse_connector_structure.insert_or_assign(1, 1);
         evse_connector_structure.insert_or_assign(2, 1);
         return evse_connector_structure;
@@ -101,7 +101,8 @@ public:
         return device_model;
     }
 
-    std::vector<ChargingSchedulePeriod> create_charging_schedule_periods(const std::vector<int32_t>& start_periods) {
+    std::vector<ChargingSchedulePeriod>
+    create_charging_schedule_periods(const std::vector<std::int32_t>& start_periods) {
         auto charging_schedule_periods = std::vector<ChargingSchedulePeriod>();
         for (auto start_period : start_periods) {
             ChargingSchedulePeriod charging_schedule_period;
@@ -156,25 +157,25 @@ public:
     }
 
     std::shared_ptr<DeviceModel> device_model;
-    std::map<int32_t, int32_t> evse_connector_structure;
+    std::map<std::int32_t, std::int32_t> evse_connector_structure;
 
-    testing::MockFunction<bool(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
+    testing::MockFunction<bool(const std::optional<const std::int32_t> evse_id, const ResetEnum& reset_type)>
         is_reset_allowed_callback_mock;
-    testing::MockFunction<void(const std::optional<const int32_t> evse_id, const ResetEnum& reset_type)>
+    testing::MockFunction<void(const std::optional<const std::int32_t> evse_id, const ResetEnum& reset_type)>
         reset_callback_mock;
-    testing::MockFunction<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>
+    testing::MockFunction<RequestStartStopStatusEnum(const std::int32_t evse_id, const ReasonEnum& stop_reason)>
         stop_transaction_callback_mock;
-    testing::MockFunction<void(const int32_t evse_id)> pause_charging_callback_mock;
-    testing::MockFunction<void(const int32_t evse_id, const int32_t connector_id,
+    testing::MockFunction<void(const std::int32_t evse_id)> pause_charging_callback_mock;
+    testing::MockFunction<void(const std::int32_t evse_id, const std::int32_t connector_id,
                                const OperationalStatusEnum new_status)>
         connector_effective_operative_status_changed_callback_mock;
     testing::MockFunction<GetLogResponse(const GetLogRequest& request)> get_log_request_callback_mock;
-    testing::MockFunction<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)>
+    testing::MockFunction<UnlockConnectorResponse(const std::int32_t evse_id, const std::int32_t connecor_id)>
         unlock_connector_callback_mock;
     testing::MockFunction<RequestStartStopStatusEnum(const RequestStartTransactionRequest& request,
                                                      const bool authorize_remote_start)>
         remote_start_transaction_callback_mock;
-    testing::MockFunction<ocpp::ReservationCheckStatus(const int32_t evse_id, const CiString<255> idToken,
+    testing::MockFunction<ocpp::ReservationCheckStatus(const std::int32_t evse_id, const CiString<255> idToken,
                                                        const std::optional<CiString<255>> groupIdToken)>
         is_reservation_for_token_callback_mock;
     testing::MockFunction<UpdateFirmwareResponse(const UpdateFirmwareRequest& request)>
@@ -183,7 +184,7 @@ public:
         security_event_callback_mock;
     testing::MockFunction<void()> set_charging_profiles_callback_mock;
     testing::MockFunction<ReserveNowStatusEnum(const ReserveNowRequest& request)> reserve_now_callback_mock;
-    testing::MockFunction<bool(const int32_t reservationId)> cancel_reservation_callback_mock;
+    testing::MockFunction<bool(const std::int32_t reservationId)> cancel_reservation_callback_mock;
     testing::MockFunction<
         std::optional<bool(const std::vector<ocpp::v2::EnergyTransferModeEnum> allowed_energy_transfer_modes,
                            const CiString<36> transaction_id)>>
@@ -327,7 +328,7 @@ TEST_F(ChargePointCommonTestFixtureV2,
     callbacks.validate_network_profile_callback = nullptr;
     EXPECT_FALSE(callbacks.all_callbacks_valid(device_model, evse_connector_structure));
 
-    testing::MockFunction<SetNetworkProfileStatusEnum(const int32_t configuration_slot,
+    testing::MockFunction<SetNetworkProfileStatusEnum(const std::int32_t configuration_slot,
                                                       const NetworkConnectionProfile& network_connection_profile)>
         validate_network_profile_callback_mock;
     callbacks.validate_network_profile_callback = validate_network_profile_callback_mock.AsStdFunction();
@@ -402,7 +403,7 @@ TEST_F(ChargePointCommonTestFixtureV2,
     callbacks.evse_effective_operative_status_changed_callback = nullptr;
     EXPECT_FALSE(callbacks.all_callbacks_valid(device_model, evse_connector_structure));
 
-    testing::MockFunction<void(const int32_t evse_id, const OperationalStatusEnum new_status)>
+    testing::MockFunction<void(const std::int32_t evse_id, const OperationalStatusEnum new_status)>
         evse_effective_operative_status_changed_callback_mock;
     callbacks.evse_effective_operative_status_changed_callback =
         evse_effective_operative_status_changed_callback_mock.AsStdFunction();
@@ -565,7 +566,7 @@ public:
     ~ChargePointConstructorTestFixtureV2() {
     }
 
-    std::map<int32_t, int32_t> evse_connector_structure;
+    std::map<std::int32_t, std::int32_t> evse_connector_structure;
     std::shared_ptr<DatabaseHandler> database_handler;
     std::shared_ptr<EvseSecurityMock> evse_security;
 };
@@ -603,7 +604,7 @@ TEST_F(ChargePointConstructorTestFixtureV2, CreateChargePoint_InitializeInCorrec
 TEST_F(ChargePointConstructorTestFixtureV2,
        CreateChargePoint_EVSEConnectorStructureDefinedBadly_ThrowsDeviceModelError) {
     configure_callbacks_with_mocks();
-    auto evse_connector_structure = std::map<int32_t, int32_t>();
+    auto evse_connector_structure = std::map<std::int32_t, std::int32_t>();
 
     EXPECT_THROW(ocpp::v2::ChargePoint(evse_connector_structure, device_model, database_handler,
                                        create_message_queue(database_handler), "/tmp", evse_security, callbacks),
@@ -642,7 +643,7 @@ class TestChargePoint : public ChargePoint {
 public:
     using ChargePoint::handle_message;
 
-    TestChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
+    TestChargePoint(const std::map<std::int32_t, std::int32_t>& evse_connector_structure,
                     std::shared_ptr<DeviceModel> device_model, std::shared_ptr<DatabaseHandler> database_handler,
                     std::shared_ptr<MessageQueue<v2::MessageType>> message_queue, const std::string& message_log_path,
                     const std::shared_ptr<EvseSecurity> evse_security, const Callbacks& callbacks) :
@@ -772,7 +773,7 @@ TEST_F(ChargePointFunctionalityTestFixtureV2, K02FR05_TransactionEnds_WillDelete
     database_handler->open_connection();
     const auto cv = ControllerComponentVariables::ResumeTransactionsOnBoot;
     this->device_model->set_value(cv.component, cv.variable.value(), AttributeEnum::Actual, "true", "TEST", true);
-    int32_t connector_id = 1;
+    std::int32_t connector_id = 1;
     std::string session_id = "some-session-id";
     ocpp::DateTime timestamp("2024-01-17T17:00:00");
 

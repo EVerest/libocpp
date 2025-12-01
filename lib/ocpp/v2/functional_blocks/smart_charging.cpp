@@ -22,7 +22,7 @@
 #include <ocpp/v2/messages/ReportChargingProfiles.hpp>
 #include <ocpp/v2/messages/SetChargingProfile.hpp>
 
-const int32_t STATION_WIDE_ID = 0;
+const std::int32_t STATION_WIDE_ID = 0;
 
 using namespace std::chrono;
 
@@ -34,7 +34,7 @@ ProfileValidationResultEnum validate_request_start_transaction_profile(const Cha
 
 /// \brief sets attributes of the given \p charging_schedule_period according to the specification.
 /// 2.11. ChargingSchedulePeriodType if absent numberPhases set to 3
-void conform_schedule_number_phases(int32_t profile_id, ChargingSchedulePeriod& charging_schedule_period);
+void conform_schedule_number_phases(std::int32_t profile_id, ChargingSchedulePeriod& charging_schedule_period);
 
 ///
 /// \brief sets attributes of the given \p profile according to the specification.
@@ -275,10 +275,10 @@ GetCompositeScheduleResponse SmartCharging::get_composite_schedule(const GetComp
     return this->get_composite_schedule_internal(request);
 }
 
-std::optional<CompositeSchedule> SmartCharging::get_composite_schedule(int32_t evse_id, std::chrono::seconds duration,
-                                                                       ChargingRateUnitEnum unit) {
+std::optional<CompositeSchedule>
+SmartCharging::get_composite_schedule(std::int32_t evse_id, std::chrono::seconds duration, ChargingRateUnitEnum unit) {
     GetCompositeScheduleRequest request;
-    request.duration = clamp_to<int32_t>(duration.count());
+    request.duration = clamp_to<std::int32_t>(duration.count());
     request.evseId = evse_id;
     request.chargingRateUnit = unit;
 
@@ -315,11 +315,11 @@ ProfileValidationResultEnum SmartCharging::verify_rate_limit(const ChargingProfi
     return result;
 }
 
-bool SmartCharging::has_dc_input_phase_control(const int32_t evse_id) const {
+bool SmartCharging::has_dc_input_phase_control(const std::int32_t evse_id) const {
     if (evse_id == 0) {
         for (EvseManagerInterface::EvseIterator it = context.evse_manager.begin(); it != context.evse_manager.end();
              ++it) {
-            const int32_t id = (*it).get_id();
+            const std::int32_t id = (*it).get_id();
             if (!evse_has_dc_input_phase_control(id)) {
                 return false;
             }
@@ -330,19 +330,19 @@ bool SmartCharging::has_dc_input_phase_control(const int32_t evse_id) const {
     return evse_has_dc_input_phase_control(evse_id);
 }
 
-bool SmartCharging::evse_has_dc_input_phase_control(const int32_t evse_id) const {
+bool SmartCharging::evse_has_dc_input_phase_control(const std::int32_t evse_id) const {
     const ComponentVariable evse_variable =
         EvseComponentVariables::get_component_variable(evse_id, EvseComponentVariables::DCInputPhaseControl);
     return this->context.device_model.get_optional_value<bool>(evse_variable).value_or(false);
 }
 
-std::vector<CompositeSchedule> SmartCharging::get_all_composite_schedules(const int32_t duration_s,
+std::vector<CompositeSchedule> SmartCharging::get_all_composite_schedules(const std::int32_t duration_s,
                                                                           const ChargingRateUnitEnum& unit) {
     std::vector<CompositeSchedule> composite_schedules;
 
     const auto number_of_evses = this->context.evse_manager.get_number_of_evses();
     // get all composite schedules including the one for evse_id == 0
-    for (int32_t evse_id = 0; evse_id <= number_of_evses; evse_id++) {
+    for (std::int32_t evse_id = 0; evse_id <= number_of_evses; evse_id++) {
         GetCompositeScheduleRequest request;
         request.duration = duration_s;
         request.evseId = evse_id;
@@ -364,7 +364,8 @@ void SmartCharging::delete_transaction_tx_profiles(const std::string& transactio
     this->context.database_handler.delete_charging_profile_by_transaction_id(transaction_id);
 }
 
-SetChargingProfileResponse SmartCharging::conform_validate_and_add_profile(ChargingProfile& profile, int32_t evse_id,
+SetChargingProfileResponse SmartCharging::conform_validate_and_add_profile(ChargingProfile& profile,
+                                                                           std::int32_t evse_id,
                                                                            CiString<20> charging_limit_source,
                                                                            AddChargingProfileSource source_of_request) {
     SetChargingProfileResponse response;
@@ -387,7 +388,7 @@ SetChargingProfileResponse SmartCharging::conform_validate_and_add_profile(Charg
     return response;
 }
 
-ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(ChargingProfile& profile, int32_t evse_id,
+ProfileValidationResultEnum SmartCharging::conform_and_validate_profile(ChargingProfile& profile, std::int32_t evse_id,
                                                                         AddChargingProfileSource source_of_request) {
     auto result = ProfileValidationResultEnum::Valid;
 
@@ -463,7 +464,7 @@ struct CompositeScheduleConfig {
     std::vector<ChargingProfilePurposeEnum> purposes_to_ignore;
     float current_limit{};
     float power_limit{};
-    int32_t default_number_phases{};
+    std::int32_t default_number_phases{};
     float supply_voltage{};
 
     CompositeScheduleConfig(DeviceModel& device_model, bool is_offline) :
@@ -526,7 +527,8 @@ std::vector<IntermediateProfile> generate_evse_intermediates(std::vector<Chargin
 } // namespace
 
 CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTime& start_time,
-                                                              const ocpp::DateTime& end_time, const int32_t evse_id,
+                                                              const ocpp::DateTime& end_time,
+                                                              const std::int32_t evse_id,
                                                               ChargingRateUnitEnum charging_rate_unit, bool is_offline,
                                                               bool simulate_transaction_active) {
 
@@ -600,12 +602,13 @@ CompositeSchedule SmartCharging::calculate_composite_schedule(const ocpp::DateTi
     return composite;
 }
 
-ProfileValidationResultEnum SmartCharging::validate_evse_exists(int32_t evse_id) const {
+ProfileValidationResultEnum SmartCharging::validate_evse_exists(std::int32_t evse_id) const {
     return this->context.evse_manager.does_evse_exist(evse_id) ? ProfileValidationResultEnum::Valid
                                                                : ProfileValidationResultEnum::EvseDoesNotExist;
 }
 
-ProfileValidationResultEnum validate_charging_station_max_profile(const ChargingProfile& profile, int32_t evse_id) {
+ProfileValidationResultEnum validate_charging_station_max_profile(const ChargingProfile& profile,
+                                                                  std::int32_t evse_id) {
     if (profile.chargingProfilePurpose != ChargingProfilePurposeEnum::ChargingStationMaxProfile) {
         return ProfileValidationResultEnum::InvalidProfileType;
     }
@@ -623,7 +626,7 @@ ProfileValidationResultEnum validate_charging_station_max_profile(const Charging
 }
 
 ProfileValidationResultEnum SmartCharging::validate_tx_default_profile(const ChargingProfile& profile,
-                                                                       int32_t evse_id) const {
+                                                                       std::int32_t evse_id) const {
     auto profiles = evse_id == 0 ? get_evse_specific_tx_default_profiles() : get_station_wide_tx_default_profiles();
 
     // K01.FR.53
@@ -639,7 +642,7 @@ ProfileValidationResultEnum SmartCharging::validate_tx_default_profile(const Cha
 }
 
 // FIXME: See OCPP2.1 spec: 3.8 Avoiding Phase Conflicts
-ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingProfile& profile, int32_t evse_id,
+ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingProfile& profile, std::int32_t evse_id,
                                                                AddChargingProfileSource source_of_request) const {
     // K01.FR.16: TxProfile shall only be used with evseId > 0.
     if (evse_id <= 0) {
@@ -697,7 +700,7 @@ ProfileValidationResultEnum SmartCharging::validate_tx_profile(const ChargingPro
 }
 
 ProfileValidationResultEnum SmartCharging::validate_priority_charging_profile(const ChargingProfile& profile,
-                                                                              int32_t /*evse_id*/) const {
+                                                                              std::int32_t /*evse_id*/) const {
     // Charging profile purpose PriorityCharging:
     // A charging profile with purpose PriorityCharging is used to overrule the currently active TxProfile or
     // TxDefaultProfile charging restrictions with a charging profile that provides the maximum possible power under the
@@ -732,7 +735,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
     }
 
     auto charging_station_supply_phases =
-        this->context.device_model.get_value<int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
+        this->context.device_model.get_value<std::int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
 
     auto phase_type = this->get_current_phase_type(evse_opt);
 
@@ -845,7 +848,7 @@ ProfileValidationResultEnum SmartCharging::validate_profile_schedules(ChargingPr
                     return ProfileValidationResultEnum::ChargingSchedulePeriodExtraneousPhaseValues;
                 }
                 if (this->context.ocpp_version == OcppProtocolVersion::v21) {
-                    const int32_t evse_id = evse_opt.has_value() ? evse_opt.value()->get_id() : 0;
+                    const std::int32_t evse_id = evse_opt.has_value() ? evse_opt.value()->get_id() : 0;
                     if (!this->has_dc_input_phase_control(evse_id)) {
                         // If 2.1 and DCInputPhaseControl is false or does not exist, then send rejected with reason
                         // code noPhaseForDC
@@ -958,7 +961,7 @@ SmartCharging::verify_no_conflicting_external_constraints_id(const ChargingProfi
     return result;
 }
 
-SetChargingProfileResponse SmartCharging::add_profile(ChargingProfile& profile, int32_t evse_id,
+SetChargingProfileResponse SmartCharging::add_profile(ChargingProfile& profile, std::int32_t evse_id,
                                                       CiString<20> charging_limit_source) {
     SetChargingProfileResponse response;
     response.status = ChargingProfileStatusEnum::Accepted;
@@ -998,7 +1001,8 @@ SmartCharging::get_reported_profiles(const GetChargingProfilesRequest& request) 
 }
 
 std::vector<ChargingProfile>
-SmartCharging::get_valid_profiles(int32_t evse_id, const std::vector<ChargingProfilePurposeEnum>& purposes_to_ignore) {
+SmartCharging::get_valid_profiles(std::int32_t evse_id,
+                                  const std::vector<ChargingProfilePurposeEnum>& purposes_to_ignore) {
     std::vector<ChargingProfile> valid_profiles = get_valid_profiles_for_evse(evse_id, purposes_to_ignore);
 
     if (evse_id != STATION_WIDE_ID) {
@@ -1009,7 +1013,7 @@ SmartCharging::get_valid_profiles(int32_t evse_id, const std::vector<ChargingPro
     return valid_profiles;
 }
 
-void SmartCharging::report_charging_profile_req(const int32_t request_id, const int32_t evse_id,
+void SmartCharging::report_charging_profile_req(const std::int32_t request_id, const std::int32_t evse_id,
                                                 const CiString<20> source, const std::vector<ChargingProfile>& profiles,
                                                 const bool tbc) {
     ReportChargingProfilesRequest req;
@@ -1145,8 +1149,8 @@ void SmartCharging::handle_get_charging_profiles_req(Call<GetChargingProfilesReq
     // ChargingLimitSourceEnumStringType as required, so we can not report all profiles in a single
     // ReportChargingProfilesRequest. We need to prepare a single ReportChargingProfilesRequest for each combination
     // of evseId and ChargingLimitSourceEnumStringType
-    std::set<int32_t> evse_ids;     // will contain all evse_ids of the profiles
-    std::set<CiString<20>> sources; // will contain all sources of the profiles
+    std::set<std::int32_t> evse_ids; // will contain all evse_ids of the profiles
+    std::set<CiString<20>> sources;  // will contain all sources of the profiles
 
     // fill evse_ids and sources sets
     for (const auto& profile : profiles_to_report) {
@@ -1298,7 +1302,7 @@ ProfileValidationResultEnum validate_request_start_transaction_profile(const Cha
 } // namespace
 
 bool SmartCharging::is_overlapping_validity_period(const ChargingProfile& candidate_profile,
-                                                   int32_t candidate_evse_id) const {
+                                                   std::int32_t candidate_evse_id) const {
     if (candidate_profile.chargingProfilePurpose == ChargingProfilePurposeEnum::TxProfile) {
         // This only applies to non TxProfile types.
         return false;
@@ -1366,7 +1370,7 @@ std::vector<ChargingProfile> SmartCharging::get_charging_station_max_profiles() 
 }
 
 std::vector<ChargingProfile>
-SmartCharging::get_valid_profiles_for_evse(int32_t evse_id,
+SmartCharging::get_valid_profiles_for_evse(std::int32_t evse_id,
                                            const std::vector<ChargingProfilePurposeEnum>& purposes_to_ignore) {
     std::vector<ChargingProfile> valid_profiles;
 
@@ -1383,7 +1387,7 @@ SmartCharging::get_valid_profiles_for_evse(int32_t evse_id,
 }
 
 namespace {
-void conform_schedule_number_phases(int32_t profile_id, ChargingSchedulePeriod& charging_schedule_period) {
+void conform_schedule_number_phases(std::int32_t profile_id, ChargingSchedulePeriod& charging_schedule_period) {
     // K01.FR.49 If no value for numberPhases received for AC, numberPhases is 3.
     if (!charging_schedule_period.numberPhases.has_value()) {
         EVLOG_debug << "Conforming profile: " << profile_id << " added number phase as "
@@ -1413,7 +1417,7 @@ CurrentPhaseType SmartCharging::get_current_phase_type(const std::optional<EvseI
     }
 
     auto supply_phases =
-        this->context.device_model.get_value<int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
+        this->context.device_model.get_value<std::int32_t>(ControllerComponentVariables::ChargingStationSupplyPhases);
     if (supply_phases == 1 || supply_phases == 3) {
         return CurrentPhaseType::AC;
     }

@@ -16,15 +16,15 @@ struct PeriodLimit {
 };
 
 struct IntermediatePeriod {
-    int32_t startPeriod;
+    std::int32_t startPeriod;
     PeriodLimit current_limit;
     PeriodLimit power_limit;
     PeriodLimit current_discharge_limit;
     PeriodLimit power_discharge_limit;
     PeriodLimit current_setpoint;
     PeriodLimit power_setpoint;
-    std::optional<int32_t> numberPhases;
-    std::optional<int32_t> phaseToUse;
+    std::optional<std::int32_t> numberPhases;
+    std::optional<std::int32_t> phaseToUse;
 };
 
 using IntermediateProfile = std::vector<IntermediatePeriod>;
@@ -62,7 +62,7 @@ struct period_entry_t {
 };
 
 /// \brief Calculate the number of seconds elapsed between \param to and \param from
-int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from);
+std::int32_t elapsed_seconds(const ocpp::DateTime& to, const ocpp::DateTime& from);
 
 /// \brief Rounds down the \param dt to the nearest second
 ocpp::DateTime floor_seconds(const ocpp::DateTime& dt);
@@ -140,14 +140,14 @@ IntermediateProfile merge_profiles_by_summing_limits(const std::vector<Intermedi
                                                      const OcppProtocolVersion ocpp_version);
 
 /// \brief Fills all the periods without a limit or a number of phases with the defaults provided
-void fill_gaps_with_defaults(IntermediateProfile& schedule, float default_limit, int32_t default_number_phases);
+void fill_gaps_with_defaults(IntermediateProfile& schedule, float default_limit, std::int32_t default_number_phases);
 
 /// \brief Convert an intermediate profile into a final charging schedule.
 /// This will fill in defaults and convert merge the current and power limits into the final \p charging_rate_unit based
 /// limit
 std::vector<ChargingSchedulePeriod>
 convert_intermediate_into_schedule(const IntermediateProfile& profile, ChargingRateUnitEnum charging_rate_unit,
-                                   float default_limit, int32_t default_number_phases, float supply_voltage);
+                                   float default_limit, std::int32_t default_number_phases, float supply_voltage);
 
 } // namespace v2
 } // namespace ocpp

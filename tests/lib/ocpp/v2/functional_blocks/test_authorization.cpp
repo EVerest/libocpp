@@ -48,9 +48,9 @@ protected: // Members
 
     std::unique_ptr<Authorization> authorization;
 
-    std::atomic<uint32_t> delete_expired_entries_count = 0;
-    std::atomic<uint32_t> get_binary_size_count = 0;
-    std::atomic<uint32_t> delete_nr_of_oldest_entries_count = 0;
+    std::atomic<std::uint32_t> delete_expired_entries_count = 0;
+    std::atomic<std::uint32_t> get_binary_size_count = 0;
+    std::atomic<std::uint32_t> delete_nr_of_oldest_entries_count = 0;
     std::mutex call_mutex;
     std::condition_variable call_condition_variable;
 
@@ -74,7 +74,7 @@ protected: // Functions
     ~AuthorizationTest() {
     }
 
-    auto update_count_and_notify(std::atomic<uint32_t>& variable) {
+    auto update_count_and_notify(std::atomic<std::uint32_t>& variable) {
         return testing::Invoke([this, &variable]() {
             std::unique_lock<std::mutex> lock(this->call_mutex);
             variable++;
@@ -82,7 +82,7 @@ protected: // Functions
         });
     }
 
-    auto update_count_and_notify(const size_t return_value, std::atomic<uint32_t>& variable) {
+    auto update_count_and_notify(const size_t return_value, std::atomic<std::uint32_t>& variable) {
         return testing::Invoke([this, &variable, return_value]() -> size_t {
             std::unique_lock<std::mutex> lock(this->call_mutex);
             variable++;
@@ -91,8 +91,9 @@ protected: // Functions
         });
     }
 
-    void wait_for_calls(const uint32_t expected_delete_expired_entries_count, const uint32_t expected_binary_size_count,
-                        const uint32_t expected_delete_nr_of_oldest_entries_count) {
+    void wait_for_calls(const std::uint32_t expected_delete_expired_entries_count,
+                        const std::uint32_t expected_binary_size_count,
+                        const std::uint32_t expected_delete_nr_of_oldest_entries_count) {
         std::unique_lock<std::mutex> lock(this->call_mutex);
         EXPECT_TRUE(call_condition_variable.wait_for(
             lock, std::chrono::seconds(3),
@@ -202,7 +203,7 @@ protected: // Functions
                   SetVariableStatusEnum::Accepted);
     }
 
-    void set_local_auth_list_ctrlr_entries(DeviceModel* device_model, const int32_t entries) {
+    void set_local_auth_list_ctrlr_entries(DeviceModel* device_model, const std::int32_t entries) {
         const auto& list_entries = ControllerComponentVariables::LocalAuthListCtrlrEntries;
         EXPECT_EQ(device_model->set_value(list_entries.component, list_entries.variable.value(), AttributeEnum::Actual,
                                           std::to_string(entries), "default", true),
@@ -251,7 +252,7 @@ protected: // Functions
     }
 
     ocpp::EnhancedMessage<MessageType>
-    create_send_local_list_request(const int32_t version_number, const UpdateEnum update_type,
+    create_send_local_list_request(const std::int32_t version_number, const UpdateEnum update_type,
                                    std::optional<std::vector<AuthorizationData>> local_authorization_list) {
         SendLocalListRequest request;
         request.localAuthorizationList = local_authorization_list;

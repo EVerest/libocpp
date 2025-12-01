@@ -128,7 +128,7 @@ private:
     /// operation where the CSMS does NOT expect a message of type 'EventData' therefore
     /// the processing is delayed either until a manual call to 'process_triggered_monitors'
     /// or when the periodic monitoring timer is hit
-    void on_variable_changed(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
+    void on_variable_changed(const std::unordered_map<std::int64_t, VariableMonitoringMeta>& monitors,
                              const Component& component, const Variable& variable,
                              const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
                              const std::string& value_previous, const std::string& value_current);

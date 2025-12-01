@@ -30,11 +30,11 @@ public:
 
     /// \brief Return the evse_id of this EVSE
     /// \return
-    virtual int32_t get_id() const = 0;
+    virtual std::int32_t get_id() const = 0;
 
     /// \brief Returns the number of connectors of this EVSE
     /// \return
-    virtual uint32_t get_number_of_connectors() const = 0;
+    virtual std::uint32_t get_number_of_connectors() const = 0;
 
     ///
     /// \brief Check if the given connector type exists on this evse.
@@ -66,10 +66,10 @@ public:
     /// \param reservation optional reservation_id if evse was reserved
     /// \param sampled_data_tx_updated_interval Interval between sampling of metering (or other) data, intended to
     /// be transmitted via TransactionEventRequest (eventType = Updated) messages
-    virtual void open_transaction(const std::string& transaction_id, const int32_t connector_id,
+    virtual void open_transaction(const std::string& transaction_id, const std::int32_t connector_id,
                                   const DateTime& timestamp, const MeterValue& meter_start,
                                   const std::optional<IdToken>& id_token, const std::optional<IdToken>& group_id_token,
-                                  const std::optional<int32_t> reservation_id,
+                                  const std::optional<std::int32_t> reservation_id,
                                   const ChargingStateEnum charging_state) = 0;
 
     /// \brief Closes the transaction on this evse by adding the given \p timestamp \p meter_stop and \p reason .
@@ -90,7 +90,7 @@ public:
     /// \brief Indicates if a transaction is active at this evse at the given \p connector_id
     /// \param connector_id id of the connector of the evse
     /// \return
-    virtual bool has_active_transaction(const int32_t connector_id) const = 0;
+    virtual bool has_active_transaction(const std::int32_t connector_id) const = 0;
 
     /// \brief Releases the reference of the transaction on this evse
     virtual void release_transaction() = 0;
@@ -103,7 +103,7 @@ public:
     /// \p connector_id
     /// \param connector_id id of the connector of the evse
     /// \param event
-    virtual void submit_event(const int32_t connector_id, ConnectorEvent event) = 0;
+    virtual void submit_event(const std::int32_t connector_id, ConnectorEvent event) = 0;
 
     /// \brief Event handler that should be called when a new meter_value for this evse is present
     /// \param meter_value
@@ -121,7 +121,7 @@ public:
     virtual void clear_idle_meter_values() = 0;
 
     /// \brief Returns a pointer to the connector with ID \param connector_id in this EVSE.
-    virtual Connector* get_connector(int32_t connector_id) const = 0;
+    virtual Connector* get_connector(std::int32_t connector_id) const = 0;
 
     /// \brief Gets the effective Operative/Inoperative status of this EVSE
     virtual OperationalStatusEnum get_effective_operational_status() = 0;
@@ -135,17 +135,17 @@ public:
     /// \param connector_id The ID of the connector
     /// \param new_status The operative status to switch to
     /// \param persist True the updated operative state should be persisted
-    virtual void set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status,
+    virtual void set_connector_operative_status(std::int32_t connector_id, OperationalStatusEnum new_status,
                                                 bool persist) = 0;
 
     /// \brief Restores the operative status of a connector within this EVSE to the persisted status and recomputes its
     /// effective status \param connector_id The ID of the connector
-    virtual void restore_connector_operative_status(int32_t connector_id) = 0;
+    virtual void restore_connector_operative_status(std::int32_t connector_id) = 0;
 
     /// \brief Get the operational status of a connector within this evse.
     /// \param connector_id The id of the connector.
     /// \return The operational status.
-    virtual OperationalStatusEnum get_connector_effective_operational_status(const int32_t connector_id) = 0;
+    virtual OperationalStatusEnum get_connector_effective_operational_status(const std::int32_t connector_id) = 0;
 
     /// \brief Returns the phase type for the EVSE based on its SupplyPhases. It can be AC, DC, or Unknown.
     virtual CurrentPhaseType get_current_phase_type() = 0;
@@ -170,11 +170,11 @@ public:
 class Evse : public EvseInterface {
 
 private:
-    int32_t evse_id;
+    std::int32_t evse_id;
     DeviceModel& device_model;
-    std::map<int32_t, std::unique_ptr<Connector>> id_connector_map;
+    std::map<std::int32_t, std::unique_ptr<Connector>> id_connector_map;
     std::function<void(const MeterValue& meter_value, EnhancedTransaction& transaction)> transaction_meter_value_req;
-    std::function<void(int32_t evse_id)> pause_charging_callback;
+    std::function<void(std::int32_t evse_id)> pause_charging_callback;
     std::unique_ptr<EnhancedTransaction> transaction; // pointer to active transaction (can be nullptr)
     MeterValue meter_value;                           // represents current meter value
     std::recursive_mutex meter_value_mutex;
@@ -228,7 +228,7 @@ private:
     /// \param connector_id     Connector id
     /// \return The connector type. If evse or connector id is not correct: std::nullopt.
     ///
-    std::optional<CiString<20>> get_evse_connector_type(const uint32_t connector_id) const;
+    std::optional<CiString<20>> get_evse_connector_type(const std::uint32_t connector_id) const;
 
 public:
     /// \brief Construct a new Evse object
@@ -240,24 +240,25 @@ public:
     /// \param transaction_meter_value_req that is called to transmit a meter value request related to a transaction
     /// \param pause_charging_callback that is called when the charging should be paused due to max energy on
     /// invalid id being exceeded
-    Evse(const int32_t evse_id, const int32_t number_of_connectors, DeviceModel& device_model,
+    Evse(const std::int32_t evse_id, const std::int32_t number_of_connectors, DeviceModel& device_model,
          std::shared_ptr<DatabaseHandler> database_handler,
          std::shared_ptr<ComponentStateManagerInterface> component_state_manager,
          const std::function<void(const MeterValue& meter_value, EnhancedTransaction& transaction)>&
              transaction_meter_value_req,
-         const std::function<void(int32_t evse_id)>& pause_charging_callback);
+         const std::function<void(std::int32_t evse_id)>& pause_charging_callback);
 
     ~Evse() override;
 
-    int32_t get_id() const override;
+    std::int32_t get_id() const override;
 
-    uint32_t get_number_of_connectors() const override;
+    std::uint32_t get_number_of_connectors() const override;
     bool does_connector_exist(const CiString<20> connector_type) const override;
     std::optional<ConnectorStatusEnum> get_connector_status(std::optional<CiString<20>> connector_type) override;
 
-    void open_transaction(const std::string& transaction_id, const int32_t connector_id, const DateTime& timestamp,
+    void open_transaction(const std::string& transaction_id, const std::int32_t connector_id, const DateTime& timestamp,
                           const MeterValue& meter_start, const std::optional<IdToken>& id_token,
-                          const std::optional<IdToken>& group_id_token, const std::optional<int32_t> reservation_id,
+                          const std::optional<IdToken>& group_id_token,
+                          const std::optional<std::int32_t> reservation_id,
                           const ChargingStateEnum charging_state) override;
     void close_transaction(const DateTime& timestamp, const MeterValue& meter_stop, const ReasonEnum& reason) override;
 
@@ -266,11 +267,11 @@ public:
     void start_checking_max_energy_on_invalid_id() override;
 
     bool has_active_transaction() const override;
-    bool has_active_transaction(const int32_t connector_id) const override;
+    bool has_active_transaction(const std::int32_t connector_id) const override;
     void release_transaction() override;
     std::unique_ptr<EnhancedTransaction>& get_transaction() override;
 
-    void submit_event(const int32_t connector_id, ConnectorEvent event) override;
+    void submit_event(const std::int32_t connector_id, ConnectorEvent event) override;
 
     void on_meter_value(const MeterValue& meter_value) override;
     MeterValue get_meter_value() override;
@@ -278,13 +279,14 @@ public:
     MeterValue get_idle_meter_value() override;
     void clear_idle_meter_values() override;
 
-    Connector* get_connector(int32_t connector_id) const override;
+    Connector* get_connector(std::int32_t connector_id) const override;
 
     OperationalStatusEnum get_effective_operational_status() override;
     void set_evse_operative_status(OperationalStatusEnum new_status, bool persist) override;
-    void set_connector_operative_status(int32_t connector_id, OperationalStatusEnum new_status, bool persist) override;
-    void restore_connector_operative_status(int32_t connector_id) override;
-    OperationalStatusEnum get_connector_effective_operational_status(const int32_t connector_id) override;
+    void set_connector_operative_status(std::int32_t connector_id, OperationalStatusEnum new_status,
+                                        bool persist) override;
+    void restore_connector_operative_status(std::int32_t connector_id) override;
+    OperationalStatusEnum get_connector_effective_operational_status(const std::int32_t connector_id) override;
 
     CurrentPhaseType get_current_phase_type() override;
 

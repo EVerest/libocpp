@@ -81,7 +81,7 @@ protected:
 
     ChargingSchedule createChargeSchedule(ChargingRateUnit chargingRateUnit) {
         std::vector<ChargingSchedulePeriod> chargingSchedulePeriod;
-        std::optional<int32_t> duration;
+        std::optional<std::int32_t> duration;
         std::optional<ocpp::DateTime> startSchedule;
         std::optional<float> minChargingRate;
 
@@ -255,7 +255,7 @@ protected:
     }
 
     // Default values used within the tests
-    std::map<int32_t, std::shared_ptr<Connector>> connectors;
+    std::map<std::int32_t, std::shared_ptr<Connector>> connectors;
     std::shared_ptr<DatabaseHandler> database_handler;
     std::unique_ptr<ChargePointConfiguration> configuration;
 

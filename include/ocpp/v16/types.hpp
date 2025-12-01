@@ -203,10 +203,10 @@ enum class BootReasonEnum {
 
 /// \brief Enhances ChargingSchedulePeriod with stackLevel
 struct EnhancedChargingSchedulePeriod {
-    int32_t startPeriod;
+    std::int32_t startPeriod;
     float limit;
-    std::optional<int32_t> numberPhases;
-    int32_t stackLevel;
+    std::optional<std::int32_t> numberPhases;
+    std::int32_t stackLevel;
     bool periodTransformed = false; // indicates that a period was transformed from chargingRateUnit
 };
 
@@ -221,7 +221,7 @@ void from_json(const json& j, EnhancedChargingSchedulePeriod& k);
 struct EnhancedChargingSchedule {
     ChargingRateUnit chargingRateUnit;
     std::vector<EnhancedChargingSchedulePeriod> chargingSchedulePeriod;
-    std::optional<int32_t> duration;
+    std::optional<std::int32_t> duration;
     std::optional<ocpp::DateTime> startSchedule;
     std::optional<float> minChargingRate;
 };

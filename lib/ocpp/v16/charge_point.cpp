@@ -81,7 +81,7 @@ ocpp::v2::AuthorizeResponse ChargePoint::data_transfer_pnc_authorize(
 }
 
 void ChargePoint::data_transfer_pnc_get_15118_ev_certificate(
-    const int32_t connector_id, const std::string& exi_request, const std::string& iso15118_schema_version,
+    const std::int32_t connector_id, const std::string& exi_request, const std::string& iso15118_schema_version,
     const ocpp::v2::CertificateActionEnum& certificate_action) {
 
     this->charge_point->data_transfer_pnc_get_15118_ev_certificate(connector_id, exi_request, iso15118_schema_version,
@@ -94,105 +94,105 @@ std::optional<DataTransferResponse> ChargePoint::data_transfer(const CiString<25
     return this->charge_point->data_transfer(vendorId, messageId, data);
 }
 
-std::map<int32_t, ChargingSchedule> ChargePoint::get_all_composite_charging_schedules(const int32_t duration_s,
-                                                                                      const ChargingRateUnit unit) {
+std::map<std::int32_t, ChargingSchedule>
+ChargePoint::get_all_composite_charging_schedules(const std::int32_t duration_s, const ChargingRateUnit unit) {
     return this->charge_point->get_all_composite_charging_schedules(duration_s, unit);
 }
 
-std::map<int32_t, EnhancedChargingSchedule>
-ChargePoint::get_all_enhanced_composite_charging_schedules(const int32_t duration_s, const ChargingRateUnit unit) {
+std::map<std::int32_t, EnhancedChargingSchedule>
+ChargePoint::get_all_enhanced_composite_charging_schedules(const std::int32_t duration_s, const ChargingRateUnit unit) {
     return this->charge_point->get_all_enhanced_composite_charging_schedules(duration_s, unit);
 }
 
-void ChargePoint::on_meter_values(int32_t connector, const Measurement& measurement) {
+void ChargePoint::on_meter_values(std::int32_t connector, const Measurement& measurement) {
     this->charge_point->on_meter_values(connector, measurement);
 }
 
-void ChargePoint::on_max_current_offered(int32_t connector, int32_t max_current) {
+void ChargePoint::on_max_current_offered(std::int32_t connector, std::int32_t max_current) {
     this->charge_point->on_max_current_offered(connector, max_current);
 }
 
-void ChargePoint::on_max_power_offered(int32_t connector, int32_t max_power) {
+void ChargePoint::on_max_power_offered(std::int32_t connector, std::int32_t max_power) {
     this->charge_point->on_max_power_offered(connector, max_power);
 }
 
-void ChargePoint::on_session_started(int32_t connector, const std::string& session_id,
+void ChargePoint::on_session_started(std::int32_t connector, const std::string& session_id,
                                      const ocpp::SessionStartedReason reason,
                                      const std::optional<std::string>& session_logging_path) {
 
     this->charge_point->on_session_started(connector, session_id, reason, session_logging_path);
 }
 
-void ChargePoint::on_session_stopped(const int32_t connector, const std::string& session_id) {
+void ChargePoint::on_session_stopped(const std::int32_t connector, const std::string& session_id) {
     this->charge_point->on_session_stopped(connector, session_id);
 }
 
-void ChargePoint::on_transaction_started(const int32_t& connector, const std::string& session_id,
+void ChargePoint::on_transaction_started(const std::int32_t& connector, const std::string& session_id,
                                          const std::string& id_token, const double meter_start,
-                                         std::optional<int32_t> reservation_id, const ocpp::DateTime& timestamp,
+                                         std::optional<std::int32_t> reservation_id, const ocpp::DateTime& timestamp,
                                          std::optional<std::string> signed_meter_value) {
     this->charge_point->on_transaction_started(connector, session_id, id_token, meter_start, reservation_id, timestamp,
                                                signed_meter_value);
 }
 
-void ChargePoint::on_transaction_stopped(const int32_t connector, const std::string& session_id, const Reason& reason,
-                                         ocpp::DateTime timestamp, float energy_wh_import,
+void ChargePoint::on_transaction_stopped(const std::int32_t connector, const std::string& session_id,
+                                         const Reason& reason, ocpp::DateTime timestamp, float energy_wh_import,
                                          std::optional<CiString<20>> id_tag_end,
                                          std::optional<std::string> signed_meter_value) {
     this->charge_point->on_transaction_stopped(connector, session_id, reason, timestamp, energy_wh_import, id_tag_end,
                                                signed_meter_value);
 }
 
-void ChargePoint::on_suspend_charging_ev(int32_t connector, const std::optional<CiString<50>> info) {
+void ChargePoint::on_suspend_charging_ev(std::int32_t connector, const std::optional<CiString<50>> info) {
     this->charge_point->on_suspend_charging_ev(connector, info);
 }
 
-void ChargePoint::on_suspend_charging_evse(int32_t connector, const std::optional<CiString<50>> info) {
+void ChargePoint::on_suspend_charging_evse(std::int32_t connector, const std::optional<CiString<50>> info) {
     this->charge_point->on_suspend_charging_evse(connector, info);
 }
 
-void ChargePoint::on_resume_charging(int32_t connector) {
+void ChargePoint::on_resume_charging(std::int32_t connector) {
     this->charge_point->on_resume_charging(connector);
 }
 
-void ChargePoint::on_error(int32_t connector, const ErrorInfo& error_info) {
+void ChargePoint::on_error(std::int32_t connector, const ErrorInfo& error_info) {
     this->charge_point->on_error(connector, error_info);
 }
 
-void ChargePoint::on_error_cleared(int32_t connector, const std::string uuid) {
+void ChargePoint::on_error_cleared(std::int32_t connector, const std::string uuid) {
     this->charge_point->on_error_cleared(connector, uuid);
 }
 
-void ChargePoint::on_all_errors_cleared(int32_t connector) {
+void ChargePoint::on_all_errors_cleared(std::int32_t connector) {
     this->charge_point->on_all_errors_cleared(connector);
 }
 
-void ChargePoint::on_log_status_notification(int32_t request_id, std::string log_status) {
+void ChargePoint::on_log_status_notification(std::int32_t request_id, std::string log_status) {
     this->charge_point->on_log_status_notification(request_id, log_status);
 }
 
-void ChargePoint::on_firmware_update_status_notification(int32_t request_id,
+void ChargePoint::on_firmware_update_status_notification(std::int32_t request_id,
                                                          const FirmwareStatusNotification firmware_update_status) {
     this->charge_point->on_firmware_update_status_notification(request_id, firmware_update_status);
 }
 
-void ChargePoint::on_reservation_start(int32_t connector) {
+void ChargePoint::on_reservation_start(std::int32_t connector) {
     this->charge_point->on_reservation_start(connector);
 }
 
-void ChargePoint::on_reservation_end(int32_t connector) {
+void ChargePoint::on_reservation_end(std::int32_t connector) {
     this->charge_point->on_reservation_end(connector);
 }
 
-void ChargePoint::on_enabled(int32_t connector) {
+void ChargePoint::on_enabled(std::int32_t connector) {
     this->charge_point->on_enabled(connector);
 }
 
-void ChargePoint::on_disabled(int32_t connector) {
+void ChargePoint::on_disabled(std::int32_t connector) {
     this->charge_point->on_disabled(connector);
 }
 
-void ChargePoint::on_plugin_timeout(int32_t connector) {
+void ChargePoint::on_plugin_timeout(std::int32_t connector) {
     this->charge_point->on_plugin_timeout(connector);
 }
 
@@ -216,44 +216,46 @@ void ChargePoint::register_data_transfer_callback(
     this->charge_point->register_data_transfer_callback(callback);
 }
 
-void ChargePoint::register_enable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_enable_evse_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->charge_point->register_enable_evse_callback(callback);
 }
 
-void ChargePoint::register_disable_evse_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_disable_evse_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->charge_point->register_disable_evse_callback(callback);
 }
 
-void ChargePoint::register_pause_charging_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_pause_charging_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->charge_point->register_pause_charging_callback(callback);
 }
 
-void ChargePoint::register_resume_charging_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_resume_charging_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->charge_point->register_resume_charging_callback(callback);
 }
 
 void ChargePoint::register_provide_token_callback(
-    const std::function<void(const std::string& id_token, std::vector<int32_t> referenced_connectors,
+    const std::function<void(const std::string& id_token, std::vector<std::int32_t> referenced_connectors,
                              bool prevalidated)>& callback) {
     this->charge_point->register_provide_token_callback(callback);
 }
 
 void ChargePoint::register_stop_transaction_callback(
-    const std::function<bool(int32_t connector, Reason reason)>& callback) {
+    const std::function<bool(std::int32_t connector, Reason reason)>& callback) {
     this->charge_point->register_stop_transaction_callback(callback);
 }
 
 void ChargePoint::register_reserve_now_callback(
-    const std::function<ReservationStatus(int32_t reservation_id, int32_t connector, ocpp::DateTime expiryDate,
-                                          CiString<20> idTag, std::optional<CiString<20>> parent_id)>& callback) {
+    const std::function<ReservationStatus(std::int32_t reservation_id, std::int32_t connector,
+                                          ocpp::DateTime expiryDate, CiString<20> idTag,
+                                          std::optional<CiString<20>> parent_id)>& callback) {
     this->charge_point->register_reserve_now_callback(callback);
 }
 
-void ChargePoint::register_cancel_reservation_callback(const std::function<bool(int32_t connector)>& callback) {
+void ChargePoint::register_cancel_reservation_callback(const std::function<bool(std::int32_t connector)>& callback) {
     this->charge_point->register_cancel_reservation_callback(callback);
 }
 
-void ChargePoint::register_unlock_connector_callback(const std::function<UnlockStatus(int32_t connector)>& callback) {
+void ChargePoint::register_unlock_connector_callback(
+    const std::function<UnlockStatus(std::int32_t connector)>& callback) {
     this->charge_point->register_unlock_connector_callback(callback);
 }
 
@@ -281,7 +283,7 @@ void ChargePoint::register_upload_logs_callback(const std::function<GetLogRespon
 }
 
 void ChargePoint::register_set_connection_timeout_callback(
-    const std::function<void(int32_t connection_timeout)>& callback) {
+    const std::function<void(std::int32_t connection_timeout)>& callback) {
     this->charge_point->register_set_connection_timeout_callback(callback);
 }
 
@@ -312,26 +314,26 @@ void ChargePoint::register_connection_state_changed_callback(const std::function
 }
 
 void ChargePoint::register_get_15118_ev_certificate_response_callback(
-    const std::function<void(const int32_t connector,
+    const std::function<void(const std::int32_t connector,
                              const ocpp::v2::Get15118EVCertificateResponse& certificate_response,
                              const ocpp::v2::CertificateActionEnum& certificate_action)>& callback) {
     this->charge_point->register_get_15118_ev_certificate_response_callback(callback);
 }
 
 void ChargePoint::register_transaction_started_callback(
-    const std::function<void(const int32_t connector, const std::string& session_id)>& callback) {
+    const std::function<void(const std::int32_t connector, const std::string& session_id)>& callback) {
     this->charge_point->register_transaction_started_callback(callback);
 }
 
 void ChargePoint::register_transaction_stopped_callback(
-    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id)>&
-        callback) {
+    const std::function<void(const std::int32_t connector, const std::string& session_id,
+                             const std::int32_t transaction_id)>& callback) {
     this->charge_point->register_transaction_stopped_callback(callback);
 }
 
 void ChargePoint::register_transaction_updated_callback(
-    const std::function<void(const int32_t connector, const std::string& session_id, const int32_t transaction_id,
-                             const IdTagInfo& id_tag_info)>& callback) {
+    const std::function<void(const std::int32_t connector, const std::string& session_id,
+                             const std::int32_t transaction_id, const IdTagInfo& id_tag_info)>& callback) {
     this->charge_point->register_transaction_updated_callback(callback);
 }
 
@@ -351,12 +353,13 @@ void ChargePoint::register_security_event_callback(
 }
 
 void ChargePoint::register_is_token_reserved_for_connector_callback(
-    const std::function<ocpp::ReservationCheckStatus(const int32_t connector, const std::string& id_token)>& callback) {
+    const std::function<ocpp::ReservationCheckStatus(const std::int32_t connector, const std::string& id_token)>&
+        callback) {
     this->charge_point->register_is_token_reserved_for_connector_callback(callback);
 }
 
 void ChargePoint::register_session_cost_callback(
-    const std::function<DataTransferResponse(const RunningCost& running_cost, const uint32_t number_of_decimals)>&
+    const std::function<DataTransferResponse(const RunningCost& running_cost, const std::uint32_t number_of_decimals)>&
         session_cost_callback) {
     this->charge_point->register_session_cost_callback(session_cost_callback);
 }

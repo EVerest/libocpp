@@ -25,11 +25,11 @@ struct TriggerMessageRequest;
 struct UnlockConnectorResponse;
 
 using UnlockConnectorCallback =
-    std::function<UnlockConnectorResponse(const int32_t evse_id, const int32_t connecor_id)>;
+    std::function<UnlockConnectorResponse(const std::int32_t evse_id, const std::int32_t connecor_id)>;
 using RemoteStartTransactionCallback = std::function<RequestStartStopStatusEnum(
     const RequestStartTransactionRequest& request, const bool authorize_remote_start)>;
 using StopTransactionCallback =
-    std::function<RequestStartStopStatusEnum(const int32_t evse_id, const ReasonEnum& stop_reason)>;
+    std::function<RequestStartStopStatusEnum(const std::int32_t evse_id, const ReasonEnum& stop_reason)>;
 
 class RemoteTransactionControlInterface : public MessageHandlerInterface {
 public:
@@ -47,7 +47,7 @@ public:
                              StopTransactionCallback stop_transaction_callback,
                              std::atomic<RegistrationStatusEnum>& registration_status,
                              std::atomic<UploadLogStatusEnum>& upload_log_status,
-                             std::atomic<int32_t>& upload_log_status_id);
+                             std::atomic<std::int32_t>& upload_log_status_id);
     void handle_message(const ocpp::EnhancedMessage<MessageType>& message) override;
 
 private:
@@ -69,7 +69,7 @@ private:
 
     std::atomic<RegistrationStatusEnum>& registration_status;
     std::atomic<UploadLogStatusEnum>& upload_log_status;
-    std::atomic<int32_t>& upload_log_status_id;
+    std::atomic<std::int32_t>& upload_log_status_id;
 
     // Functions
     /* OCPP message handlers */

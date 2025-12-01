@@ -17,9 +17,9 @@ namespace v2 {
 
 /// \brief Contains a OCPP NotifyEVChargingNeeds message
 struct NotifyEVChargingNeedsRequest : public ocpp::Message {
-    int32_t evseId;
+    std::int32_t evseId;
     ChargingNeeds chargingNeeds;
-    std::optional<int32_t> maxScheduleTuples;
+    std::optional<std::int32_t> maxScheduleTuples;
     std::optional<ocpp::DateTime> timestamp;
     std::optional<CustomData> customData;
 

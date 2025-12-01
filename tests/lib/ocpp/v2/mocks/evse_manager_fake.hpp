@@ -38,21 +38,21 @@ public:
         return EvseIterator(std::make_unique<EvseIteratorImpl>(this->evses.end()));
     }
 
-    EvseInterface& get_evse(int32_t id) override {
+    EvseInterface& get_evse(std::int32_t id) override {
         if (id > this->evses.size()) {
             throw EvseOutOfRangeException(id);
         }
         return *this->evses.at(id - 1);
     }
 
-    const EvseInterface& get_evse(int32_t id) const override {
+    const EvseInterface& get_evse(std::int32_t id) const override {
         if (id > this->evses.size()) {
             throw EvseOutOfRangeException(id);
         }
         return *this->evses.at(id - 1);
     }
 
-    virtual bool does_connector_exist(const int32_t evse_id, const CiString<20> connector_type) const override {
+    virtual bool does_connector_exist(const std::int32_t evse_id, const CiString<20> connector_type) const override {
         if (evse_id > this->evses.size()) {
             return false;
         }
@@ -60,7 +60,7 @@ public:
         return get_evse(evse_id).does_connector_exist(connector_type);
     }
 
-    bool does_evse_exist(int32_t id) const override {
+    bool does_evse_exist(std::int32_t id) const override {
         return id <= this->evses.size();
     }
 
@@ -80,7 +80,7 @@ public:
         return this->evses.size();
     }
 
-    std::optional<int32_t> get_transaction_evseid(const CiString<36>& transaction_id) const override {
+    std::optional<std::int32_t> get_transaction_evseid(const CiString<36>& transaction_id) const override {
         for (const auto& evse : this->evses) {
             if (evse->has_active_transaction()) {
                 if (transaction_id == evse->get_transaction()->get_transaction().transactionId) {
@@ -103,14 +103,14 @@ public:
         EXPECT_CALL(mock, has_active_transaction()).WillRepeatedly(testing::Return(true));
     }
 
-    EvseMock& get_mock(int32_t evse_id) {
+    EvseMock& get_mock(std::int32_t evse_id) {
         return dynamic_cast<EvseMock&>(*evses.at(evse_id - 1).get());
     }
 
     MOCK_METHOD(bool, any_transaction_active, (const std::optional<EVSE>& evse), (const));
 
     bool is_valid_evse(const EVSE& evse) const override {
-        return (static_cast<int32_t>(evses.size()) >= evse.id);
+        return (static_cast<std::int32_t>(evses.size()) >= evse.id);
     }
 };
 

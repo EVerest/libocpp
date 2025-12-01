@@ -744,7 +744,7 @@ TEST_F(CompositeScheduleTestFixtureV2, SingleTxDefaultProfileForEvse0WithMultipl
     const DateTime start_time = ocpp::DateTime("2024-01-02T08:00:00");
     const DateTime end_time = ocpp::DateTime("2024-01-02T09:00:00");
 
-    constexpr int32_t nr_of_evses = 2;
+    constexpr std::int32_t nr_of_evses = 2;
 
     this->reconfigure_for_nr_of_evses(nr_of_evses);
 
@@ -769,7 +769,7 @@ TEST_F(CompositeScheduleTestFixtureV2, SingleTxDefaultProfileForEvse0WithMultipl
 TEST_F(CompositeScheduleTestFixtureV2, SingleTxDefaultProfileForEvse0WithMultipleEvses_Power) {
     this->load_charging_profiles_for_evse("singles/TXDefaultProfile_25_Watt.json", STATION_WIDE_ID);
 
-    constexpr int32_t nr_of_evses = 2;
+    constexpr std::int32_t nr_of_evses = 2;
 
     this->reconfigure_for_nr_of_evses(nr_of_evses);
 
@@ -828,7 +828,7 @@ TEST_F(CompositeScheduleTestFixtureV2, SingleTxDefaultProfileWithStationMaxForEv
     this->load_charging_profiles_for_evse("singles/Relative_303.json", DEFAULT_EVSE_ID);
     this->load_charging_profiles_for_evse("singles/Relative_303.json", 2);
 
-    constexpr int32_t nr_of_evses = 2;
+    constexpr std::int32_t nr_of_evses = 2;
 
     this->reconfigure_for_nr_of_evses(nr_of_evses);
 
@@ -859,7 +859,7 @@ TEST_F(CompositeScheduleTestFixtureV2, TxProfilePerEvseWithMultipleEvses) {
     this->load_charging_profiles_for_evse("singles/Recurring_Daily_301.json", DEFAULT_EVSE_ID);
     this->load_charging_profiles_for_evse("singles/Relative_303.json", 2);
 
-    constexpr int32_t nr_of_evses = 2;
+    constexpr std::int32_t nr_of_evses = 2;
 
     this->reconfigure_for_nr_of_evses(nr_of_evses);
 
@@ -1043,7 +1043,7 @@ TEST_F(CompositeScheduleTestFixtureV2, TxProfilePerEvseWithMultipleEvses_Differe
     this->load_charging_profiles_for_evse("singles/Recurring_Daily_302_phase_limit.json", DEFAULT_EVSE_ID);
     this->load_charging_profiles_for_evse("singles/Relative_302_phase_limit.json", 2);
 
-    constexpr int32_t nr_of_evses = 2;
+    constexpr std::int32_t nr_of_evses = 2;
 
     this->reconfigure_for_nr_of_evses(nr_of_evses);
 
@@ -1123,7 +1123,7 @@ TEST_F(CompositeScheduleTestFixtureV2, NoGapsWithSequentialProfiles) {
 TEST_F(CompositeScheduleTestFixtureV2, TxDefaultConnector0) {
     this->load_charging_profiles_for_evse("relative/TxDefault_relative.json", STATION_WIDE_ID);
 
-    constexpr int32_t nr_of_evses = 2;
+    constexpr std::int32_t nr_of_evses = 2;
     this->reconfigure_for_nr_of_evses(nr_of_evses);
 
     const DateTime start_time = ocpp::DateTime("2024-01-02T08:00:00");

@@ -96,7 +96,7 @@ std::chrono::time_point<std::chrono::system_clock> get_next_clock_aligned_point(
     return aligned_timepoint;
 }
 
-EventData create_notify_event(int32_t unique_id, const std::string& reported_value, const Component& component,
+EventData create_notify_event(std::int32_t unique_id, const std::string& reported_value, const Component& component,
                               const Variable& variable, const VariableMonitoringMeta& monitor_meta) {
     EventData notify_event;
 
@@ -153,10 +153,10 @@ MonitoringUpdater::~MonitoringUpdater() {
 
 void MonitoringUpdater::start_monitoring() {
     // Bind function to this instance
-    auto fn = [this](const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors, const Component& component,
-                     const Variable& variable, const VariableCharacteristics& characteristics,
-                     const VariableAttribute& attribute, const std::string& value_previous,
-                     const std::string& value_current) {
+    auto fn = [this](const std::unordered_map<std::int64_t, VariableMonitoringMeta>& monitors,
+                     const Component& component, const Variable& variable,
+                     const VariableCharacteristics& characteristics, const VariableAttribute& attribute,
+                     const std::string& value_previous, const std::string& value_current) {
         this->on_variable_changed(monitors, component, variable, characteristics, attribute, value_previous,
                                   value_current);
     };
@@ -351,7 +351,7 @@ void MonitoringUpdater::evaluate_monitor(const VariableMonitoringMeta& monitor_m
     }
 }
 
-void MonitoringUpdater::on_variable_changed(const std::unordered_map<int64_t, VariableMonitoringMeta>& monitors,
+void MonitoringUpdater::on_variable_changed(const std::unordered_map<std::int64_t, VariableMonitoringMeta>& monitors,
                                             const Component& component, const Variable& variable,
                                             const VariableCharacteristics& characteristics,
                                             const VariableAttribute& attribute, const std::string& value_previous,

@@ -17,9 +17,9 @@ namespace v2 {
 /// \brief Contains a OCPP NotifyCustomerInformation message
 struct NotifyCustomerInformationRequest : public ocpp::Message {
     CiString<512> data;
-    int32_t seqNo;
+    std::int32_t seqNo;
     ocpp::DateTime generatedAt;
-    int32_t requestId;
+    std::int32_t requestId;
     std::optional<bool> tbc;
     std::optional<CustomData> customData;
 

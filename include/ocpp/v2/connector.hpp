@@ -37,9 +37,9 @@ class Connector {
 private:
     /// \brief ID of the EVSE this connector belongs to (>0)
     // cppcheck-suppress unusedStructMember
-    int32_t evse_id;
+    std::int32_t evse_id;
     /// \brief ID of the connector itself (>0)
-    int32_t connector_id;
+    std::int32_t connector_id;
 
     /// \brief Component responsible for maintaining and monitoring the operational status of CS, EVSEs, and connectors.
     std::shared_ptr<ComponentStateManagerInterface> component_state_manager;
@@ -52,7 +52,7 @@ public:
     /// \param evse_id id of the EVSE the connector is ap art of
     /// \param connector_id id of the connector
     /// \param component_state_manager A shared reference to the component state manager
-    Connector(const int32_t evse_id, const int32_t connector_id,
+    Connector(const std::int32_t evse_id, const std::int32_t connector_id,
               std::shared_ptr<ComponentStateManagerInterface> component_state_manager);
 
     /// \brief Gets the effective Operative/Inoperative status of this connector

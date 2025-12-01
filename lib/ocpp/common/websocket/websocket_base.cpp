@@ -165,8 +165,8 @@ void WebsocketBase::cancel_reconnect_timer() {
     this->reconnect_timer = nullptr;
 }
 
-void WebsocketBase::set_websocket_ping_interval(int32_t ping_interval_s, int32_t pong_timeout_s) {
-    static constexpr int32_t PING_TIMER_INTERVAL = 1;
+void WebsocketBase::set_websocket_ping_interval(std::int32_t ping_interval_s, std::int32_t pong_timeout_s) {
+    static constexpr std::int32_t PING_TIMER_INTERVAL = 1;
 
     if (this->ping_timer) {
         this->ping_timer->stop();

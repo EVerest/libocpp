@@ -442,8 +442,8 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
     // Check if there is an active transaction (on the given evse or if not
     // given, on one of the evse's)
     bool transaction_active = false;
-    std::set<int32_t> evse_active_transactions;
-    std::set<int32_t> evse_no_transactions;
+    std::set<std::int32_t> evse_active_transactions;
+    std::set<std::int32_t> evse_no_transactions;
     if (msg.evseId.has_value() and this->context.evse_manager.get_evse(msg.evseId.value()).has_active_transaction()) {
         transaction_active = true;
         evse_active_transactions.emplace(msg.evseId.value());
@@ -483,7 +483,7 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
     }
 
     if (response.status == ResetStatusEnum::Accepted and transaction_active and msg.type == ResetEnum::OnIdle) {
-        std::optional<int32_t> reset_scheduled_evseid = std::nullopt;
+        std::optional<std::int32_t> reset_scheduled_evseid = std::nullopt;
         // B12.FR.07
         reset_scheduled_evseid = msg.evseId;
 
@@ -501,11 +501,11 @@ void Provisioning::handle_reset_req(Call<ResetRequest> call) {
     if (response.status != ResetStatusEnum::Rejected and transaction_active) {
         if (msg.type == ResetEnum::Immediate) {
             // B12.FR.08 and B12.FR.04
-            for (const int32_t evse_id : evse_active_transactions) {
+            for (const std::int32_t evse_id : evse_active_transactions) {
                 stop_transaction_callback(evse_id, ReasonEnum::ImmediateReset);
             }
         } else if (msg.type == ResetEnum::OnIdle and !evse_no_transactions.empty()) {
-            for (const int32_t evse_id : evse_no_transactions) {
+            for (const std::int32_t evse_id : evse_no_transactions) {
                 auto& evse = this->context.evse_manager.get_evse(evse_id);
                 set_evse_connectors_unavailable(evse, false);
             }

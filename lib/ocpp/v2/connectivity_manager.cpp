@@ -13,7 +13,7 @@ const auto WEBSOCKET_INIT_DELAY = std::chrono::seconds(2);
 const std::string VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL = "internal";
 /// \brief Default timeout for the return value (future) of the `configure_network_connection_profile_callback`
 ///        function.
-constexpr int32_t default_network_config_timeout_seconds = 60;
+constexpr std::int32_t default_network_config_timeout_seconds = 60;
 } // namespace
 
 namespace ocpp {
@@ -73,7 +73,7 @@ void ConnectivityManager::set_configure_network_connection_profile_callback(
 }
 
 std::optional<NetworkConnectionProfile>
-ConnectivityManager::get_network_connection_profile(const int32_t configuration_slot) const {
+ConnectivityManager::get_network_connection_profile(const std::int32_t configuration_slot) const {
 
     for (const auto& network_profile : this->cached_network_connection_profiles) {
         if (network_profile.configurationSlot == configuration_slot) {
@@ -92,7 +92,8 @@ ConnectivityManager::get_network_connection_profile(const int32_t configuration_
     return std::nullopt;
 }
 
-std::optional<int32_t> ConnectivityManager::get_priority_from_configuration_slot(const int configuration_slot) const {
+std::optional<std::int32_t>
+ConnectivityManager::get_priority_from_configuration_slot(const int configuration_slot) const {
     auto it =
         std::find(this->network_connection_slots.begin(), this->network_connection_slots.end(), configuration_slot);
     if (it != this->network_connection_slots.end()) {
@@ -118,13 +119,14 @@ bool ConnectivityManager::is_websocket_connected() {
     return this->websocket != nullptr && this->websocket->is_connected();
 }
 
-void ConnectivityManager::connect(std::optional<int32_t> network_profile_slot) {
+void ConnectivityManager::connect(std::optional<std::int32_t> network_profile_slot) {
     if (this->network_connection_slots.empty()) {
         EVLOG_warning << "No network connection profiles configured, aborting websocket connection.";
         return;
     }
 
-    const int32_t configuration_slot = network_profile_slot.value_or(this->get_active_network_configuration_slot());
+    const std::int32_t configuration_slot =
+        network_profile_slot.value_or(this->get_active_network_configuration_slot());
     if (!this->get_network_connection_profile(configuration_slot).has_value()) {
         EVLOG_warning << "Could not find network connection profile belonging to configuration slot "
                       << configuration_slot;
@@ -262,7 +264,7 @@ ConnectivityManager::handle_configure_network_connection_profile_callback(int sl
 
     std::future<ConfigNetworkResult> config_status =
         this->configure_network_connection_profile_callback.value()(slot, profile);
-    const int32_t config_timeout =
+    const std::int32_t config_timeout =
         this->device_model.get_optional_value<int>(ControllerComponentVariables::NetworkConfigTimeout)
             .value_or(default_network_config_timeout_seconds);
 
@@ -274,7 +276,7 @@ ConnectivityManager::handle_configure_network_connection_profile_callback(int sl
     return std::nullopt;
 }
 
-int ConnectivityManager::get_next_configuration_slot(int32_t configuration_slot) {
+int ConnectivityManager::get_next_configuration_slot(std::int32_t configuration_slot) {
 
     if (this->network_connection_slots.size() > 1) {
         EVLOG_info << "Switching to next network configuration priority";
@@ -320,7 +322,7 @@ void ConnectivityManager::on_charging_station_certificate_changed() {
 }
 
 std::optional<WebsocketConnectionOptions>
-ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot) {
+ConnectivityManager::get_ws_connection_options(const std::int32_t configuration_slot) {
     const auto network_connection_profile_opt = this->get_network_connection_profile(configuration_slot);
 
     if (!network_connection_profile_opt.has_value()) {

@@ -17,8 +17,8 @@ namespace v2 {
 
 /// \brief Contains a OCPP UnlockConnector message
 struct UnlockConnectorRequest : public ocpp::Message {
-    int32_t evseId;
-    int32_t connectorId;
+    std::int32_t evseId;
+    std::int32_t connectorId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this UnlockConnector message as a human readable string

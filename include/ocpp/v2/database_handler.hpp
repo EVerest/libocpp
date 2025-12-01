@@ -80,23 +80,24 @@ public:
     virtual OperationalStatusEnum get_cs_availability() = 0;
 
     /// \brief Persist operational settings for an EVSE
-    virtual void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status, bool replace) = 0;
+    virtual void insert_evse_availability(std::int32_t evse_id, OperationalStatusEnum operational_status,
+                                          bool replace) = 0;
     /// \brief Retrieve persisted operational settings for an EVSE
-    virtual OperationalStatusEnum get_evse_availability(int32_t evse_id) = 0;
+    virtual OperationalStatusEnum get_evse_availability(std::int32_t evse_id) = 0;
 
     /// \brief Persist operational settings for a connector
-    virtual void insert_connector_availability(int32_t evse_id, int32_t connector_id,
+    virtual void insert_connector_availability(std::int32_t evse_id, std::int32_t connector_id,
                                                OperationalStatusEnum operational_status, bool replace) = 0;
     /// \brief Retrieve persisted operational settings for a connector
-    virtual OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id) = 0;
+    virtual OperationalStatusEnum get_connector_availability(std::int32_t evse_id, std::int32_t connector_id) = 0;
 
     // Local authorization list management
 
     /// \brief Inserts or updates the given \p version in the AUTH_LIST_VERSION table.
-    virtual void insert_or_update_local_authorization_list_version(int32_t version) = 0;
+    virtual void insert_or_update_local_authorization_list_version(std::int32_t version) = 0;
 
     /// \brief Returns the version in the AUTH_LIST_VERSION table.
-    virtual int32_t get_local_authorization_list_version() = 0;
+    virtual std::int32_t get_local_authorization_list_version() = 0;
 
     /// \brief Inserts or updates a local authorization list entry to the AUTH_LIST table.
     virtual void insert_or_update_local_authorization_list_entry(const IdToken& id_token,
@@ -116,7 +117,7 @@ public:
     virtual void clear_local_authorization_list() = 0;
 
     /// \brief Get the number of entries currently in the authorization list
-    virtual int32_t get_local_authorization_list_number_of_entries() = 0;
+    virtual std::int32_t get_local_authorization_list_number_of_entries() = 0;
 
     // Transaction metervalues
 
@@ -134,17 +135,17 @@ public:
     /// \brief Inserts a transaction with the given parameters to the TRANSACTIONS table
     /// \param transaction
     /// \param evse_id
-    virtual void transaction_insert(const EnhancedTransaction& transaction, int32_t evse_id) = 0;
+    virtual void transaction_insert(const EnhancedTransaction& transaction, std::int32_t evse_id) = 0;
 
     /// \brief Gets a transaction from the database if one can be found using \p evse_id
     /// \param evse_id The evse id to get the transaction for
     /// \return nullptr if not found, otherwise an enhanced transaction object.
-    virtual std::unique_ptr<EnhancedTransaction> transaction_get(const int32_t evse_id) = 0;
+    virtual std::unique_ptr<EnhancedTransaction> transaction_get(const std::int32_t evse_id) = 0;
 
     /// \brief Update the sequence number of the given transaction id in the database.
     /// \param transaction_id
     /// \param seq_no
-    virtual void transaction_update_seq_no(const std::string& transaction_id, int32_t seq_no) = 0;
+    virtual void transaction_update_seq_no(const std::string& transaction_id, std::int32_t seq_no) = 0;
 
     /// \brief Update the charging state of the given transaction id in the database.
     /// \param transaction_id
@@ -179,12 +180,12 @@ public:
     virtual bool clear_charging_profiles() = 0;
 
     /// \brief Deletes all profiles from table CHARGING_PROFILES matching \p profile_id or \p criteria
-    virtual bool clear_charging_profiles_matching_criteria(const std::optional<int32_t> profile_id,
+    virtual bool clear_charging_profiles_matching_criteria(const std::optional<std::int32_t> profile_id,
                                                            const std::optional<ClearChargingProfile>& criteria) = 0;
 
     /// \brief Get all profiles from table CHARGING_PROFILES matching \p profile_id or \p criteria
     virtual std::vector<ReportedChargingProfile>
-    get_charging_profiles_matching_criteria(const std::optional<int32_t> evse_id,
+    get_charging_profiles_matching_criteria(const std::optional<std::int32_t> evse_id,
                                             const ChargingProfileCriterion& criteria) = 0;
 
     /// \brief Retrieves the charging profiles stored on \p evse_id
@@ -194,7 +195,7 @@ public:
     virtual std::vector<v2::ChargingProfile> get_all_charging_profiles() = 0;
 
     /// \brief Retrieves all ChargingProfiles grouped by EVSE ID
-    virtual std::map<int32_t, std::vector<v2::ChargingProfile>> get_all_charging_profiles_group_by_evse() = 0;
+    virtual std::map<std::int32_t, std::vector<v2::ChargingProfile>> get_all_charging_profiles_group_by_evse() = 0;
 
     virtual CiString<20> get_charging_limit_source_for_profile(const int profile_id) = 0;
 
@@ -213,9 +214,9 @@ private:
 
     // Availability management (internal helpers)
     // Setting evse_id to 0 addresses the whole CS, setting evse_id > 0 and connector_id=0 addresses a whole EVSE
-    void insert_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
+    void insert_availability(std::int32_t evse_id, std::int32_t connector_id, OperationalStatusEnum operational_status,
                              bool replace);
-    OperationalStatusEnum get_availability(int32_t evse_id, int32_t connector_id);
+    OperationalStatusEnum get_availability(std::int32_t evse_id, std::int32_t connector_id);
 
 public:
     DatabaseHandler(std::unique_ptr<everest::db::sqlite::ConnectionInterface> database,
@@ -234,15 +235,16 @@ public:
     // Availability
     void insert_cs_availability(OperationalStatusEnum operational_status, bool replace) override;
     OperationalStatusEnum get_cs_availability() override;
-    void insert_evse_availability(int32_t evse_id, OperationalStatusEnum operational_status, bool replace) override;
-    OperationalStatusEnum get_evse_availability(int32_t evse_id) override;
-    void insert_connector_availability(int32_t evse_id, int32_t connector_id, OperationalStatusEnum operational_status,
-                                       bool replace) override;
-    OperationalStatusEnum get_connector_availability(int32_t evse_id, int32_t connector_id) override;
+    void insert_evse_availability(std::int32_t evse_id, OperationalStatusEnum operational_status,
+                                  bool replace) override;
+    OperationalStatusEnum get_evse_availability(std::int32_t evse_id) override;
+    void insert_connector_availability(std::int32_t evse_id, std::int32_t connector_id,
+                                       OperationalStatusEnum operational_status, bool replace) override;
+    OperationalStatusEnum get_connector_availability(std::int32_t evse_id, std::int32_t connector_id) override;
 
     // Local authorization list management
-    void insert_or_update_local_authorization_list_version(int32_t version) override;
-    int32_t get_local_authorization_list_version() override;
+    void insert_or_update_local_authorization_list_version(std::int32_t version) override;
+    std::int32_t get_local_authorization_list_version() override;
     void insert_or_update_local_authorization_list_entry(const IdToken& id_token,
                                                          const IdTokenInfo& id_token_info) override;
     void insert_or_update_local_authorization_list(
@@ -250,7 +252,7 @@ public:
     void delete_local_authorization_list_entry(const IdToken& id_token) override;
     std::optional<v2::IdTokenInfo> get_local_authorization_list_entry(const IdToken& id_token) override;
     void clear_local_authorization_list() override;
-    int32_t get_local_authorization_list_number_of_entries() override;
+    std::int32_t get_local_authorization_list_number_of_entries() override;
 
     // Transaction metervalues
     void transaction_metervalues_insert(const std::string& transaction_id, const MeterValue& meter_value) override;
@@ -258,9 +260,9 @@ public:
     void transaction_metervalues_clear(const std::string& transaction_id) override;
 
     // transactions
-    void transaction_insert(const EnhancedTransaction& transaction, int32_t evse_id) override;
-    std::unique_ptr<EnhancedTransaction> transaction_get(const int32_t evse_id) override;
-    void transaction_update_seq_no(const std::string& transaction_id, int32_t seq_no) override;
+    void transaction_insert(const EnhancedTransaction& transaction, std::int32_t evse_id) override;
+    std::unique_ptr<EnhancedTransaction> transaction_get(const std::int32_t evse_id) override;
+    void transaction_update_seq_no(const std::string& transaction_id, std::int32_t seq_no) override;
     void transaction_update_charging_state(const std::string& transaction_id,
                                            const ChargingStateEnum charging_state) override;
     void transaction_update_id_token_sent(const std::string& transaction_id, bool id_token_sent) override;
@@ -273,14 +275,14 @@ public:
     bool delete_charging_profile(const int profile_id) override;
     void delete_charging_profile_by_transaction_id(const std::string& transaction_id) override;
     bool clear_charging_profiles() override;
-    bool clear_charging_profiles_matching_criteria(const std::optional<int32_t> profile_id,
+    bool clear_charging_profiles_matching_criteria(const std::optional<std::int32_t> profile_id,
                                                    const std::optional<ClearChargingProfile>& criteria) override;
     std::vector<ReportedChargingProfile>
-    get_charging_profiles_matching_criteria(const std::optional<int32_t> evse_id,
+    get_charging_profiles_matching_criteria(const std::optional<std::int32_t> evse_id,
                                             const ChargingProfileCriterion& criteria) override;
     std::vector<v2::ChargingProfile> get_charging_profiles_for_evse(const int evse_id) override;
     std::vector<v2::ChargingProfile> get_all_charging_profiles() override;
-    std::map<int32_t, std::vector<v2::ChargingProfile>> get_all_charging_profiles_group_by_evse() override;
+    std::map<std::int32_t, std::vector<v2::ChargingProfile>> get_all_charging_profiles_group_by_evse() override;
     CiString<20> get_charging_limit_source_for_profile(const int profile_id) override;
 
     std::unique_ptr<everest::db::sqlite::StatementInterface> new_statement(const std::string& sql) override;

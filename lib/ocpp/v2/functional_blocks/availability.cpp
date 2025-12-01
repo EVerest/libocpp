@@ -40,7 +40,7 @@ void Availability::handle_message(const ocpp::EnhancedMessage<MessageType>& mess
     }
 }
 
-void Availability::status_notification_req(const int32_t evse_id, const int32_t connector_id,
+void Availability::status_notification_req(const std::int32_t evse_id, const std::int32_t connector_id,
                                            const ConnectorStatusEnum status, const bool initiated_by_trigger_message) {
     StatusNotificationRequest req;
     req.connectorId = connector_id;
@@ -60,7 +60,7 @@ void Availability::heartbeat_req(const bool initiated_by_trigger_message) {
     this->context.message_dispatcher.dispatch_call(call, initiated_by_trigger_message);
 }
 
-void Availability::handle_scheduled_change_availability_requests(const int32_t evse_id) {
+void Availability::handle_scheduled_change_availability_requests(const std::int32_t evse_id) {
     if (this->scheduled_change_availability_requests.count(evse_id) != 0) {
         EVLOG_info << "Found scheduled ChangeAvailability.req for evse_id:" << evse_id;
         const auto req = this->scheduled_change_availability_requests[evse_id].request;
@@ -80,7 +80,7 @@ void Availability::handle_scheduled_change_availability_requests(const int32_t e
     }
 }
 
-void Availability::set_scheduled_change_availability_requests(const int32_t evse_id,
+void Availability::set_scheduled_change_availability_requests(const std::int32_t evse_id,
                                                               AvailabilityChange availability_change) {
     this->scheduled_change_availability_requests[evse_id] = availability_change;
 }
@@ -212,11 +212,11 @@ void Availability::set_cs_operative_status(OperationalStatusEnum new_status, boo
     this->context.component_state_manager.set_cs_individual_operational_status(new_status, persist);
 }
 
-void Availability::set_evse_operative_status(int32_t evse_id, OperationalStatusEnum new_status, bool persist) {
+void Availability::set_evse_operative_status(std::int32_t evse_id, OperationalStatusEnum new_status, bool persist) {
     this->context.evse_manager.get_evse(evse_id).set_evse_operative_status(new_status, persist);
 }
 
-void Availability::set_connector_operative_status(int32_t evse_id, int32_t connector_id,
+void Availability::set_connector_operative_status(std::int32_t evse_id, std::int32_t connector_id,
                                                   OperationalStatusEnum new_status, bool persist) {
     this->context.evse_manager.get_evse(evse_id).set_connector_operative_status(connector_id, new_status, persist);
 }

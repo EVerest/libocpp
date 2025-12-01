@@ -18,7 +18,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP GetTariffs message
 struct GetTariffsRequest : public ocpp::Message {
-    int32_t evseId;
+    std::int32_t evseId;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this GetTariffs message as a human readable string

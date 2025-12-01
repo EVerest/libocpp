@@ -15,7 +15,7 @@ namespace v16 {
 
 /// \brief Contains a OCPP RemoteStopTransaction message
 struct RemoteStopTransactionRequest : public ocpp::Message {
-    int32_t transactionId;
+    std::int32_t transactionId;
 
     /// \brief Provides the type of this RemoteStopTransaction message as a human readable string
     /// \returns the message type as a human readable string

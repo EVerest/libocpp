@@ -17,8 +17,8 @@ namespace v21 {
 
 /// \brief Contains a OCPP NotifyWebPaymentStarted message
 struct NotifyWebPaymentStartedRequest : public ocpp::Message {
-    int32_t evseId;
-    int32_t timeout;
+    std::int32_t evseId;
+    std::int32_t timeout;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this NotifyWebPaymentStarted message as a human readable string

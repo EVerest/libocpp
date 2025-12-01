@@ -17,8 +17,8 @@ namespace v2 {
 
 /// \brief Contains a OCPP GetCompositeSchedule message
 struct GetCompositeScheduleRequest : public ocpp::Message {
-    int32_t duration;
-    int32_t evseId;
+    std::int32_t duration;
+    std::int32_t evseId;
     std::optional<ChargingRateUnitEnum> chargingRateUnit;
     std::optional<CustomData> customData;
 

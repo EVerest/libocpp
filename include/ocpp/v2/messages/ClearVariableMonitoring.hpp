@@ -17,7 +17,7 @@ namespace v2 {
 
 /// \brief Contains a OCPP ClearVariableMonitoring message
 struct ClearVariableMonitoringRequest : public ocpp::Message {
-    std::vector<int32_t> id;
+    std::vector<std::int32_t> id;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClearVariableMonitoring message as a human readable string

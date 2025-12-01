@@ -255,7 +255,7 @@ SetVariableStatusEnum DeviceModelStorageSqlite::set_variable_attribute_value(con
     return SetVariableStatusEnum::Accepted;
 }
 
-bool DeviceModelStorageSqlite::update_monitoring_reference(const int32_t monitor_id,
+bool DeviceModelStorageSqlite::update_monitoring_reference(const std::int32_t monitor_id,
                                                            const std::string& reference_value) {
     auto transaction = this->db->begin_transaction();
 
@@ -340,15 +340,15 @@ std::optional<VariableMonitoringMeta> DeviceModelStorageSqlite::set_monitoring_d
 
     transaction->commit();
 
-    const int64_t last_row_id = this->db->get_last_inserted_rowid();
+    const std::int64_t last_row_id = this->db->get_last_inserted_rowid();
 
     VariableMonitoringMeta meta;
 
-    if (last_row_id > std::numeric_limits<int32_t>::max()) {
+    if (last_row_id > std::numeric_limits<std::int32_t>::max()) {
         EVLOG_warning << "Monitor id exceeds 32 bit integer, clamped at maximum";
     }
 
-    meta.monitor.id = clamp_to<int32_t>(last_row_id);
+    meta.monitor.id = clamp_to<std::int32_t>(last_row_id);
     meta.monitor.severity = data.severity;
     meta.monitor.transaction = data.transaction.value_or(false);
     meta.monitor.type = data.type;
@@ -454,7 +454,7 @@ ClearMonitoringStatusEnum DeviceModelStorageSqlite::clear_variable_monitor(int m
     return ((delete_stmt->changes() == 1) ? ClearMonitoringStatusEnum::Accepted : ClearMonitoringStatusEnum::Rejected);
 }
 
-int32_t DeviceModelStorageSqlite::clear_custom_variable_monitors() {
+std::int32_t DeviceModelStorageSqlite::clear_custom_variable_monitors() {
     const std::string delete_query = "DELETE FROM VARIABLE_MONITORING WHERE CONFIG_TYPE_ID = ?";
 
     auto transaction = this->db->begin_transaction();

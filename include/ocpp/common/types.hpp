@@ -380,7 +380,7 @@ struct TariffMessage {
 };
 
 struct DisplayMessage {
-    std::optional<int32_t> id;
+    std::optional<std::int32_t> id;
     std::optional<v2::MessagePriorityEnum> priority;
     std::optional<v2::MessageStateEnum> state;
     std::optional<DateTime> timestamp_from;
@@ -401,7 +401,7 @@ struct RunningCostChargingPrice {
 };
 
 struct RunningCostIdlePrice {
-    std::optional<uint32_t> idle_grace_minutes;
+    std::optional<std::uint32_t> idle_grace_minutes;
     std::optional<double> idle_hour_price;
 
     friend void from_json(const json& j, RunningCostIdlePrice& c);
@@ -422,7 +422,7 @@ std::string running_cost_state_to_string(const RunningCostState& state);
 struct RunningCost {
     std::string transaction_id;
     std::optional<DateTime> timestamp;
-    std::optional<uint32_t> meter_value;
+    std::optional<std::uint32_t> meter_value;
     double cost;
     // Running cost state: "Charging" or "Idle". When this is the final price, state will be "Finished".
     RunningCostState state;
@@ -842,9 +842,9 @@ enum class QueueType {
 
 /// \brief Struct containing default limits for amps, watts and number of phases
 struct CompositeScheduleDefaultLimits {
-    int32_t amps;
-    int32_t watts;
-    int32_t number_phases;
+    std::int32_t amps;
+    std::int32_t watts;
+    std::int32_t number_phases;
 };
 
 /// \brief Status of a reservation check.

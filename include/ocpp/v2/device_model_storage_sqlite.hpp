@@ -67,7 +67,7 @@ public:
     std::optional<VariableMonitoringMeta> set_monitoring_data(const SetMonitoringData& data,
                                                               const VariableMonitorType type) final;
 
-    bool update_monitoring_reference(const int32_t monitor_id, const std::string& reference_value) final;
+    bool update_monitoring_reference(const std::int32_t monitor_id, const std::string& reference_value) final;
 
     std::vector<VariableMonitoringMeta> get_monitoring_data(const std::vector<MonitoringCriterionEnum>& criteria,
                                                             const Component& component_id,
@@ -75,7 +75,7 @@ public:
 
     ClearMonitoringStatusEnum clear_variable_monitor(int monitor_id, bool allow_protected) final;
 
-    int32_t clear_custom_variable_monitors() final;
+    std::int32_t clear_custom_variable_monitors() final;
 
     void check_integrity() final;
 };

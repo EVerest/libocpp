@@ -17,7 +17,7 @@ namespace v21 {
 
 /// \brief Contains a OCPP ClosePeriodicEventStream message
 struct ClosePeriodicEventStreamRequest : public ocpp::Message {
-    int32_t id;
+    std::int32_t id;
     std::optional<CustomData> customData;
 
     /// \brief Provides the type of this ClosePeriodicEventStream message as a human readable string
