@@ -2868,7 +2868,25 @@ ConfigurationStatus ChargePointConfiguration::setDefaultPriceText(const CiString
         default_price["priceTexts"] = json::array();
     }
 
-    default_price["priceTexts"].push_back(j);
+    auto& price_texts = default_price.at("priceTexts");
+
+    if (!price_texts.is_array()) {
+        EVLOG_error << "Error while setting default price: 'priceTexts' is not an array";
+        return ConfigurationStatus::Rejected;
+    }
+
+    bool language_found = false;
+    for (auto& price_text : price_texts.items()) {
+        if (price_text.value().at("language").get<std::string>() == language) {
+            price_text.value() = j;
+            language_found = true;
+            break;
+        }
+    }
+
+    if (!language_found) {
+        default_price["priceTexts"].push_back(j);
+    }
 
     this->config["CostAndPrice"]["DefaultPriceText"] = default_price;
     this->setInUserConfig("CostAndPrice", "DefaultPriceText", default_price);
@@ -3661,14 +3679,13 @@ std::vector<KeyValue> ChargePointConfiguration::get_all_key_value() {
     return all;
 }
 
-ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
+std::optional<ConfigurationStatus> ChargePointConfiguration::set(CiString<50> key, CiString<500> value) {
     const std::lock_guard<std::recursive_mutex> lock(this->configuration_mutex);
     if (key == "IgnoredProfilePurposesOffline") {
         if (this->setIgnoredProfilePurposesOffline(value) == false) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "AllowOfflineTxForUnknownId") {
+    } else if (key == "AllowOfflineTxForUnknownId") {
         if (this->getAllowOfflineTxForUnknownId() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3677,8 +3694,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "AuthorizationCacheEnabled") {
+    } else if (key == "AuthorizationCacheEnabled") {
         if (this->getAuthorizationCacheEnabled() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3687,8 +3703,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "AuthorizationKey") {
+    } else if (key == "AuthorizationKey") {
         const std::string authorization_key = value.get();
         if (authorization_key.length() >= AUTHORIZATION_KEY_MIN_LENGTH) {
             this->setAuthorizationKey(value.get());
@@ -3699,8 +3714,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
     }
     if (key == "AuthorizeRemoteTxRequests") {
         this->setAuthorizeRemoteTxRequests(ocpp::conversions::string_to_bool(value.get()));
-    }
-    if (key == "BlinkRepeat") {
+    } else if (key == "BlinkRepeat") {
         if (this->getBlinkRepeat() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3715,8 +3729,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "ClockAlignedDataInterval") {
+    } else if (key == "ClockAlignedDataInterval") {
         try {
             auto [valid, interval] = is_positive_integer(value.get());
             if (!valid) {
@@ -3728,8 +3741,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "ConnectionTimeOut") {
+    } else if (key == "ConnectionTimeOut") {
         try {
             auto [valid, timeout] = is_positive_integer(value.get());
             if (!valid) {
@@ -3741,21 +3753,18 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "ConnectorPhaseRotation") {
+    } else if (key == "ConnectorPhaseRotation") {
         if (this->isConnectorPhaseRotationValid(value.get())) {
             this->setConnectorPhaseRotation(value.get());
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "CentralContractValidationAllowed") {
+    } else if (key == "CentralContractValidationAllowed") {
         if (this->getCentralContractValidationAllowed() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
         this->setCentralContractValidationAllowed(ocpp::conversions::string_to_bool(value.get()));
-    }
-    if (key == "CertSigningWaitMinimum") {
+    } else if (key == "CertSigningWaitMinimum") {
         if (this->getCertSigningWaitMinimum() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3770,8 +3779,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "CertSigningRepeatTimes") {
+    } else if (key == "CertSigningRepeatTimes") {
         if (this->getCertSigningRepeatTimes() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3786,17 +3794,13 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "ContractValidationOffline") {
+    } else if (key == "ContractValidationOffline") {
         this->setContractValidationOffline(ocpp::conversions::string_to_bool(value.get()));
-    }
-    if (key == "CpoName") {
+    } else if (key == "CpoName") {
         this->setCpoName(value.get());
-    }
-    if (key == "DisableSecurityEventNotifications") {
+    } else if (key == "DisableSecurityEventNotifications") {
         this->setDisableSecurityEventNotifications(ocpp::conversions::string_to_bool(value.get()));
-    }
-    if (key == "HeartbeatInterval") {
+    } else if (key == "HeartbeatInterval") {
         try {
             auto [valid, interval] = is_positive_integer(value.get());
             if (!valid) {
@@ -3808,14 +3812,11 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "ISO15118CertificateManagementEnabled") {
+    } else if (key == "ISO15118CertificateManagementEnabled") {
         this->setISO15118CertificateManagementEnabled(ocpp::conversions::string_to_bool(value.get()));
-    }
-    if (key == "ISO15118PnCEnabled") {
+    } else if (key == "ISO15118PnCEnabled") {
         this->setISO15118PnCEnabled(ocpp::conversions::string_to_bool(value.get()));
-    }
-    if (key == "LightIntensity") {
+    } else if (key == "LightIntensity") {
         if (this->getLightIntensity() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3830,22 +3831,19 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "LocalAuthorizeOffline") {
+    } else if (key == "LocalAuthorizeOffline") {
         if (isBool(value.get())) {
             this->setLocalAuthorizeOffline(ocpp::conversions::string_to_bool(value.get()));
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "LocalPreAuthorize") {
+    } else if (key == "LocalPreAuthorize") {
         if (isBool(value.get())) {
             this->setLocalPreAuthorize(ocpp::conversions::string_to_bool(value.get()));
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "MaxEnergyOnInvalidId") {
+    } else if (key == "MaxEnergyOnInvalidId") {
         if (this->getMaxEnergyOnInvalidId() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3860,18 +3858,15 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "MeterValuesAlignedData") {
+    } else if (key == "MeterValuesAlignedData") {
         if (!this->setMeterValuesAlignedData(value.get())) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "MeterValuesSampledData") {
+    } else if (key == "MeterValuesSampledData") {
         if (!this->setMeterValuesSampledData(value.get())) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "MeterValueSampleInterval") {
+    } else if (key == "MeterValueSampleInterval") {
         try {
             auto [valid, meter_value_sample_interval] = is_positive_integer(value.get());
             if (!valid) {
@@ -3883,8 +3878,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "MinimumStatusDuration") {
+    } else if (key == "MinimumStatusDuration") {
         if (this->getMinimumStatusDuration() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -3899,8 +3893,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "OcspRequestInterval") {
+    } else if (key == "OcspRequestInterval") {
         try {
             auto [valid, ocsp_request_interval] = is_positive_integer(value.get());
             if (!valid or ocsp_request_interval < 86400) {
@@ -3912,8 +3905,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "WaitForStopTransactionsOnResetTimeout") {
+    } else if (key == "WaitForStopTransactionsOnResetTimeout") {
         try {
             auto [valid, wait_for_stop_transactions_on_reset_timeout] = is_positive_integer(value.get());
             if (!valid) {
@@ -3925,8 +3917,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "ResetRetries") {
+    } else if (key == "ResetRetries") {
         try {
             auto [valid, reset_retries] = is_positive_integer(value.get());
             if (!valid) {
@@ -3938,25 +3929,21 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "StopTransactionOnInvalidId") {
+    } else if (key == "StopTransactionOnInvalidId") {
         if (isBool(value.get())) {
             this->setStopTransactionOnInvalidId(ocpp::conversions::string_to_bool(value.get()));
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "StopTxnAlignedData") {
+    } else if (key == "StopTxnAlignedData") {
         if (!this->setStopTxnAlignedData(value.get())) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "StopTxnSampledData") {
+    } else if (key == "StopTxnSampledData") {
         if (!this->setStopTxnSampledData(value.get())) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "TransactionMessageAttempts") {
+    } else if (key == "TransactionMessageAttempts") {
         try {
             auto [valid, message_attempts] = is_positive_integer(value.get());
             if (!valid) {
@@ -3968,8 +3955,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "TransactionMessageRetryInterval") {
+    } else if (key == "TransactionMessageRetryInterval") {
         try {
             auto [valid, retry_inverval] = is_positive_integer(value.get());
             if (!valid) {
@@ -3981,15 +3967,13 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "UnlockConnectorOnEVSideDisconnect") {
+    } else if (key == "UnlockConnectorOnEVSideDisconnect") {
         if (isBool(value.get()) and !this->getUnlockConnectorOnEVSideDisconnectKeyValue().readonly) {
             this->setUnlockConnectorOnEVSideDisconnect(ocpp::conversions::string_to_bool(value.get()));
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "WebSocketPingInterval") {
+    } else if (key == "WebSocketPingInterval") {
         if (this->getWebsocketPingInterval() == std::nullopt) {
             return ConfigurationStatus::NotSupported;
         }
@@ -4004,17 +3988,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "StopTransactionIfUnlockNotSupported") {
+    } else if (key == "StopTransactionIfUnlockNotSupported") {
         if (isBool(value.get())) {
             this->setStopTransactionIfUnlockNotSupported(ocpp::conversions::string_to_bool(value.get()));
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-
-    // Local Auth List Management
-    if (key == "LocalAuthListEnabled") {
+    } else if (key == "LocalAuthListEnabled") {
+        // Local Auth List Management
         if (this->supported_feature_profiles.count(SupportedFeatureProfiles::LocalAuthListManagement) != 0) {
             if (isBool(value.get())) {
                 this->setLocalAuthListEnabled(ocpp::conversions::string_to_bool(value.get()));
@@ -4024,9 +4005,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::NotSupported;
         }
-    }
-
-    if (key == "CompositeScheduleDefaultLimitAmps") {
+    } else if (key == "CompositeScheduleDefaultLimitAmps") {
         if (not this->getCompositeScheduleDefaultLimitAmps().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
@@ -4041,8 +4020,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "CompositeScheduleDefaultLimitWatts") {
+    } else if (key == "CompositeScheduleDefaultLimitWatts") {
         if (not this->getCompositeScheduleDefaultLimitWatts().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
@@ -4057,8 +4035,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "CompositeScheduleDefaultNumberPhases") {
+    } else if (key == "CompositeScheduleDefaultNumberPhases") {
         if (not this->getCompositeScheduleDefaultNumberPhases().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
@@ -4073,8 +4050,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-    if (key == "SupplyVoltage") {
+    } else if (key == "SupplyVoltage") {
         if (not this->getSupplyVoltage().has_value()) {
             return ConfigurationStatus::NotSupported;
         }
@@ -4089,18 +4065,14 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-
-    if (key == "VerifyCsmsAllowWildcards") {
+    } else if (key == "VerifyCsmsAllowWildcards") {
         if (isBool(value.get())) {
             this->setVerifyCsmsAllowWildcards(ocpp::conversions::string_to_bool(value.get()));
         } else {
             return ConfigurationStatus::Rejected;
         }
-    }
-
-    // Hubject PnC Extension keys
-    if (key == "SeccLeafSubjectCommonName") {
+    } else if (key == "SeccLeafSubjectCommonName") {
+        // Hubject PnC Extension keys
         if (this->getSeccLeafSubjectCommonName().has_value()) {
             if (value.get().length() < SECC_LEAF_SUBJECT_COMMON_NAME_MIN_LENGTH or
                 value.get().length() > SECC_LEAF_SUBJECT_COMMON_NAME_MAX_LENGTH) {
@@ -4111,8 +4083,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::NotSupported;
         }
-    }
-    if (key == "SeccLeafSubjectCountry") {
+    } else if (key == "SeccLeafSubjectCountry") {
         if (this->getSeccLeafSubjectCountry().has_value()) {
             if (value.get().length() != SECC_LEAF_SUBJECT_COUNTRY_LENGTH) {
                 EVLOG_warning << "Attempt to set SeccLeafSubjectCountry with invalid number of characters";
@@ -4122,8 +4093,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::NotSupported;
         }
-    }
-    if (key == "SeccLeafSubjectOrganization") {
+    } else if (key == "SeccLeafSubjectOrganization") {
         if (this->getSeccLeafSubjectOrganization().has_value()) {
             if (value.get().length() > SECC_LEAF_SUBJECT_ORGANIZATION_MAX_LENGTH) {
                 EVLOG_warning << "Attempt to set SeccLeafSubjectOrganization with invalid number of characters";
@@ -4133,8 +4103,7 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::NotSupported;
         }
-    }
-    if (key == "ConnectorEvseIds") {
+    } else if (key == "ConnectorEvseIds") {
         if (this->getConnectorEvseIds().has_value()) {
             if (validate_connector_evse_ids(value.get())) {
                 this->setConnectorEvseIds(value.get());
@@ -4144,59 +4113,42 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } else {
             return ConfigurationStatus::NotSupported;
         }
-    }
-    if (key == "AllowChargingProfileWithoutStartSchedule") {
+    } else if (key == "AllowChargingProfileWithoutStartSchedule") {
         if (this->getAllowChargingProfileWithoutStartSchedule().has_value()) {
             this->setAllowChargingProfileWithoutStartSchedule(ocpp::conversions::string_to_bool(value.get()));
         } else {
             return ConfigurationStatus::NotSupported;
         }
-    }
-
-    if (key.get().find("DefaultPriceText") == 0) {
+    } else if (key.get().find("DefaultPriceText") == 0) {
         const ConfigurationStatus result = this->setDefaultPriceText(key, value);
         if (result != ConfigurationStatus::Accepted) {
             return result;
         }
-    }
-
-    if (key == "DefaultPrice") {
+    } else if (key == "DefaultPrice") {
         const ConfigurationStatus result = this->setDefaultPrice(value);
         if (result != ConfigurationStatus::Accepted) {
             return result;
         }
-    }
-
-    if (key == "TimeOffset") {
+    } else if (key == "TimeOffset") {
         const ConfigurationStatus result = this->setDisplayTimeOffset(value);
         if (result != ConfigurationStatus::Accepted) {
             return result;
         }
-    }
-
-    if (key == "NextTimeOffsetTransitionDateTime") {
+    } else if (key == "NextTimeOffsetTransitionDateTime") {
         const ConfigurationStatus result = this->setNextTimeOffsetTransitionDateTime(value);
         if (result != ConfigurationStatus::Accepted) {
             return result;
         }
-    }
-
-    if (key == "TimeOffsetNextTransition") {
+    } else if (key == "TimeOffsetNextTransition") {
         const ConfigurationStatus result = this->setTimeOffsetNextTransition(value);
         if (result != ConfigurationStatus::Accepted) {
             return result;
         }
-    }
-
-    if (key == "CustomIdleFeeAfterStop") {
+    } else if (key == "CustomIdleFeeAfterStop") {
         this->setCustomIdleFeeAfterStop(ocpp::conversions::string_to_bool(value));
-    }
-
-    if (key == "Language") {
+    } else if (key == "Language") {
         this->setLanguage(value);
-    }
-
-    if (key == "WaitForSetUserPriceTimeout") {
+    } else if (key == "WaitForSetUserPriceTimeout") {
         try {
             auto [valid, wait_for_set_user_price_timeout] = is_positive_integer(value.get());
             if (!valid) {
@@ -4211,15 +4163,16 @@ ConfigurationStatus ChargePointConfiguration::set(CiString<50> key, CiString<500
         } catch (const std::out_of_range& e) {
             return ConfigurationStatus::Rejected;
         }
-    }
-
-    if (key == "CentralSystemURI") {
+    } else if (key == "CentralSystemURI") {
         this->setCentralSystemURI(value.get());
         return ConfigurationStatus::RebootRequired;
-    }
-
-    if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {
+    } else if (this->config.contains("Custom") and this->config["Custom"].contains(key.get())) {
         return this->setCustomKey(key, value, false);
+    } else if (key == "SecurityProfile") {
+        // do nothing here (key is valid!)
+    } else {
+        // the key is not one that is recognised for setting
+        return std::nullopt;
     }
 
     return ConfigurationStatus::Accepted;

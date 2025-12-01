@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project(ocpp
-    VERSION 0.30.2
+    VERSION 0.30.3
     DESCRIPTION "A C++ implementation of the Open Charge Point Protocol"
     LANGUAGES CXX
 )
@@ -36,8 +36,13 @@ if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TEST
     append_coverage_compiler_flags()
 endif()
 
+# this policy allows us to continue using the removed FindBoost module for now
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+
 # dependencies
-find_package(Boost COMPONENTS program_options regex system thread REQUIRED)
+find_package(Boost COMPONENTS program_options regex thread REQUIRED)
 find_package(SQLite3 REQUIRED)
 find_package(OpenSSL 3 REQUIRED)
 
