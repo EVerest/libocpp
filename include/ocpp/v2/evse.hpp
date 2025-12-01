@@ -26,7 +26,7 @@ enum class CurrentPhaseType {
 
 class EvseInterface {
 public:
-    virtual ~EvseInterface();
+    virtual ~EvseInterface() = default;
 
     /// \brief Return the evse_id of this EVSE
     /// \return

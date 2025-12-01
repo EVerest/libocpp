@@ -45,8 +45,6 @@ float get_normalized_energy_value(SampledValue sampled_value) {
 }
 } // namespace
 
-EvseInterface::~EvseInterface() = default;
-
 Evse::Evse(const std::int32_t evse_id, const std::int32_t number_of_connectors, DeviceModel& device_model,
            std::shared_ptr<DatabaseHandler> database_handler,
            std::shared_ptr<ComponentStateManagerInterface> component_state_manager,

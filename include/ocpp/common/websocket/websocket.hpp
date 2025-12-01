@@ -26,7 +26,7 @@ public:
     /// \brief Creates a new Websocket object with the provided \p connection_options
     explicit Websocket(const WebsocketConnectionOptions& connection_options,
                        std::shared_ptr<EvseSecurity> evse_security, std::shared_ptr<MessageLogging> logging);
-    ~Websocket();
+    ~Websocket() = default;
 
     /// \brief Starts the connection attempts. It will init the websocket processing thread
     /// \returns true if the websocket is successfully initialized, false otherwise. Does

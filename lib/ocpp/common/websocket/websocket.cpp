@@ -19,8 +19,6 @@ Websocket::Websocket(const WebsocketConnectionOptions& connection_options, std::
     this->websocket = std::make_unique<WebsocketLibwebsockets>(connection_options, evse_security);
 }
 
-Websocket::~Websocket() = default;
-
 bool Websocket::start_connecting() {
     this->logging->sys("Connecting");
     return this->websocket->start_connecting();
