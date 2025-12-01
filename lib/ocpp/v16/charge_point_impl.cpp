@@ -1869,8 +1869,8 @@ ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> 
                             << "AuthorizationKey was changed while on security profile 1 or 2. Reconnect Websocket.";
                         if (uniqueId) {
                             response.value().status = result;
-                            ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
-                                                                                      uniqueId.value());
+                            const ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
+                                                                                            uniqueId.value());
                             message_dispatcher->dispatch_call_result(call_result);
                         }
                         response.reset(); // response has been sent
@@ -1908,12 +1908,12 @@ ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> 
                             // valid set of security profile
                             if (uniqueId) {
                                 response.value().status = result;
-                                ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
-                                                                                          uniqueId.value());
+                                const ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(),
+                                                                                                uniqueId.value());
                                 message_dispatcher->dispatch_call_result(call_result);
                             }
                             response.reset(); // response has been sent
-                            std::int32_t security_profile = std::stoi(value);
+                            const std::int32_t security_profile = std::stoi(value);
                             switch_security_profile_callback = [this, security_profile]() {
                                 switchSecurityProfile(security_profile, 1);
                             };
@@ -1969,8 +1969,9 @@ ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> 
 
     if (result == ConfigurationStatus::Accepted) {
         // notify callback if registered and change was accepted
-        KeyValue key_value = {key, false, value};
-        if (configuration_key_changed_callbacks.count(key) and configuration_key_changed_callbacks[key] != nullptr) {
+        const KeyValue key_value = {key, false, value};
+        if (configuration_key_changed_callbacks.count(key) != 0 and
+            configuration_key_changed_callbacks[key] != nullptr) {
             configuration_key_changed_callbacks[key](key_value);
         } else if (generic_configuration_key_changed_callback != nullptr) {
             generic_configuration_key_changed_callback(key_value);
@@ -2003,10 +2004,10 @@ void ChargePointImpl::handleChangeAvailabilityRequest(ocpp::Call<ChangeAvailabil
 void ChargePointImpl::handleChangeConfigurationRequest(ocpp::Call<ChangeConfigurationRequest> call) {
     EVLOG_debug << "Received ChangeConfigurationRequest: " << call.msg << "\nwith messageId: " << call.uniqueId;
 
-    auto [_, response] = set_configuration_key_internal(call.msg.key, call.msg.value, call.uniqueId);
+    const auto [_, response] = set_configuration_key_internal(call.msg.key, call.msg.value, call.uniqueId);
 
     if (response) {
-        ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(), call.uniqueId);
+        const ocpp::CallResult<ChangeConfigurationResponse> call_result(response.value(), call.uniqueId);
         message_dispatcher->dispatch_call_result(call_result);
     }
 }
