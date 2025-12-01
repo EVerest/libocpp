@@ -147,6 +147,7 @@ MonitoringUpdater::~MonitoringUpdater() {
     try {
         stop_monitoring();
     } catch (...) {
+        EVLOG_error << "Exception during dtor call of stop monitoring";
         return;
     }
 }

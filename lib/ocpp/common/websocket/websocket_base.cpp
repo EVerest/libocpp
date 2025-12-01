@@ -34,6 +34,7 @@ WebsocketBase::~WebsocketBase() {
     try {
         this->cancel_reconnect_timer();
     } catch (...) {
+        EVLOG_error << "Exception during dtor call of reconnect timer cancellation";
         return;
     }
 }

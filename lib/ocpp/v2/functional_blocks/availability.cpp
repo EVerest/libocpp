@@ -24,6 +24,7 @@ Availability::~Availability() {
     try {
         this->stop_heartbeat_timer();
     } catch (...) {
+        EVLOG_error << "Exception during dtor call of stop heartbeat timer";
         return;
     }
 }

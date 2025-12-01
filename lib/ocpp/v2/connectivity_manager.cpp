@@ -474,7 +474,7 @@ void ConnectivityManager::check_cache_for_invalid_security_profiles() {
 
 void ConnectivityManager::remove_network_connection_profiles_below_actual_security_profile() {
     if (not ControllerComponentVariables::NetworkConnectionProfiles.variable.has_value()) {
-        // FIXME: warning?
+        EVLOG_warning << "NetworkConnectionProfiles variable is not set, cannot remove associated connection profiles";
         return;
     }
     // Remove all the profiles that are a lower security level than security_level
@@ -517,7 +517,7 @@ void ConnectivityManager::remove_network_connection_profiles_below_actual_securi
         }
     }
     if (not ControllerComponentVariables::NetworkConfigurationPriority.variable.has_value()) {
-        // FIXME: warning?
+        EVLOG_warning << "NetworkConfigurationPriority variable is not set, cannot set new network priority";
         return;
     }
     this->device_model.set_value(ControllerComponentVariables::NetworkConfigurationPriority.component,

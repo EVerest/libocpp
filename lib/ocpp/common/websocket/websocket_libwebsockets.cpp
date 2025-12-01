@@ -376,6 +376,7 @@ WebsocketLibwebsockets::~WebsocketLibwebsockets() {
             this->deferred_callback_thread->join();
         }
     } catch (...) {
+        EVLOG_error << "Exception during dtor cleanup of websocket connection";
         return;
     }
 }

@@ -78,6 +78,7 @@ Evse::~Evse() {
             this->trigger_metervalue_at_time_timer = nullptr;
         }
     } catch (...) {
+        EVLOG_error << "Exception during dtor call trigger metervalue at time timer stop";
         return;
     }
 }

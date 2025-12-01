@@ -39,6 +39,7 @@ Security::~Security() {
         stop_certificate_signed_timer();
         stop_certificate_expiration_check_timers();
     } catch (...) {
+        EVLOG_error << "Exception during dtor call of certificate timer stop";
         return;
     }
 }
