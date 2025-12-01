@@ -16,7 +16,7 @@ bool is_avg_meas(const SampledValue& sample) {
     }
     return false;
 }
-}
+} // namespace
 
 void AverageMeterValues::clear_values() {
     const std::lock_guard<std::mutex> lk(this->avg_meter_value_mutex);
