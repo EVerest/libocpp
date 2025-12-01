@@ -273,6 +273,14 @@ public:
 };
 
 namespace {
+int wildcard_X509_check_host(bool allow_wildcards, X509* server_cert, const std::string& hostname) {
+    if (allow_wildcards) {
+        return X509_check_host(server_cert, hostname.c_str(), hostname.length(), X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS,
+                               nullptr);
+    }
+    return X509_check_host(server_cert, hostname.c_str(), hostname.length(), X509_CHECK_FLAG_NO_WILDCARDS, nullptr);
+}
+
 bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_STORE_CTX* ctx, bool allow_wildcards) {
 
     // Error depth gives the depth in the chain (with 0 = leaf certificate) where
@@ -298,15 +306,7 @@ bool verify_csms_cn(const std::string& hostname, bool preverified, const X509_ST
         // when we can make libwebsocket take custom verification parameter
 
         // Verify host-name manually
-        int result; // NOLINT(cppcoreguidelines-init-variables): initialized below
-
-        if (allow_wildcards) {
-            result = X509_check_host(server_cert, hostname.c_str(), hostname.length(),
-                                     X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS, nullptr);
-        } else {
-            result = X509_check_host(server_cert, hostname.c_str(), hostname.length(), X509_CHECK_FLAG_NO_WILDCARDS,
-                                     nullptr);
-        }
+        const int result = wildcard_X509_check_host(allow_wildcards, server_cert, hostname);
 
         if (result != 1) {
             const X509_NAME* subject_name = X509_get_subject_name(server_cert);
