@@ -346,12 +346,8 @@ bool SmartChargingHandler::validate_profile(
             }
         }
         if (profile.chargingSchedule.duration) {
-            int max_recurrency_duration; // NOLINT(cppcoreguidelines-init-variables): initialized below
-            if (profile.recurrencyKind == RecurrencyKindType::Daily) {
-                max_recurrency_duration = SECONDS_PER_DAY;
-            } else {
-                max_recurrency_duration = SECONDS_PER_DAY * DAYS_PER_WEEK;
-            }
+            const int max_recurrency_duration =
+                profile.recurrencyKind == RecurrencyKindType::Daily ? SECONDS_PER_DAY : SECONDS_PER_DAY * DAYS_PER_WEEK;
 
             if (profile.chargingSchedule.duration > max_recurrency_duration) {
                 EVLOG_warning << "Given duration of Recurring profile was > than max_recurrency_duration. Setting "
