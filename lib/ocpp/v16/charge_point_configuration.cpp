@@ -3711,8 +3711,7 @@ std::optional<ConfigurationStatus> ChargePointConfiguration::set(CiString<50> ke
         }
         EVLOG_warning << "Attempt to change AuthorizationKey to value with < 8 characters";
         return ConfigurationStatus::Rejected;
-    }
-    if (key == "AuthorizeRemoteTxRequests") {
+    } else if (key == "AuthorizeRemoteTxRequests") {
         this->setAuthorizeRemoteTxRequests(ocpp::conversions::string_to_bool(value.get()));
     } else if (key == "BlinkRepeat") {
         if (this->getBlinkRepeat() == std::nullopt) {
