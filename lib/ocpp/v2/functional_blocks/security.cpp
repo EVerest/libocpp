@@ -422,7 +422,7 @@ void Security::handle_delete_certificate_req(Call<DeleteCertificateRequest> call
     if (response.status == DeleteCertificateStatusEnum::Accepted) {
         const auto& security_event = ocpp::security_events::RECONFIGURATIONOFSECURITYPARAMETERS;
         const std::string tech_info =
-            "Deleted certificate wit serial number: " + msg.certificateHashData.serialNumber.get();
+            "Deleted certificate with serial number: " + msg.certificateHashData.serialNumber.get();
         this->security_event_notification_req(CiString<50>(security_event), CiString<255>(tech_info), true,
                                               utils::is_critical(security_event));
     }

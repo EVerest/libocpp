@@ -1106,7 +1106,7 @@ void SmartCharging::handle_set_charging_profile_req(Call<SetChargingProfileReque
         EVLOG_debug << "Accepting SetChargingProfileRequest";
         this->set_charging_profiles_callback();
     } else {
-        std::string reason_code = "Unknown";
+        std::string reason_code = "Unspecified";
         std::string additional_info = "Unknown";
         if (response.statusInfo.has_value()) {
             const auto& status_info = response.statusInfo.value();
