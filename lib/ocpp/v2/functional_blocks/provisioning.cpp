@@ -353,9 +353,13 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
     const auto msg = call.msg;
 
     SetNetworkProfileResponse response;
+    StatusInfo status_info;
 
     if (!this->validate_network_profile_callback.has_value()) {
-        EVLOG_warning << "No callback registered to validate network profile";
+        const auto warning = "No callback registered to validate network profile";
+        EVLOG_warning << warning;
+        status_info.additionalInfo = warning;
+        response.statusInfo = status_info;
         response.status = SetNetworkProfileStatusEnum::Rejected;
         const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
@@ -364,7 +368,10 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
 
     if (msg.connectionData.securityProfile <
         this->context.device_model.get_value<int>(ControllerComponentVariables::SecurityProfile)) {
-        EVLOG_warning << "CSMS attempted to set a network profile with a lower securityProfile";
+        const auto warning = "CSMS attempted to set a network profile with a lower securityProfile";
+        EVLOG_warning << warning;
+        status_info.additionalInfo = warning;
+        response.statusInfo = status_info;
         response.status = SetNetworkProfileStatusEnum::Rejected;
         const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
@@ -373,7 +380,10 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
 
     if (this->validate_network_profile_callback.value()(msg.configurationSlot, msg.connectionData) !=
         SetNetworkProfileStatusEnum::Accepted) {
-        EVLOG_warning << "CSMS attempted to set a network profile that could not be validated.";
+        const auto warning = "CSMS attempted to set a network profile that could not be validated.";
+        EVLOG_warning << warning;
+        status_info.additionalInfo = warning;
+        response.statusInfo = status_info;
         response.status = SetNetworkProfileStatusEnum::Rejected;
         const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
@@ -401,7 +411,11 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
     }
 
     if (not ControllerComponentVariables::NetworkConnectionProfiles.variable.has_value()) {
-        EVLOG_warning << "Could not set a network profile because NetworkConnectionProfiles.variable is not defined";
+        const auto warning =
+            "Could not set a network profile because NetworkConnectionProfiles.variable is not defined";
+        EVLOG_warning << warning;
+        status_info.additionalInfo = warning;
+        response.statusInfo = status_info;
         response.status = SetNetworkProfileStatusEnum::Rejected;
         const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
@@ -413,7 +427,10 @@ void Provisioning::handle_set_network_profile_req(Call<SetNetworkProfileRequest>
                                              AttributeEnum::Actual, network_connection_profiles.dump(),
                                              VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL) !=
         SetVariableStatusEnum::Accepted) {
-        EVLOG_warning << "CSMS attempted to set a network profile that could not be written to the device model";
+        const auto warning = "CSMS attempted to set a network profile that could not be written to the device model";
+        EVLOG_warning << warning;
+        status_info.additionalInfo = warning;
+        response.statusInfo = status_info;
         response.status = SetNetworkProfileStatusEnum::Rejected;
         const ocpp::CallResult<SetNetworkProfileResponse> call_result(response, call.uniqueId);
         this->context.message_dispatcher.dispatch_call_result(call_result);
