@@ -29,7 +29,6 @@ private:
         if (diff > 0s) {
             time_to_next = ((std::chrono::duration_cast<std::chrono::seconds>(diff) / this->call_interval) + 1) *
                            this->call_interval;
-            ;
         }
         auto next_time = this->start_point + time_to_next;
         EVLOG_debug << "Clock aligned interval every " << this->call_interval.count() << " seconds, starting at "
@@ -42,7 +41,7 @@ private:
     }
 
     system_time_point call_next() {
-        if (this->callback == nullptr) {
+        if (this->callback == nullptr or this->call_interval.count() == 0) {
             return system_time_point{};
         }
 
