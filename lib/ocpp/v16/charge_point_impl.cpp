@@ -1955,8 +1955,10 @@ ChargePointImpl::set_configuration_key_internal(CiString<50> key, CiString<500> 
                         ocsp_request_timer->interval(std::chrono::seconds(configuration->getOcspRequestInterval()));
                     }
                 } else if (key == "NextTimeOffsetTransitionDateTime") {
-                    if (configuration->getNextTimeOffsetTransitionDateTime().has_value()) {
-                        set_time_offset_timer(configuration->getNextTimeOffsetTransitionDateTime().value());
+                    const auto next_time_offset_transition_date_time =
+                        configuration->getNextTimeOffsetTransitionDateTime();
+                    if (next_time_offset_transition_date_time.has_value()) {
+                        set_time_offset_timer(next_time_offset_transition_date_time.value());
                     }
                 }
             }
