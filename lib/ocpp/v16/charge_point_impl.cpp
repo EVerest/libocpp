@@ -2575,22 +2575,12 @@ void ChargePointImpl::handleTriggerMessageRequest(ocpp::Call<TriggerMessageReque
     TriggerMessageResponse response;
     response.status = TriggerMessageStatus::Rejected;
     switch (call.msg.requestedMessage) {
-    case MessageTrigger::BootNotification: // NOLINT(bugprone-branch-clone): readability
-        response.status = TriggerMessageStatus::Accepted;
-        break;
-    case MessageTrigger::DiagnosticsStatusNotification: // NOLINT(bugprone-branch-clone): readability
-        response.status = TriggerMessageStatus::Accepted;
-        break;
-    case MessageTrigger::FirmwareStatusNotification: // NOLINT(bugprone-branch-clone): readability
-        response.status = TriggerMessageStatus::Accepted;
-        break;
-    case MessageTrigger::Heartbeat: // NOLINT(bugprone-branch-clone): readability
-        response.status = TriggerMessageStatus::Accepted;
-        break;
-    case MessageTrigger::MeterValues: // NOLINT(bugprone-branch-clone): readability
-        response.status = TriggerMessageStatus::Accepted;
-        break;
-    case MessageTrigger::StatusNotification: // NOLINT(bugprone-branch-clone): readability
+    case MessageTrigger::BootNotification:
+    case MessageTrigger::DiagnosticsStatusNotification:
+    case MessageTrigger::FirmwareStatusNotification:
+    case MessageTrigger::Heartbeat:
+    case MessageTrigger::MeterValues:
+    case MessageTrigger::StatusNotification:
         response.status = TriggerMessageStatus::Accepted;
         break;
     }
