@@ -3328,7 +3328,7 @@ void ChargePointConfiguration::setCentralSystemURI(std::string centralSystemUri)
 }
 
 namespace {
-template <typename T> std::optional<T> parse_meter_public_key_index(const std::string& input) {
+std::optional<uint32_t> parse_meter_public_key_index(const std::string& input) {
     const std::string prefix = "MeterPublicKey[";
     const std::string suffix = "]";
 
@@ -3363,14 +3363,10 @@ template <typename T> std::optional<T> parse_meter_public_key_index(const std::s
         return std::nullopt;
     }
 
-    if constexpr (std::is_same_v<T, uint32_t>) {
-        if (temp > std::numeric_limits<uint32_t>::max()) {
-            return std::nullopt;
-        }
-        return static_cast<uint32_t>(temp);
-    } else {
-        static_assert(sizeof(T) == 0, "Unsupported type");
+    if (temp > std::numeric_limits<uint32_t>::max()) {
+        return std::nullopt;
     }
+    return static_cast<uint32_t>(temp);
 }
 } // namespace
 
@@ -3624,14 +3620,14 @@ std::optional<KeyValue> ChargePointConfiguration::get(CiString<50> key) {
     }
     if (key.get().rfind("MeterPublicKey[", 0) == 0) {
         const std::string& s = key.get();
-        const auto connector_id_opt = parse_meter_public_key_index<uint32_t>(s);
+        const auto connector_id_opt = parse_meter_public_key_index(s);
 
-        if (connector_id_opt.has_value() == false) {
+        if (!connector_id_opt.has_value()) {
             EVLOG_error << "Invalid MeterPublicKey format for key '" << s << "'";
             return std::nullopt;
         }
 
-        const uint32_t connector_id = connector_id_opt.value();
+        const auto connector_id = connector_id_opt.value();
 
         if (connector_id == 0) {
             EVLOG_error << "MeterPublicKey key '" << s << "' contains connectorId=0 which is invalid.";
