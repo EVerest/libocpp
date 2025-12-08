@@ -1299,6 +1299,18 @@ firmware_status_notification_to_firmware_status_enum_type(const FirmwareStatusNo
     throw EnumConversionException("Could not convert to v16::FirmwareStatusEnumType");
 }
 
+std::string queue_type_to_string(const QueueType queue_type) {
+    switch (queue_type) {
+    case ocpp::QueueType::None:
+        return "None";
+    case ocpp::QueueType::Normal:
+        return "Normal";
+    case ocpp::QueueType::Transaction:
+        return "Transaction";
+    }
+    throw EnumToStringException(queue_type, "Could not convert QueueType to string");
+}
+
 } // namespace conversions
 
 } // namespace ocpp

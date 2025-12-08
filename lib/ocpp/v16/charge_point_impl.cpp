@@ -365,22 +365,27 @@ void ChargePointImpl::init_websocket() {
 void ChargePointImpl::init_state_machine(const std::map<int, ChargePointStatus>& connector_status_map) {
     // if connector_status_map empty it retrieves the last availablity states from the database
     if (connector_status_map.empty()) {
-        auto connector_availability = this->database_handler->get_connector_availability();
-        std::map<int, ChargePointStatus> _connector_status_map;
-        for (const auto& [connector, availability] : connector_availability) {
-            if (availability == AvailabilityType::Operative) {
-                _connector_status_map[connector] = ChargePointStatus::Available;
-                if (this->enable_evse_callback != nullptr) {
-                    this->enable_evse_callback(connector);
-                }
-            } else {
-                _connector_status_map[connector] = ChargePointStatus::Unavailable;
-                if (this->disable_evse_callback != nullptr) {
-                    this->disable_evse_callback(connector);
+        try {
+            auto connector_availability = this->database_handler->get_connector_availability();
+            std::map<int, ChargePointStatus> _connector_status_map;
+            for (const auto& [connector, availability] : connector_availability) {
+                if (availability == AvailabilityType::Operative) {
+                    _connector_status_map[connector] = ChargePointStatus::Available;
+                    if (this->enable_evse_callback != nullptr) {
+                        this->enable_evse_callback(connector);
+                    }
+                } else {
+                    _connector_status_map[connector] = ChargePointStatus::Unavailable;
+                    if (this->disable_evse_callback != nullptr) {
+                        this->disable_evse_callback(connector);
+                    }
                 }
             }
+            this->status->reset(_connector_status_map);
+        } catch (const QueryExecutionException& e) {
+            EVLOG_warning << "Unable to fetch connector availability, unable to enable or disable evses accordingly: "
+                          << e.what();
         }
-        this->status->reset(_connector_status_map);
     } else {
         if (static_cast<size_t>(this->configuration->getNumberOfConnectors()) + 1 != connector_status_map.size()) {
             throw std::runtime_error(
@@ -1767,7 +1772,13 @@ void ChargePointImpl::preprocess_change_availability_request(
 
         // We store the queued request in the database, so in case of a powerloss the operational state is persisted.
         for (const auto& [connector, availabilityChange] : this->change_availability_queue) {
-            this->database_handler->insert_or_update_connector_availability(connector, availabilityChange.availability);
+            try {
+                this->database_handler->insert_or_update_connector_availability(connector,
+                                                                                availabilityChange.availability);
+            } catch (const QueryExecutionException& e) {
+                EVLOG_warning << "Could not update availability of connector << " << connector
+                              << " in the database: " << e.what();
+            }
         }
 
         if (should_be_scheduled) {
@@ -2233,20 +2244,25 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
 }
 
 bool ChargePointImpl::validate_against_cache_entries(CiString<20> id_tag) {
-    const auto cache_entry_opt = this->database_handler->get_authorization_cache_entry(id_tag);
-    if (cache_entry_opt.has_value()) {
-        auto cache_entry = cache_entry_opt.value();
-        const auto expiry_date_opt = cache_entry.expiryDate;
+    try {
+        const auto cache_entry_opt = this->database_handler->get_authorization_cache_entry(id_tag);
+        if (cache_entry_opt.has_value()) {
+            auto cache_entry = cache_entry_opt.value();
+            const auto expiry_date_opt = cache_entry.expiryDate;
 
-        if (cache_entry.status == AuthorizationStatus::Accepted) {
-            if (expiry_date_opt.has_value()) {
-                const auto expiry_date = expiry_date_opt.value();
-                if (expiry_date < ocpp::DateTime()) {
-                    cache_entry.status = AuthorizationStatus::Expired;
-                    try {
-                        this->database_handler->insert_or_update_authorization_cache_entry(id_tag, cache_entry);
-                    } catch (const QueryExecutionException& e) {
-                        EVLOG_warning << "Could not insert or update authorization cache entry: " << e.what();
+            if (cache_entry.status == AuthorizationStatus::Accepted) {
+                if (expiry_date_opt.has_value()) {
+                    const auto expiry_date = expiry_date_opt.value();
+                    if (expiry_date < ocpp::DateTime()) {
+                        cache_entry.status = AuthorizationStatus::Expired;
+                        try {
+                            this->database_handler->insert_or_update_authorization_cache_entry(id_tag, cache_entry);
+                        } catch (const QueryExecutionException& e) {
+                            EVLOG_warning << "Could not insert or update authorization cache entry: " << e.what();
+                        }
+                        return false;
+                    } else {
+                        return true;
                     }
                     return false;
                 }
@@ -2254,7 +2270,8 @@ bool ChargePointImpl::validate_against_cache_entries(CiString<20> id_tag) {
             }
             return true;
         }
-        return false;
+    } catch (const QueryExecutionException& e) {
+        EVLOG_warning << "Could not fetch authorization cache entry: " << e.what();
     }
     return false;
 }
@@ -3511,12 +3528,16 @@ EnhancedIdTagInfo ChargePointImpl::authorize_id_token(CiString<20> id_token, con
 
         if (this->configuration->getAuthorizationCacheEnabled()) {
             if (this->validate_against_cache_entries(id_token)) {
-                const auto auth_cache_entry = this->database_handler->get_authorization_cache_entry(id_token);
-                if (auth_cache_entry.has_value()) {
-                    EVLOG_info << "Found valid id_tag " << id_token.get() << " in AuthorizationCache";
-                    enhanced_id_tag_info.id_tag_info = auth_cache_entry.value();
-                    update_tariff_message_if_eligible(enhanced_id_tag_info);
-                    return enhanced_id_tag_info;
+                try {
+                    const auto auth_cache_entry = this->database_handler->get_authorization_cache_entry(id_token);
+                    if (auth_cache_entry.has_value()) {
+                        EVLOG_info << "Found valid id_tag " << id_token.get() << " in AuthorizationCache";
+                        enhanced_id_tag_info.id_tag_info = auth_cache_entry.value();
+                        update_tariff_message_if_eligible(enhanced_id_tag_info);
+                        return enhanced_id_tag_info;
+                    }
+                } catch (const QueryExecutionException& e) {
+                    EVLOG_warning << "Could not request authorization cache entry: " << e.what();
                 }
             }
         }
@@ -4540,8 +4561,8 @@ ChargePointImpl::get_filtered_transaction_data(const std::shared_ptr<Transaction
                             continue;
                         }
                     } else {
-                        // else use StopTxnSampledData although spec is unclear about how to filter other ReadingContext
-                        // values like Transaction.Begin , Trigger , etc.
+                        // else use StopTxnSampledData although spec is unclear about how to filter other
+                        // ReadingContext values like Transaction.Begin , Trigger , etc.
                         if (std::find(stop_txn_sampled_data_measurands.begin(), stop_txn_sampled_data_measurands.end(),
                                       meter_value.measurand.value()) != stop_txn_sampled_data_measurands.end()) {
                             sampled_values.push_back(meter_value);
@@ -4592,8 +4613,8 @@ void ChargePointImpl::on_log_status_notification(std::int32_t request_id, std::s
     if (request_id != -1) {
         this->log_status_notification(conversions::string_to_upload_log_status_enum_type(log_status), request_id);
     } else {
-        // In OCPP enum DiagnosticsStatus it is called UploadFailed, in UploadLogStatusEnumType of Security Whitepaper
-        // it is called UploadFailure
+        // In OCPP enum DiagnosticsStatus it is called UploadFailed, in UploadLogStatusEnumType of Security
+        // Whitepaper it is called UploadFailure
         if (log_status == "UploadFailure") {
             log_status = "UploadFailed";
         }
@@ -4619,18 +4640,24 @@ void ChargePointImpl::on_firmware_update_status_notification(std::int32_t reques
     if (firmware_update_status == FirmwareStatusNotification::InstallationFailed or
         firmware_update_status == FirmwareStatusNotification::Installed or
         firmware_update_status == FirmwareStatusNotification::InstallVerificationFailed) {
-        // Restore connector status, since we did not save to db the status, we can just get the old status back using
-        // it
-        auto connector_availability = this->database_handler->get_connector_availability();
-        for (const auto& [connector, availability] : connector_availability) {
-            if (availability == AvailabilityType::Operative) {
-                if (connector == 0) {
-                    this->status->submit_event(0, FSMEvent::BecomeAvailable, ocpp::DateTime());
-                }
-                if (this->enable_evse_callback != nullptr) {
-                    this->enable_evse_callback(connector);
+        // Restore connector status, since we did not save to db the status, we can just get the old status back
+        // using it
+        try {
+            auto connector_availability = this->database_handler->get_connector_availability();
+            for (const auto& [connector, availability] : connector_availability) {
+                if (availability == AvailabilityType::Operative) {
+                    if (connector == 0) {
+                        this->status->submit_event(0, FSMEvent::BecomeAvailable, ocpp::DateTime());
+                    }
+                    if (this->enable_evse_callback != nullptr) {
+                        this->enable_evse_callback(connector);
+                    }
                 }
             }
+        } catch (const QueryExecutionException& e) {
+            EVLOG_warning << "Unable to fetch connector availability, unable to call enable evse callback on firmware "
+                             "status notification: "
+                          << e.what();
         }
     }
     if (firmware_update_status == FirmwareStatusNotification::InstallationFailed or
@@ -4639,8 +4666,8 @@ void ChargePointImpl::on_firmware_update_status_notification(std::int32_t reques
         firmware_update_status == FirmwareStatusNotification::InstallVerificationFailed or
         firmware_update_status == FirmwareStatusNotification::DownloadFailed) {
         // Reset status to idle to avoid on trigger message sending an incorrect status
-        // Even if we have to retry the firmware update resetting to Idle won't cause an issue since we do not trigger a
-        // status notification and we don't have a state machine to block certain state transitions
+        // Even if we have to retry the firmware update resetting to Idle won't cause an issue since we do not
+        // trigger a status notification and we don't have a state machine to block certain state transitions
         if (request_id != -1) {
             this->signed_firmware_status = FirmwareStatusEnumType::Idle;
         } else {
@@ -4671,9 +4698,9 @@ void ChargePointImpl::firmware_status_notification(FirmwareStatus status, bool i
     FirmwareStatusNotificationRequest req;
     req.status = status;
 
-    // The "Downloaded" status signals a firmware update is pending which will cause connectors to be set inoperative
-    // (now or after pending transactions are stopped); in case of a status that signals a failed firmware update this
-    // is revoked
+    // The "Downloaded" status signals a firmware update is pending which will cause connectors to be set
+    // inoperative (now or after pending transactions are stopped); in case of a status that signals a failed
+    // firmware update this is revoked
     if (status == FirmwareStatus::Downloaded) {
         this->firmware_update_is_pending = true;
     } else if (status == FirmwareStatus::DownloadFailed || status == FirmwareStatus::InstallationFailed) {

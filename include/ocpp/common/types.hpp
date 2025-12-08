@@ -840,6 +840,11 @@ enum class QueueType {
     None,
 };
 
+namespace conversions {
+/// \brief Converts GetCertificateSignRequestStatus to string
+std::string queue_type_to_string(const QueueType queue_type);
+} // namespace conversions
+
 /// \brief Struct containing default limits for amps, watts and number of phases
 struct CompositeScheduleDefaultLimits {
     std::int32_t amps;

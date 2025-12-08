@@ -583,43 +583,52 @@ public:
         const std::vector<QueueType> queue_types = {QueueType::Normal, QueueType::Transaction};
         // do for Normal and Transaction queue
         for (const auto queue_type : queue_types) {
-            const auto persisted_messages = database_handler->get_message_queue_messages(queue_type);
-            if (!persisted_messages.empty()) {
-                for (auto& persisted_message : persisted_messages) {
+            try {
+                const auto persisted_messages = database_handler->get_message_queue_messages(queue_type);
+                if (!persisted_messages.empty()) {
+                    for (auto& persisted_message : persisted_messages) {
 
-                    if (ignore_security_event_notifications &&
-                        persisted_message.message_type == "SecurityEventNotification") {
-                        try {
-                            // remove from database in case SecurityEventNotification.req should not be sent
-                            this->database_handler->remove_message_queue_message(persisted_message.unique_id,
-                                                                                 queue_type);
-                        } catch (const everest::db::QueryExecutionException& e) {
-                            EVLOG_warning << "Could not delete message from message queue: " << e.what();
-                        } catch (const std::exception& e) {
-                            EVLOG_warning << "Could not delete message from message queue: " << e.what();
-                        }
-                    } else {
-                        const std::shared_ptr<ControlMessage<M>> message =
-                            std::make_shared<ControlMessage<M>>(persisted_message.json_message, true);
-                        message->messageType = string_to_messagetype(persisted_message.message_type);
-                        message->timestamp = persisted_message.timestamp;
-                        message->message_attempts = persisted_message.message_attempts;
+                        if (ignore_security_event_notifications &&
+                            persisted_message.message_type == "SecurityEventNotification") {
+                            try {
+                                // remove from database in case SecurityEventNotification.req should not be sent
+                                this->database_handler->remove_message_queue_message(persisted_message.unique_id,
+                                                                                     queue_type);
+                            } catch (const everest::db::QueryExecutionException& e) {
+                                EVLOG_warning << "Could not delete message from message queue: " << e.what();
+                            } catch (const std::exception& e) {
+                                EVLOG_warning << "Could not delete message from message queue: " << e.what();
+                            }
+                        } else {
+                            const std::shared_ptr<ControlMessage<M>> message =
+                                std::make_shared<ControlMessage<M>>(persisted_message.json_message, true);
+                            message->messageType = string_to_messagetype(persisted_message.message_type);
+                            message->timestamp = persisted_message.timestamp;
+                            message->message_attempts = persisted_message.message_attempts;
 
-                        if (queue_type == QueueType::Normal) {
-                            normal_message_queue.push_back(message);
-                        } else if (queue_type == QueueType::Transaction) {
-                            transaction_message_queue.push_back(message);
+                            if (queue_type == QueueType::Normal) {
+                                normal_message_queue.push_back(message);
+                            } else if (queue_type == QueueType::Transaction) {
+                                transaction_message_queue.push_back(message);
+                            }
                         }
                     }
+                    this->new_message = true;
                 }
-                this->new_message = true;
+            } catch (const everest::db::QueryExecutionException& e) {
+                EVLOG_warning << "Could not fetch messages from message queue of type "
+                              << conversions::queue_type_to_string(queue_type) << ": " << e.what();
             }
         }
 
         if (!this->config.queue_all_messages) {
-            // make sure to clear normal message queue table in case queue_all_messages is false, since without clearing
-            // it here messages would not be removed in handle_call_result or handle_call_timeout_or_error
-            this->database_handler->clear_message_queue(QueueType::Normal);
+            try {
+                // make sure to clear normal message queue table in case queue_all_messages is false, since without
+                // clearing it here messages would not be removed in handle_call_result or handle_call_timeout_or_error
+                this->database_handler->clear_message_queue(QueueType::Normal);
+            } catch (const everest::db::QueryExecutionException& e) {
+                EVLOG_warning << "Could not clear normal message queue from database: " << e.what();
+            }
         }
     }
 

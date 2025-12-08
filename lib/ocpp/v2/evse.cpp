@@ -178,25 +178,29 @@ std::optional<ConnectorStatusEnum> Evse::get_connector_status(std::optional<CiSt
 
 void Evse::try_resume_transaction() {
     // Get an open transactions from the database and resume it if there is one
-    auto transaction = this->database_handler->transaction_get(evse_id);
-    if (transaction == nullptr) {
-        return;
-    }
-
-    if (this->id_connector_map.count(transaction->connector_id) != 0) {
-        this->transaction = std::move(transaction);
-        this->start_metering_timers(this->transaction->start_time);
-    } else {
-        EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector "
-                    << transaction->connector_id;
-
-        try {
-            this->database_handler->transaction_delete(transaction->transactionId);
-        } catch (const QueryExecutionException& e) {
-            EVLOG_error << "Can't delete transaction: " << e.what();
+    try {
+        auto transaction = this->database_handler->transaction_get(evse_id);
+        if (transaction == nullptr) {
+            return;
         }
 
-        // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
+        if (this->id_connector_map.count(transaction->connector_id) != 0) {
+            this->transaction = std::move(transaction);
+            this->start_metering_timers(this->transaction->start_time);
+        } else {
+            EVLOG_error << "Can't resume transaction on evse_id " << evse_id << " for non existent connector "
+                        << transaction->connector_id;
+
+            try {
+                this->database_handler->transaction_delete(transaction->transactionId);
+            } catch (const QueryExecutionException& e) {
+                EVLOG_error << "Can't delete transaction: " << e.what();
+            }
+
+            // Todo: Can we drop the transaction like this or do we still want to transmit an ended message?
+        }
+    } catch (const QueryExecutionException& e) {
+        EVLOG_error << "Can't fetch transaction on evse_id " << evse_id << ": " << e.what();
     }
 }
 
