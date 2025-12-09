@@ -25,12 +25,12 @@
 namespace ocpp {
 
 template <typename M> struct MessageQueueConfig {
-    int transaction_message_attempts = 0;
-    int transaction_message_retry_interval = 0; // seconds
+    int transaction_message_attempts = 3;
+    int transaction_message_retry_interval = 30; // seconds
 
     // threshold for the accumulated sizes of the queues; if the queues exceed this limit,
     // messages are potentially dropped in accordance with OCPP 2.0.1. Specification (cf. QueueAllMessages parameter)
-    int queues_total_size_threshold = 0;
+    int queues_total_size_threshold = 500;
 
     bool queue_all_messages{false};                 // cf. OCPP 2.0.1. "QueueAllMessages" in OCPPCommCtrlr
     std::set<M> message_types_discard_for_queueing; // allows to discard certain message types for offline queuing (e.g.
