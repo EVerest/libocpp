@@ -60,33 +60,8 @@ ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_struct
     skip_invalid_csms_certificate_notifications(false),
     upload_log_status(UploadLogStatusEnum::Idle),
     bootreason(BootReasonEnum::PowerUp),
-    ocsp_updater(this->evse_security,
-                 [this](GetCertificateStatusRequest req) -> GetCertificateStatusResponse {
-                     try {
-                         return this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(
-                             MessageType::GetCertificateStatusResponse)(req);
-                     } catch (const UnexpectedMessageTypeFromCSMS& e) {
-                         EVLOG_warning << e.what();
-                     }
-                     GetCertificateStatusResponse response;
-                     response.status = GetCertificateStatusEnum::Failed;
-                     return response;
-                 }),
+    ocsp_updater(make_ocsp_updater()),
     callbacks(callbacks) {
-
-    if (!this->device_model) {
-        EVLOG_AND_THROW(std::invalid_argument("Device model should not be null"));
-    }
-
-    // Make sure the received callback struct is completely filled early before we actually start running
-    if (!this->callbacks.all_callbacks_valid(this->device_model, evse_connector_structure)) {
-        EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
-    }
-
-    if (!this->database_handler) {
-        EVLOG_AND_THROW(std::invalid_argument("Database handler should not be null"));
-    }
-
     initialize(evse_connector_structure, message_log_path);
 }
 
@@ -413,6 +388,19 @@ void ChargePoint::on_ev_charging_needs(const NotifyEVChargingNeedsRequest& reque
 
 void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_structure,
                              const std::string& message_log_path) {
+    if (!this->device_model) {
+        EVLOG_AND_THROW(std::invalid_argument("Device model should not be null"));
+    }
+
+    // Make sure the received callback struct is completely filled early before we actually start running
+    if (!this->callbacks.all_callbacks_valid(this->device_model, evse_connector_structure)) {
+        EVLOG_AND_THROW(std::invalid_argument("All non-optional callbacks must be supplied"));
+    }
+
+    if (!this->database_handler) {
+        EVLOG_AND_THROW(std::invalid_argument("Database handler should not be null"));
+    }
+
     this->device_model->check_integrity(evse_connector_structure);
     this->database_handler->open_connection();
     this->component_state_manager = std::make_shared<ComponentStateManager>(
@@ -622,6 +610,20 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
     this->device_model->set_value(ControllerComponents::OCPPCommCtrlr, field_length, AttributeEnum::Actual,
                                   std::to_string(ISO15118_GET_EV_CERTIFICATE_EXI_RESPONSE_SIZE),
                                   VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL, true);
+}
+
+OcspUpdater ChargePoint::make_ocsp_updater() {
+    return OcspUpdater(this->evse_security, [this](GetCertificateStatusRequest req) -> GetCertificateStatusResponse {
+        try {
+            return this->send_callback<GetCertificateStatusRequest, GetCertificateStatusResponse>(
+                MessageType::GetCertificateStatusResponse)(req);
+        } catch (const UnexpectedMessageTypeFromCSMS& e) {
+            EVLOG_warning << e.what();
+        }
+        GetCertificateStatusResponse response;
+        response.status = GetCertificateStatusEnum::Failed;
+        return response;
+    });
 }
 
 void ChargePoint::handle_message(const EnhancedMessage<v2::MessageType>& message) {

@@ -408,6 +408,7 @@ private:
 
     // internal helper functions
     void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
+    OcspUpdater make_ocsp_updater();
     void websocket_connected_callback(const int configuration_slot,
                                       const NetworkConnectionProfile& network_connection_profile,
                                       const OcppProtocolVersion ocpp_version);
