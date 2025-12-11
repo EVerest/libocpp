@@ -2246,34 +2246,32 @@ void ChargePointImpl::handleRemoteStartTransactionRequest(ocpp::Call<RemoteStart
 bool ChargePointImpl::validate_against_cache_entries(CiString<20> id_tag) {
     try {
         const auto cache_entry_opt = this->database_handler->get_authorization_cache_entry(id_tag);
-        if (cache_entry_opt.has_value()) {
-            auto cache_entry = cache_entry_opt.value();
-            const auto expiry_date_opt = cache_entry.expiryDate;
+        if (!cache_entry_opt.has_value()) {
+            return false;
+        }
+        auto cache_entry = cache_entry_opt.value();
+        const auto expiry_date_opt = cache_entry.expiryDate;
 
-            if (cache_entry.status == AuthorizationStatus::Accepted) {
-                if (expiry_date_opt.has_value()) {
-                    const auto expiry_date = expiry_date_opt.value();
-                    if (expiry_date < ocpp::DateTime()) {
-                        cache_entry.status = AuthorizationStatus::Expired;
-                        try {
-                            this->database_handler->insert_or_update_authorization_cache_entry(id_tag, cache_entry);
-                        } catch (const QueryExecutionException& e) {
-                            EVLOG_warning << "Could not insert or update authorization cache entry: " << e.what();
-                        }
-                        return false;
-                    } else {
-                        return true;
-                    }
-                    return false;
-                }
-                return true;
-            }
+        if (cache_entry.status != AuthorizationStatus::Accepted) {
+            return false;
+        }
+        if (!expiry_date_opt.has_value()) {
             return true;
         }
+        const auto expiry_date = expiry_date_opt.value();
+        if (expiry_date < ocpp::DateTime()) {
+            cache_entry.status = AuthorizationStatus::Expired;
+            try {
+                this->database_handler->insert_or_update_authorization_cache_entry(id_tag, cache_entry);
+            } catch (const QueryExecutionException& e) {
+                EVLOG_warning << "Could not insert or update authorization cache entry: " << e.what();
+            }
+            return false;
+        }
+        return true;
     } catch (const QueryExecutionException& e) {
         EVLOG_warning << "Could not fetch authorization cache entry: " << e.what();
     }
-    return false;
 }
 
 void ChargePointImpl::handleRemoteStopTransactionRequest(ocpp::Call<RemoteStopTransactionRequest> call) {
