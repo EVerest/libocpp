@@ -364,7 +364,7 @@ class ChargePoint : public ChargePointInterface, private ocpp::ChargingStationBa
 private:
     std::shared_ptr<DeviceModel> device_model;
     std::unique_ptr<EvseManager> evse_manager;
-    std::shared_ptr<ConnectivityManager> connectivity_manager;
+    std::shared_ptr<ConnectivityManagerInterface> connectivity_manager;
 
     std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
 
@@ -488,7 +488,7 @@ public:
     /// \param callbacks Callbacks that will be registered for ChargePoint
     ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DeviceModel> device_model,
                 std::shared_ptr<DatabaseHandler> database_handler, const std::shared_ptr<EvseSecurity> evse_security,
-                const std::shared_ptr<ConnectivityManager> connectivity_manager, const std::string& message_log_path,
+                const std::shared_ptr<ConnectivityManagerInterface> connectivity_manager, const std::string& message_log_path,
                 const Callbacks& callbacks);
 
     /// \brief Construct a new ChargePoint object

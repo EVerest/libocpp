@@ -32,6 +32,15 @@ class ConnectivityManagerInterface {
 public:
     virtual ~ConnectivityManagerInterface() {
     }
+
+    /// \brief Set the \p callback that is called when a message is received from the websocket
+    ///
+    virtual void set_message_callback(const std::function<void(const std::string& message)>& callback) = 0;
+    
+    /// \brief Set the logger \p logging
+    ///
+    virtual void set_logging(std::shared_ptr<MessageLogging> logging) = 0;
+
     /// \brief Set the websocket \p authorization_key
     ///
     virtual void set_websocket_authorization_key(const std::string& authorization_key) = 0;
@@ -153,8 +162,8 @@ private:
 public:
     ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security);
 
-    void set_message_callback(const std::function<void(const std::string& message)>& callback);
-    void set_logging(std::shared_ptr<MessageLogging> logging);
+    void set_message_callback(const std::function<void(const std::string& message)>& callback) override;
+    void set_logging(std::shared_ptr<MessageLogging> logging) override;
     void set_websocket_authorization_key(const std::string& authorization_key) override;
     void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options) override;
     void set_websocket_connection_options_without_reconnect() override;

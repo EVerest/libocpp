@@ -50,7 +50,7 @@ const auto DEFAULT_MESSAGE_QUEUE_SIZE_THRESHOLD = 2E5;
 ChargePoint::ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure,
                          std::shared_ptr<DeviceModel> device_model, std::shared_ptr<DatabaseHandler> database_handler,
                          const std::shared_ptr<EvseSecurity> evse_security,
-                         const std::shared_ptr<ConnectivityManager> connectivity_manager,
+                         const std::shared_ptr<ConnectivityManagerInterface> connectivity_manager,
                          const std::string& message_log_path, const Callbacks& callbacks) :
     ocpp::ChargingStationBase(evse_security),
     device_model(device_model),
@@ -560,7 +560,7 @@ void ChargePoint::initialize(const std::map<int32_t, int32_t>& evse_connector_st
 
     if (this->connectivity_manager == nullptr) {
         // connectivity manager was not provided in constructor. Create a new one and set the message callbacks
-        this->connectivity_manager = std::make_unique<ConnectivityManager>(*this->device_model, this->evse_security);
+        this->connectivity_manager = std::make_shared<ConnectivityManager>(*this->device_model, this->evse_security);
         this->connectivity_manager->set_websocket_connected_callback(
             [this](int configuration_slot, const NetworkConnectionProfile& network_connection_profile,
                    const OcppProtocolVersion ocpp_version) {
