@@ -90,6 +90,28 @@ public:
     /// @{
 
     ///
+    /// \brief Shall be called when a websocket connection has been established in case the connectivity_handler is
+    /// provided exernally.
+    /// \param configuration_slot The network profile slot used for the connection.
+    /// \param network_connection_profile The network connection profile used for the connection.
+    virtual void on_websocket_connected(const int configuration_slot,
+                                const NetworkConnectionProfile& network_connection_profile,
+                                const OcppProtocolVersion ocpp_version) = 0;
+
+    ///
+    /// \brief Shall be called when a websocket connection has been disconnected in case the connectivity_handler is
+    /// provided externally.
+    /// \param configuration_slot The network profile slot used for the connection.
+    /// \param network_connection_profile The network connection profile used for the connection.
+    virtual void on_websocket_disconnected(const int configuration_slot,
+                                   const NetworkConnectionProfile& network_connection_profile) = 0;
+
+    /// \brief Shall be called when a websocket connection attempt has failed in case the connectivity_handler is
+    /// provided externally.
+    /// \param reason The reason why the connection failed.
+    virtual void on_websocket_connection_failed(ConnectionFailedReason reason) = 0;
+
+    ///
     /// \brief Can be called when a network is disconnected, for example when an ethernet cable is removed.
     ///
     /// This is introduced because the websocket can take several minutes to timeout when a network interface becomes
@@ -342,7 +364,7 @@ class ChargePoint : public ChargePointInterface, private ocpp::ChargingStationBa
 private:
     std::shared_ptr<DeviceModel> device_model;
     std::unique_ptr<EvseManager> evse_manager;
-    std::unique_ptr<ConnectivityManager> connectivity_manager;
+    std::shared_ptr<ConnectivityManager> connectivity_manager;
 
     std::unique_ptr<MessageDispatcherInterface<MessageType>> message_dispatcher;
 
@@ -409,12 +431,6 @@ private:
     // internal helper functions
     void initialize(const std::map<int32_t, int32_t>& evse_connector_structure, const std::string& message_log_path);
     OcspUpdater make_ocsp_updater();
-    void websocket_connected_callback(const int configuration_slot,
-                                      const NetworkConnectionProfile& network_connection_profile,
-                                      const OcppProtocolVersion ocpp_version);
-    void websocket_disconnected_callback(const int configuration_slot,
-                                         const NetworkConnectionProfile& network_connection_profile);
-    void websocket_connection_failed(ConnectionFailedReason reason);
     void update_dm_availability_state(const int32_t evse_id, const int32_t connector_id,
                                       const ConnectorStatusEnum status);
 
@@ -459,6 +475,21 @@ public:
 
     /// @name Constructors for 2.0.1
     /// @{
+
+    /// \brief Construct a new ChargePoint object
+    /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
+    /// key represents the id of the EVSE and the value represents the number of connectors for this EVSE. The ids of
+    /// the EVSEs have to increment starting with 1.
+    /// \param device_model device model instance
+    /// \param database_handler database handler instance
+    /// \param evse_security Pointer to evse_security that manages security related operations
+    /// \param connectivity_manager connectivity manager instance
+    /// \param message_log_path Path to where logfiles are written to
+    /// \param callbacks Callbacks that will be registered for ChargePoint
+    ChargePoint(const std::map<int32_t, int32_t>& evse_connector_structure, std::shared_ptr<DeviceModel> device_model,
+                std::shared_ptr<DatabaseHandler> database_handler, const std::shared_ptr<EvseSecurity> evse_security,
+                const std::shared_ptr<ConnectivityManager> connectivity_manager, const std::string& message_log_path,
+                const Callbacks& callbacks);
 
     /// \brief Construct a new ChargePoint object
     /// \param evse_connector_structure Map that defines the structure of EVSE and connectors of the chargepoint. The
@@ -524,6 +555,12 @@ public:
     void connect_websocket(std::optional<int32_t> network_profile_slot = std::nullopt) override;
     virtual void disconnect_websocket() override;
 
+    void on_websocket_connected(const int configuration_slot,
+                                const NetworkConnectionProfile& network_connection_profile,
+                                const OcppProtocolVersion ocpp_version) override;
+    void on_websocket_disconnected(const int configuration_slot,
+                                   const NetworkConnectionProfile& network_connection_profile) override;
+    void on_websocket_connection_failed(ConnectionFailedReason reason) override;
     void on_network_disconnected(OCPPInterfaceEnum ocpp_interface) override;
 
     void on_firmware_update_status_notification(int32_t request_id,
