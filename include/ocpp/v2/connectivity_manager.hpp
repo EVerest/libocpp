@@ -151,10 +151,10 @@ private:
     OcppProtocolVersion connected_ocpp_version;
 
 public:
-    ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security,
-                        std::shared_ptr<MessageLogging> logging,
-                        const std::function<void(const std::string& message)>& message_callback);
+    ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security);
 
+    void set_message_callback(const std::function<void(const std::string& message)>& callback);
+    void set_logging(std::shared_ptr<MessageLogging> logging);
     void set_websocket_authorization_key(const std::string& authorization_key) override;
     void set_websocket_connection_options(const WebsocketConnectionOptions& connection_options) override;
     void set_websocket_connection_options_without_reconnect() override;

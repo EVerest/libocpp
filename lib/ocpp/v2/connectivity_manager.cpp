@@ -19,19 +19,26 @@ constexpr int32_t default_network_config_timeout_seconds = 60;
 namespace ocpp {
 namespace v2 {
 
-ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security,
-                                         std::shared_ptr<MessageLogging> logging,
-                                         const std::function<void(const std::string& message)>& message_callback) :
+ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security) :
     device_model{device_model},
     evse_security{evse_security},
-    logging{logging},
+    message_callback([](const std::string& message) {
+        EVLOG_warning << "No message callback set in ConnectivityManager. Dropping message: " << message;
+    }),
     websocket{nullptr},
-    message_callback{message_callback},
     wants_to_be_connected{false},
     active_network_configuration_priority{0},
     last_known_security_level{0},
     connected_ocpp_version{OcppProtocolVersion::Unknown} {
     cache_network_connection_profiles();
+}
+
+void ConnectivityManager::set_message_callback(const std::function<void(const std::string& message)>& callback) {
+    this->message_callback = callback;
+}
+
+void ConnectivityManager::set_logging(std::shared_ptr<MessageLogging> logging) {
+    this->logging = logging;
 }
 
 void ConnectivityManager::set_websocket_authorization_key(const std::string& authorization_key) {
