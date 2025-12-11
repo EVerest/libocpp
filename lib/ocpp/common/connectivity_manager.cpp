@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2024 Pionix GmbH and Contributors to EVerest
 
-#include <ocpp/v2/connectivity_manager.hpp>
+#include <ocpp/common/connectivity_manager.hpp>
 
 #include <everest/logging.hpp>
 #include <ocpp/v2/ctrlr_component_variables.hpp>
@@ -17,7 +17,13 @@ constexpr int32_t default_network_config_timeout_seconds = 60;
 } // namespace
 
 namespace ocpp {
-namespace v2 {
+
+using NetworkConnectionProfile = ocpp::v2::NetworkConnectionProfile;
+using AttributeEnum = ocpp::v2::AttributeEnum;
+using DeviceModel = ocpp::v2::DeviceModel;
+using OCPPInterfaceEnum = ocpp::v2::OCPPInterfaceEnum;
+using SetNetworkProfileRequest = ocpp::v2::SetNetworkProfileRequest;
+namespace ControllerComponentVariables = ocpp::v2::ControllerComponentVariables;
 
 ConnectivityManager::ConnectivityManager(DeviceModel& device_model, std::shared_ptr<EvseSecurity> evse_security) :
     device_model{device_model},
@@ -344,7 +350,7 @@ ConnectivityManager::get_ws_connection_options(const int32_t configuration_slot)
             this->device_model.get_value<std::string>(ControllerComponentVariables::SecurityCtrlrIdentity),
             network_connection_profile.securityProfile);
 
-        const auto ocpp_versions = utils::get_ocpp_protocol_versions(
+        const auto ocpp_versions = ocpp::v2::utils::get_ocpp_protocol_versions(
             this->device_model.get_value<std::string>(ControllerComponentVariables::SupportedOcppVersions));
 
         WebsocketConnectionOptions connection_options{
@@ -395,6 +401,7 @@ void ConnectivityManager::on_websocket_connected(OcppProtocolVersion protocol) {
         this->websocket_connected_callback.value()(actual_configuration_slot, network_connection_profile.value(),
                                                    this->connected_ocpp_version);
     }
+    // write successful slot to slot 0
 }
 
 void ConnectivityManager::on_websocket_disconnected() {
@@ -524,5 +531,4 @@ void ConnectivityManager::remove_network_connection_profiles_below_actual_securi
                                  AttributeEnum::Actual, new_network_priority, VARIABLE_ATTRIBUTE_VALUE_SOURCE_INTERNAL);
 }
 
-} // namespace v2
 } // namespace ocpp

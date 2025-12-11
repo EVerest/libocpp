@@ -5,7 +5,7 @@
 
 #include "gmock/gmock.h"
 
-#include <ocpp/v2/connectivity_manager.hpp>
+#include <ocpp/common/connectivity_manager.hpp>
 
 namespace ocpp::v2 {
 class ConnectivityManagerMock : public ConnectivityManagerInterface {

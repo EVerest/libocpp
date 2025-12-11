@@ -4,7 +4,7 @@
 #pragma once
 
 #include <ocpp/common/message_dispatcher.hpp>
-#include <ocpp/v2/connectivity_manager.hpp>
+#include <ocpp/common/connectivity_manager.hpp>
 #include <ocpp/v2/device_model.hpp>
 
 namespace ocpp {
