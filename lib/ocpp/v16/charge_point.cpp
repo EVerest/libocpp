@@ -53,6 +53,10 @@ bool ChargePoint::restart(const std::map<int, ChargePointStatus>& connector_stat
     return this->charge_point->restart(connector_status_map, bootreason);
 }
 
+void ChargePoint::reset_state_machine(const std::map<int, ChargePointStatus>& connector_status_map) {
+    return this->charge_point->reset_state_machine(connector_status_map);
+}
+
 bool ChargePoint::stop() {
     return this->charge_point->stop();
 }
