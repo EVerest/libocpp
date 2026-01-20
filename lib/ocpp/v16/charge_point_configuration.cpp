@@ -70,6 +70,8 @@ ChargePointConfiguration::ChargePointConfiguration(const std::string& config, co
             const auto core_schema = json::parse(core_schema_file);
             this->core_schema_unlock_connector_on_ev_side_disconnect_ro_value =
                 core_schema["properties"]["UnlockConnectorOnEVSideDisconnect"]["readOnly"];
+            this->core_schema_authorize_remote_tx_requests_ro_value =
+                core_schema["properties"]["AuthorizeRemoteTxRequests"]["readOnly"];
         }
     } catch (const json::parse_error& e) {
         EVLOG_error << "Error while parsing Core.json file.";
@@ -1280,7 +1282,7 @@ void ChargePointConfiguration::setAuthorizeRemoteTxRequests(bool enabled) {
 KeyValue ChargePointConfiguration::getAuthorizeRemoteTxRequestsKeyValue() {
     KeyValue kv;
     kv.key = "AuthorizeRemoteTxRequests";
-    kv.readonly = false;
+    kv.readonly = this->core_schema_authorize_remote_tx_requests_ro_value;
     kv.value.emplace(ocpp::conversions::bool_to_string(this->getAuthorizeRemoteTxRequests()));
     return kv;
 }
