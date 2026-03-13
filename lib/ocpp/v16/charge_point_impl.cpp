@@ -205,8 +205,7 @@ ChargePointImpl::ChargePointImpl(const std::string& config, const fs::path& shar
             };
         this->ocsp_request_timer = std::make_unique<Everest::SteadyTimer>(&this->io_context, [this]() {
             this->update_ocsp_cache();
-            this->ocsp_request_timer->interval(
-                std::chrono::seconds(this->configuration->getOcspRequestInterval()));
+            this->ocsp_request_timer->interval(std::chrono::seconds(this->configuration->getOcspRequestInterval()));
         });
     }
 
