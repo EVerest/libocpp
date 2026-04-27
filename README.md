@@ -2,17 +2,21 @@
 
 ![Github Actions](https://github.com/EVerest/libocpp/actions/workflows/build_and_test.yaml/badge.svg)
 
-## ⚠️ DEPRECATION NOTICE
+⚠️ **DEPRECATION NOTICE: This repository is now archived**. libocpp has been integrated into [EVerest](https://github.com/EVerest/EVerest).
 
-**This repository is now archived**. libocpp has been integrated into [EVerest](https://github.com/EVerest/EVerest).
+All future development, updates, and issue tracking will continue within the [EVerest](https://github.com/EVerest/EVerest).
+This standalone repository is now read-only and will no longer be maintained.
 
-All future development, updates, and issue tracking will continue within the [EVerest](https://github.com/EVerest/EVerest). This standalone repository is now read-only and will no longer be maintained.
+Please visit the [EVerest repository](https://github.com/EVerest/EVerest/tree/main/lib/everest/ocpp) to access the active codebase,
+submit issues, or contribute.
 
-Please visit the [EVerest repository](https://github.com/EVerest/EVerest/tree/main/lib/everest/ocpp) to access the active codebase, submit issues, or contribute.
+--------
 
 This is a C++ library implementation of OCPP for version 1.6, 2.0.1 and 2.1.
 (see [OCPP protocols at OCA website](https://openchargealliance.org/protocols/open-charge-point-protocol/)).
 The OCPP2.0.1 implementation of libocpp has been certified by the OCA for multiple hardware platforms.
+
+--------
 
 Libocpp's approach to implementing the  OCPP protocol is to address as much functional requirements as possible as part of the library.
 Since OCPP is a protocol that affects, controls, and monitors many areas of a charging station's operation this library needs to be
